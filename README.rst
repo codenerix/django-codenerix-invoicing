@@ -23,7 +23,7 @@ Quickstart
     For python 2: sudo pip2 install django-codenerix-invoicing
     For python 3: sudo pip3 install django-codenerix-invoicing
 
-2. Add "codenerix_extensions" to your INSTALLED_APPS setting like this::
+2. Add "codenerix_extensions", "codenerix_products", "codenerix_storages" and "codenerix_invoicing" to your INSTALLED_APPS setting like this::
 
     INSTALLED_APPS = [
         ...
@@ -52,7 +52,7 @@ Commercial support
 ******************
 
 This project is backed by `Centrologic <http://www.centrologic.com/>`_. You can discover more in `CODENERIX.com <http://www.codenerix.com/>`_.
-If you need help implementing or hosting django-codenerix-extensions, please contact us:
+If you need help implementing or hosting django-codenerix-invoicing, please contact us:
 http://www.centrologic.com/contacto/
 
 .. image:: http://www.centrologic.com/wp-content/uploads/2015/09/logo-centrologic.png
