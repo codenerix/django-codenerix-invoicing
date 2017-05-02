@@ -1,0 +1,96 @@
+{% extends "codenerix/sublist.html" %}
+{% load codenerix_common %}
+{% load i18n %}
+{% comment %}
+
+django-codenerix-invoicing
+
+Copyright 2017 Centrologic Computational Logistic Center S.L.
+
+Project URL : http://www.codenerix.com
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+{% endcomment %}
+{% block table_content %}
+<input type="hidden" name="lines" ng-model="lines" />
+<div class="col-md-12 column panel panel-default scrolling-container" ng-controller="codenerixPurchasesDetailsCtrl">
+    <table class="table table-condensed table-hover list">
+        <thead>
+            <tr>
+                <th>&nbsp;</th>
+                <th>{% trans "Product" %}</th>
+                <th class="text-right">{% trans "Price"  %}</th>
+                <th class="text-right">{% trans "Quantity" %}</th>
+                <th class="text-right">{% trans "Quantity for order" %}</th>
+                <th class="text-right">{% trans "Tax" %}</th>
+                <th class="text-right">{% trans "Total" %}</th>
+                <th class="text-center">{% trans "Delete" %}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for obj in object_list %}
+            <tr>
+                <td>
+                    <input type="checkbox" ng-model="checkline_{{obj.pk}}" ng-change="checkline_select({{ obj.pk }})" />  
+                </td>
+                <td>
+                    {{obj.product}}
+                </td>
+                <td class="text-right">
+                    {{obj.price|floatformat:2}}
+                </td>
+                <td class="text-right">
+                    {{obj.quantity}}
+                </td>
+                <td class="text-right">
+                <input type="number" name="quantity_{{obj.pk}}" ng-model="quantity_{{obj.pk}}" ng-value="{{obj.quantity}}" value="{{obj.quantity}}" ng-change="change_quantity({{obj.pk}})" />
+                </td>
+                <td class="text-right">
+                    {{obj.tax|floatformat:2}}%
+                </td>
+                <td class="text-right">
+                    {% with tax=obj.price|multiplication:obj.quantity|multiplication:obj.tax|division:100 %}
+                        {{ obj.price|multiplication:obj.quantity|addition:tax|floatformat:2 }}
+                    {% endwith %}
+                </td>
+                <td class="text-center">
+                    {% if linkedit %}
+                    <i ng-click="removerecord({{obj.pk}}, '{% trans "Delete file?" %}')" class="glyphicon glyphicon-trash pointer"></i>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+            
+{% if linkedit %}
+    <div class="row clearfix ng-scope">&nbsp;</div>
+    <button type="button" class="btn green btn-sm" popover-placement="top" uib-popover="{{gentranslate.Add}}" popover-trigger="mouseenter" ng-click="addrecord(currentTab)"><span class="glyphicon glyphicon-plus"></span>&nbsp;{{gentranslate.Add}}</button>
+    <div class="row clearfix ng-scope">&nbsp;</div>
+    <div class="row clearfix">&nbsp;</div>
+{% endif %}
+
+{% endblock %}
+
+{% block form_bottom %}
+    </div>
+    </div>
+    <div class="modal-footer" ng-controller="codenerixPurchasesDetailsCtrl">
+        <label  class="sr-only"  for="submit_save">{% trans "Save" %}</label>
+        <button id="submit_save" ng-click="presubmit({{form.form_name}})" class="btn btn-sm btn-info" ng-disabled="{{ form.form_name }}.$invalid" ng-if="{{form.form_name}}.$dirty">{% trans "Save" %}</button>
+        <label  class="sr-only"  for="cancel">{% trans "Cancel" %}</label>
+        <button class="btn btn-sm btn-danger" ng-click="cancel()">{% trans "Cancel" %}</button>
+    </div>
+{% endblock %}

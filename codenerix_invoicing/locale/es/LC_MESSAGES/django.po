@@ -1,0 +1,1475 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-03-28 14:33+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: codenerix_invoicing/forms.py:27 codenerix_invoicing/forms.py:45
+#: codenerix_invoicing/forms.py:60 codenerix_invoicing/forms.py:118
+#: codenerix_invoicing/forms.py:129 codenerix_invoicing/forms.py:145
+#: codenerix_invoicing/forms.py:160 codenerix_invoicing/forms.py:171
+#: codenerix_invoicing/forms.py:187 codenerix_invoicing/forms.py:197
+#: codenerix_invoicing/forms.py:225 codenerix_invoicing/forms_purchases.py:43
+#: codenerix_invoicing/forms_purchases.py:60
+#: codenerix_invoicing/forms_purchases.py:85
+#: codenerix_invoicing/forms_purchases.py:97
+#: codenerix_invoicing/forms_purchases.py:114
+#: codenerix_invoicing/forms_purchases.py:126
+#: codenerix_invoicing/forms_purchases.py:147
+#: codenerix_invoicing/forms_purchases.py:160
+#: codenerix_invoicing/forms_purchases.py:181
+#: codenerix_invoicing/forms_purchases.py:196
+#: codenerix_invoicing/forms_purchases.py:209
+#: codenerix_invoicing/forms_purchases.py:231
+#: codenerix_invoicing/forms_purchases.py:243
+#: codenerix_invoicing/forms_purchases.py:269
+#: codenerix_invoicing/forms_purchases.py:286
+#: codenerix_invoicing/forms_purchases.py:311
+#: codenerix_invoicing/forms_purchases.py:323
+#: codenerix_invoicing/forms_purchases.py:340
+#: codenerix_invoicing/forms_purchases.py:354
+#: codenerix_invoicing/forms_purchases.py:376
+#: codenerix_invoicing/forms_purchases.py:387
+#: codenerix_invoicing/forms_purchases.py:403
+#: codenerix_invoicing/forms_purchases.py:416
+#: codenerix_invoicing/forms_purchases.py:438
+#: codenerix_invoicing/forms_purchases.py:450
+#: codenerix_invoicing/forms_purchases.py:467
+#: codenerix_invoicing/forms_purchases.py:483
+#: codenerix_invoicing/forms_purchases.py:506
+#: codenerix_invoicing/forms_purchases.py:517
+#: codenerix_invoicing/forms_purchases.py:533
+#: codenerix_invoicing/forms_purchases.py:547
+#: codenerix_invoicing/forms_purchases.py:620
+#: codenerix_invoicing/forms_purchases.py:630
+#: codenerix_invoicing/forms_purchases.py:646
+#: codenerix_invoicing/forms_purchases.py:656
+#: codenerix_invoicing/forms_purchases.py:672
+#: codenerix_invoicing/forms_purchases.py:682
+#: codenerix_invoicing/forms_purchases.py:698
+#: codenerix_invoicing/forms_purchases.py:708
+#: codenerix_invoicing/forms_purchases.py:724
+#: codenerix_invoicing/forms_purchases.py:734
+#: codenerix_invoicing/forms_purchases.py:750
+#: codenerix_invoicing/forms_purchases.py:760
+#: codenerix_invoicing/forms_purchases.py:776
+#: codenerix_invoicing/forms_purchases.py:786
+#: codenerix_invoicing/forms_sales.py:35 codenerix_invoicing/forms_sales.py:50
+#: codenerix_invoicing/forms_sales.py:69 codenerix_invoicing/forms_sales.py:80
+#: codenerix_invoicing/forms_sales.py:140
+#: codenerix_invoicing/forms_sales.py:155
+#: codenerix_invoicing/forms_sales.py:183
+#: codenerix_invoicing/forms_sales.py:197
+#: codenerix_invoicing/forms_sales.py:232
+#: codenerix_invoicing/forms_sales.py:246
+#: codenerix_invoicing/forms_sales.py:272
+#: codenerix_invoicing/forms_sales.py:282
+#: codenerix_invoicing/forms_sales.py:309
+#: codenerix_invoicing/forms_sales.py:320
+#: codenerix_invoicing/forms_sales.py:347
+#: codenerix_invoicing/forms_sales.py:358
+#: codenerix_invoicing/forms_sales.py:386
+#: codenerix_invoicing/forms_sales.py:400
+#: codenerix_invoicing/forms_sales.py:425
+#: codenerix_invoicing/forms_sales.py:437
+#: codenerix_invoicing/forms_sales.py:457
+#: codenerix_invoicing/forms_sales.py:480
+#: codenerix_invoicing/forms_sales.py:490
+#: codenerix_invoicing/forms_sales.py:516
+#: codenerix_invoicing/forms_sales.py:533
+#: codenerix_invoicing/forms_sales.py:545
+#: codenerix_invoicing/forms_sales.py:572
+#: codenerix_invoicing/forms_sales.py:586
+#: codenerix_invoicing/forms_sales.py:611
+#: codenerix_invoicing/forms_sales.py:622
+#: codenerix_invoicing/forms_sales.py:642
+#: codenerix_invoicing/forms_sales.py:664
+#: codenerix_invoicing/forms_sales.py:674
+#: codenerix_invoicing/forms_sales.py:697
+#: codenerix_invoicing/forms_sales.py:744
+#: codenerix_invoicing/forms_sales.py:753
+#: codenerix_invoicing/forms_sales.py:767
+#: codenerix_invoicing/forms_sales.py:777
+#: codenerix_invoicing/forms_sales.py:797
+#: codenerix_invoicing/forms_sales.py:812
+#: codenerix_invoicing/forms_sales.py:821
+#: codenerix_invoicing/forms_sales.py:835
+#: codenerix_invoicing/forms_sales.py:844
+msgid "Details"
+msgstr ""
+
+#: codenerix_invoicing/forms_purchases.py:27
+#: codenerix_invoicing/models_purchases.py:145
+#: codenerix_invoicing/views_purchases.py:111
+msgid "Categories"
+msgstr ""
+
+#: codenerix_invoicing/forms_purchases.py:254
+#: codenerix_invoicing/forms_purchases.py:264
+#: codenerix_invoicing/models_sales.py:875
+#: codenerix_invoicing/models_sales.py:889
+msgid "Storage"
+msgstr ""
+
+#: codenerix_invoicing/forms_purchases.py:255
+msgid "Zone"
+msgstr ""
+
+#: codenerix_invoicing/forms_purchases.py:256
+#: codenerix_invoicing/models.py:128 codenerix_invoicing/models.py:134
+msgid "Batch"
+msgstr ""
+
+#: codenerix_invoicing/forms_sales.py:100
+#: codenerix_invoicing/forms_sales.py:113
+#: codenerix_invoicing/models_purchases.py:173
+#: codenerix_invoicing/models_purchases.py:178
+#: codenerix_invoicing/models_purchases.py:184
+#: codenerix_invoicing/models_purchases.py:188
+#: codenerix_invoicing/models_purchases.py:195
+#: codenerix_invoicing/models_purchases.py:200
+#: codenerix_invoicing/models_sales.py:29
+#: codenerix_invoicing/models_sales.py:677
+#: codenerix_invoicing/models_sales.py:702
+#: codenerix_invoicing/models_sales.py:821
+#: codenerix_invoicing/models_sales.py:827
+#: codenerix_invoicing/models_sales.py:873
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:10
+#: codenerix_invoicing/views_purchases.py:125
+#: codenerix_invoicing/views_sales.py:185
+msgid "Budget"
+msgstr ""
+
+#: codenerix_invoicing/forms_sales.py:228
+msgid "No hay tantos productos en Stock"
+msgstr ""
+
+#: codenerix_invoicing/forms_sales.py:294
+#: codenerix_invoicing/forms_sales.py:371
+#: codenerix_invoicing/forms_sales.py:557
+#: codenerix_invoicing/models_purchases.py:209
+#: codenerix_invoicing/models_purchases.py:215
+#: codenerix_invoicing/models_purchases.py:222
+#: codenerix_invoicing/models_purchases.py:226
+#: codenerix_invoicing/models_sales.py:904
+#: codenerix_invoicing/models_sales.py:911
+#: codenerix_invoicing/models_sales.py:955
+#: codenerix_invoicing/templates/sales/linealbaran_sublist.html:10
+#: codenerix_invoicing/templates/sales/lineinvoice_sublist.html:10
+#: codenerix_invoicing/templates/sales/lineticket_sublist.html:10
+#: codenerix_invoicing/views_purchases.py:323
+#: codenerix_invoicing/views_sales.py:434
+msgid "Order"
+msgstr ""
+
+#: codenerix_invoicing/models.py:27
+msgid "Requested"
+msgstr ""
+
+#: codenerix_invoicing/models.py:28 codenerix_invoicing/models_sales.py:46
+msgid "Sent"
+msgstr ""
+
+#: codenerix_invoicing/models.py:29 codenerix_invoicing/models_sales.py:47
+msgid "Delivered"
+msgstr ""
+
+#: codenerix_invoicing/models.py:37 codenerix_invoicing/models.py:47
+#: codenerix_invoicing/models.py:96 codenerix_invoicing/models.py:103
+#: codenerix_invoicing/models_purchases.py:65
+#: codenerix_invoicing/models_purchases.py:73
+#: codenerix_invoicing/models_purchases.py:85
+#: codenerix_invoicing/models_purchases.py:95
+#: codenerix_invoicing/models_purchases.py:201
+#: codenerix_invoicing/models_purchases.py:307
+#: codenerix_invoicing/models_purchases.py:369
+#: codenerix_invoicing/models_sales.py:164
+#: codenerix_invoicing/models_sales.py:590
+#: codenerix_invoicing/models_sales.py:738
+#: codenerix_invoicing/models_sales.py:887
+#: codenerix_invoicing/models_sales.py:932
+#: codenerix_invoicing/models_sales.py:984
+#: codenerix_invoicing/models_sales.py:1067
+#: codenerix_invoicing/templates/purchases/document_sublist.html:10
+msgid "Code"
+msgstr ""
+
+#: codenerix_invoicing/models.py:38 codenerix_invoicing/models.py:48
+#: codenerix_invoicing/models.py:77 codenerix_invoicing/models.py:109
+#: codenerix_invoicing/models_purchases.py:56
+#: codenerix_invoicing/models_sales.py:259
+#: codenerix_invoicing/models_sales.py:276
+msgid "Description"
+msgstr ""
+
+#: codenerix_invoicing/models.py:39 codenerix_invoicing/models.py:49
+#: codenerix_invoicing/models.py:78
+msgid "Default"
+msgstr ""
+
+#: codenerix_invoicing/models.py:40 codenerix_invoicing/models_purchases.py:87
+#: codenerix_invoicing/models_sales.py:166
+msgid "Observations"
+msgstr ""
+
+#: codenerix_invoicing/models.py:68
+msgid "Legal_note"
+msgstr ""
+
+#: codenerix_invoicing/models.py:69 codenerix_invoicing/models_sales.py:53
+#: codenerix_invoicing/models_sales.py:698
+#: codenerix_invoicing/models_sales.py:741
+#: codenerix_invoicing/models_sales.py:861
+msgid "Public"
+msgstr ""
+
+#: codenerix_invoicing/models.py:76
+msgid "Last update"
+msgstr ""
+
+#: codenerix_invoicing/models.py:108 codenerix_invoicing/models_sales.py:1179
+#: codenerix_invoicing/templates/sales/customerdocument_sublist.html:9
+msgid "Name"
+msgstr ""
+
+#: codenerix_invoicing/models.py:127
+#: codenerix_invoicing/models_purchases.py:282
+#: codenerix_invoicing/models_purchases.py:288
+#: codenerix_invoicing/models_purchases.py:343
+#: codenerix_invoicing/models_purchases.py:350
+msgid "Line albaran"
+msgstr ""
+
+#: codenerix_invoicing/models.py:129 codenerix_invoicing/models.py:135
+#: codenerix_invoicing/models.py:163 codenerix_invoicing/models.py:168
+#: codenerix_invoicing/models_purchases.py:52
+#: codenerix_invoicing/models_purchases.py:174
+#: codenerix_invoicing/models_purchases.py:211
+#: codenerix_invoicing/models_purchases.py:239
+#: codenerix_invoicing/models_purchases.py:283
+#: codenerix_invoicing/models_purchases.py:316
+#: codenerix_invoicing/models_purchases.py:344
+#: codenerix_invoicing/models_purchases.py:378
+#: codenerix_invoicing/models_sales.py:600
+#: codenerix_invoicing/models_sales.py:609
+#: codenerix_invoicing/models_sales.py:678
+#: codenerix_invoicing/models_sales.py:687
+#: codenerix_invoicing/models_sales.py:822
+#: codenerix_invoicing/models_sales.py:868
+#: codenerix_invoicing/models_sales.py:906
+#: codenerix_invoicing/models_sales.py:956
+#: codenerix_invoicing/models_sales.py:1211
+#: codenerix_invoicing/models_sales.py:1217
+#: codenerix_invoicing/templates/codenerix_invoicing/pdf/stockmovement_pdf.html:49
+#: codenerix_invoicing/templates/purchases/linealbaran_sublist.html:10
+#: codenerix_invoicing/templates/purchases/linebudget_sublist.html:10
+#: codenerix_invoicing/templates/purchases/linebudget_sublist_form.html:11
+#: codenerix_invoicing/templates/purchases/lineinvoice_sublist.html:10
+#: codenerix_invoicing/templates/purchases/lineinvoicerectification_sublist.html:10
+#: codenerix_invoicing/templates/purchases/lineorder_sublist.html:10
+#: codenerix_invoicing/templates/purchases/lineticket_sublist.html:10
+#: codenerix_invoicing/templates/purchases/lineticketrectification_sublist.html:10
+#: codenerix_invoicing/templates/sales/linealbaran_sublist.html:11
+#: codenerix_invoicing/templates/sales/linebudget_sublist.html:10
+#: codenerix_invoicing/templates/sales/lineinvoice_sublist.html:11
+#: codenerix_invoicing/templates/sales/lineinvoicerectification_sublist.html:9
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:11
+#: codenerix_invoicing/templates/sales/lineticket_sublist.html:11
+#: codenerix_invoicing/templates/sales/lineticketrectification_sublist.html:10
+msgid "Product"
+msgstr ""
+
+#: codenerix_invoicing/models.py:130 codenerix_invoicing/models.py:136
+#: codenerix_invoicing/models.py:164 codenerix_invoicing/models.py:169
+#: codenerix_invoicing/models_purchases.py:42
+#: codenerix_invoicing/models_purchases.py:53
+#: codenerix_invoicing/models_sales.py:226
+#: codenerix_invoicing/models_sales.py:277
+#: codenerix_invoicing/models_sales.py:601
+#: codenerix_invoicing/models_sales.py:610
+#: codenerix_invoicing/models_sales.py:679
+#: codenerix_invoicing/models_sales.py:688
+#: codenerix_invoicing/models_sales.py:957
+#: codenerix_invoicing/models_sales.py:1040
+#: codenerix_invoicing/models_sales.py:1122
+#: codenerix_invoicing/models_sales.py:1212
+#: codenerix_invoicing/models_sales.py:1218
+#: codenerix_invoicing/templates/codenerix_invoicing/pdf/stockmovement_pdf.html:52
+#: codenerix_invoicing/templates/purchases/linealbaran_sublist.html:12
+#: codenerix_invoicing/templates/purchases/linebudget_sublist.html:12
+#: codenerix_invoicing/templates/purchases/linebudget_sublist_form.html:13
+#: codenerix_invoicing/templates/purchases/lineinvoice_sublist.html:12
+#: codenerix_invoicing/templates/purchases/lineinvoicerectification_sublist.html:12
+#: codenerix_invoicing/templates/purchases/lineorder_sublist.html:12
+#: codenerix_invoicing/templates/purchases/lineticket_sublist.html:12
+#: codenerix_invoicing/templates/purchases/lineticketrectification_sublist.html:12
+#: codenerix_invoicing/templates/sales/linealbaran_sublist.html:13
+#: codenerix_invoicing/templates/sales/linebudget_sublist.html:12
+#: codenerix_invoicing/templates/sales/lineinvoice_sublist.html:13
+#: codenerix_invoicing/templates/sales/lineinvoicerectification_sublist.html:11
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:13
+#: codenerix_invoicing/templates/sales/lineticket_sublist.html:13
+#: codenerix_invoicing/templates/sales/lineticketrectification_sublist.html:12
+msgid "Quantity"
+msgstr ""
+
+#: codenerix_invoicing/models.py:146 codenerix_invoicing/models.py:152
+msgid "Batch source"
+msgstr ""
+
+#: codenerix_invoicing/models.py:147
+msgid "Batch destionation"
+msgstr ""
+
+#: codenerix_invoicing/models.py:148
+#: codenerix_invoicing/models_purchases.py:240
+#: codenerix_invoicing/models_purchases.py:251
+#: codenerix_invoicing/models_sales.py:696
+#: codenerix_invoicing/models_sales.py:742
+#: codenerix_invoicing/models_sales.py:877
+#: codenerix_invoicing/models_sales.py:890
+#: codenerix_invoicing/models_sales.py:1180
+#: codenerix_invoicing/models_sales.py:1185
+#: codenerix_invoicing/templates/codenerix_invoicing/pdf/stockmovement_pdf.html:43
+msgid "Status"
+msgstr ""
+
+#: codenerix_invoicing/models.py:153
+msgid "Batch destination"
+msgstr ""
+
+#: codenerix_invoicing/models.py:154 codenerix_invoicing/views.py:333
+#: codenerix_invoicing/views_purchases.py:158
+#: codenerix_invoicing/views_purchases.py:342
+#: codenerix_invoicing/views_purchases.py:417
+#: codenerix_invoicing/views_purchases.py:579
+#: codenerix_invoicing/views_purchases.py:1271
+#: codenerix_invoicing/views_purchases.py:1425
+#: codenerix_invoicing/views_purchases.py:1582
+#: codenerix_invoicing/views_purchases.py:1767
+#: codenerix_invoicing/views_sales.py:226
+#: codenerix_invoicing/views_sales.py:472
+#: codenerix_invoicing/views_sales.py:829
+#: codenerix_invoicing/views_sales.py:1085
+#: codenerix_invoicing/views_sales.py:1398
+#: codenerix_invoicing/views_sales.py:1607
+#: codenerix_invoicing/views_sales.py:1904
+#: codenerix_invoicing/views_sales.py:2171
+#: codenerix_invoicing/views_sales.py:2293
+msgid "Products"
+msgstr ""
+
+#: codenerix_invoicing/models.py:162
+msgid "Stock movement"
+msgstr ""
+
+#: codenerix_invoicing/models.py:191
+msgid "Billing Series"
+msgstr ""
+
+#: codenerix_invoicing/models.py:192 codenerix_invoicing/models.py:202
+#: codenerix_invoicing/models_sales.py:122
+#: codenerix_invoicing/models_sales.py:136
+#: codenerix_invoicing/models_sales.py:144
+#: codenerix_invoicing/models_sales.py:599
+#: codenerix_invoicing/models_sales.py:608
+#: codenerix_invoicing/models_sales.py:617
+#: codenerix_invoicing/models_sales.py:625
+#: codenerix_invoicing/models_sales.py:695
+#: codenerix_invoicing/models_sales.py:737
+#: codenerix_invoicing/models_sales.py:857
+#: codenerix_invoicing/models_sales.py:874
+#: codenerix_invoicing/models_sales.py:886
+#: codenerix_invoicing/models_sales.py:975
+#: codenerix_invoicing/models_sales.py:983
+#: codenerix_invoicing/models_sales.py:1028
+#: codenerix_invoicing/models_sales.py:1058
+#: codenerix_invoicing/models_sales.py:1066
+#: codenerix_invoicing/models_sales.py:1110
+#: codenerix_invoicing/models_sales.py:1178
+#: codenerix_invoicing/views_sales.py:62
+msgid "Customer"
+msgstr ""
+
+#: codenerix_invoicing/models.py:201
+#: codenerix_invoicing/models_purchases.py:139
+#: codenerix_invoicing/models_sales.py:103
+msgid "Billing series"
+msgstr ""
+
+#: codenerix_invoicing/models.py:212
+msgid "Point of Sales"
+msgstr ""
+
+#: codenerix_invoicing/models.py:219
+#: codenerix_invoicing/models_purchases.py:159
+#: codenerix_invoicing/models_sales.py:129
+msgid "---"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:13
+msgid "Amazon"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:14
+msgid "Wire transfer"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:15
+msgid "Card"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:16
+#: codenerix_invoicing/models_purchases.py:115
+#: codenerix_invoicing/models_purchases.py:138
+#: codenerix_invoicing/models_sales.py:84
+#: codenerix_invoicing/models_sales.py:101
+msgid "Credit"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:17
+msgid "Paypal"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:18
+msgid "30 day credit"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:19
+msgid "60 day credit"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:20
+msgid "90 day credit"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:24
+msgid "Taxable base"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:25
+msgid "Total bill"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:30
+msgid "Pending review"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:31
+msgid "Reviewed"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:32
+msgid "Rejected"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:43
+#: codenerix_invoicing/models_purchases.py:54
+#: codenerix_invoicing/models_sales.py:261
+#: codenerix_invoicing/models_sales.py:278
+#: codenerix_invoicing/templates/purchases/linealbaran_sublist.html:11
+#: codenerix_invoicing/templates/purchases/linebudget_sublist.html:11
+#: codenerix_invoicing/templates/purchases/linebudget_sublist_form.html:12
+#: codenerix_invoicing/templates/purchases/lineinvoice_sublist.html:11
+#: codenerix_invoicing/templates/purchases/lineinvoicerectification_sublist.html:11
+#: codenerix_invoicing/templates/purchases/lineorder_sublist.html:11
+#: codenerix_invoicing/templates/purchases/lineticket_sublist.html:11
+#: codenerix_invoicing/templates/purchases/lineticketrectification_sublist.html:11
+#: codenerix_invoicing/templates/sales/linealbaran_sublist.html:12
+#: codenerix_invoicing/templates/sales/linebudget_sublist.html:11
+#: codenerix_invoicing/templates/sales/lineinvoice_sublist.html:12
+#: codenerix_invoicing/templates/sales/lineinvoicerectification_sublist.html:10
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:12
+#: codenerix_invoicing/templates/sales/lineticket_sublist.html:12
+#: codenerix_invoicing/templates/sales/lineticketrectification_sublist.html:11
+msgid "Price"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:44
+#: codenerix_invoicing/models_purchases.py:55
+#: codenerix_invoicing/models_purchases.py:84
+#: codenerix_invoicing/models_purchases.py:97
+#: codenerix_invoicing/models_purchases.py:203
+#: codenerix_invoicing/models_purchases.py:309
+#: codenerix_invoicing/models_purchases.py:371
+#: codenerix_invoicing/models_sales.py:262
+#: codenerix_invoicing/models_sales.py:280
+#: codenerix_invoicing/models_sales.py:925
+#: codenerix_invoicing/models_sales.py:934
+#: codenerix_invoicing/models_sales.py:976
+#: codenerix_invoicing/models_sales.py:986
+#: codenerix_invoicing/models_sales.py:1059
+#: codenerix_invoicing/models_sales.py:1069
+#: codenerix_invoicing/templates/purchases/linealbaran_sublist.html:13
+#: codenerix_invoicing/templates/purchases/linebudget_sublist.html:13
+#: codenerix_invoicing/templates/purchases/linebudget_sublist_form.html:15
+#: codenerix_invoicing/templates/purchases/lineinvoice_sublist.html:13
+#: codenerix_invoicing/templates/purchases/lineinvoicerectification_sublist.html:13
+#: codenerix_invoicing/templates/purchases/lineorder_sublist.html:13
+#: codenerix_invoicing/templates/purchases/lineticket_sublist.html:13
+#: codenerix_invoicing/templates/purchases/lineticketrectification_sublist.html:13
+#: codenerix_invoicing/templates/sales/linealbaran_sublist.html:15
+#: codenerix_invoicing/templates/sales/linebudget_sublist.html:14
+#: codenerix_invoicing/templates/sales/lineinvoice_sublist.html:15
+#: codenerix_invoicing/templates/sales/lineinvoicerectification_sublist.html:12
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:15
+#: codenerix_invoicing/templates/sales/lineticket_sublist.html:15
+#: codenerix_invoicing/templates/sales/lineticketrectification_sublist.html:14
+msgid "Tax"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:45
+msgid "description"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:66
+#: codenerix_invoicing/models_purchases.py:74
+#: codenerix_invoicing/models_purchases.py:86
+#: codenerix_invoicing/models_purchases.py:96
+#: codenerix_invoicing/models_purchases.py:202
+#: codenerix_invoicing/models_purchases.py:308
+#: codenerix_invoicing/models_purchases.py:370
+#: codenerix_invoicing/models_sales.py:165
+#: codenerix_invoicing/models_sales.py:591
+#: codenerix_invoicing/models_sales.py:739
+#: codenerix_invoicing/models_sales.py:888
+#: codenerix_invoicing/models_sales.py:933
+#: codenerix_invoicing/models_sales.py:985
+#: codenerix_invoicing/models_sales.py:1068
+#: codenerix_invoicing/templates/purchases/document_sublist.html:11
+msgid "Date"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:75
+msgid "name_file"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:94
+#: codenerix_invoicing/models_purchases.py:152
+#: codenerix_invoicing/models_purchases.py:168
+#: codenerix_invoicing/models_purchases.py:194
+#: codenerix_invoicing/models_purchases.py:199
+#: codenerix_invoicing/models_purchases.py:232
+#: codenerix_invoicing/models_purchases.py:277
+#: codenerix_invoicing/models_purchases.py:338
+#: codenerix_invoicing/views_purchases.py:53
+msgid "Provider"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:113
+#: codenerix_invoicing/models_purchases.py:137
+#: codenerix_invoicing/models_sales.py:82
+#: codenerix_invoicing/models_sales.py:100
+msgid "Balance"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:117
+#: codenerix_invoicing/models_purchases.py:140
+#: codenerix_invoicing/models_sales.py:88
+#: codenerix_invoicing/models_sales.py:105
+msgid "Type tax"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:118
+#: codenerix_invoicing/models_purchases.py:141
+msgid "Impuesto de gastos de envio"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:119
+msgid "Finance surcharge"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:120
+#: codenerix_invoicing/models_purchases.py:143
+msgid "Payment methods"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:121
+msgid "Delivery time (days)"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:142
+msgid "Finance surcharg"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:144
+msgid "Delivery time"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:210
+#: codenerix_invoicing/models_purchases.py:216
+#: codenerix_invoicing/models_sales.py:905
+#: codenerix_invoicing/models_sales.py:912
+msgid "Line budget"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:237
+#: codenerix_invoicing/models_purchases.py:247
+#: codenerix_invoicing/models_purchases.py:267
+#: codenerix_invoicing/models_purchases.py:271
+#: codenerix_invoicing/models_sales.py:946
+#: codenerix_invoicing/views_purchases.py:546
+#: codenerix_invoicing/views_sales.py:797
+msgid "Albaran"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:238
+#: codenerix_invoicing/models_purchases.py:248
+#: codenerix_invoicing/models_sales.py:947
+msgid "Line orders"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:242
+#: codenerix_invoicing/models_purchases.py:249
+#: codenerix_invoicing/models_sales.py:948
+#: codenerix_invoicing/models_sales.py:958
+msgid "Invoiced"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:243
+#: codenerix_invoicing/models_purchases.py:250
+#: codenerix_invoicing/models_purchases.py:345
+#: codenerix_invoicing/models_purchases.py:351
+msgid "Feature special values"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:281
+#: codenerix_invoicing/models_purchases.py:287
+#: codenerix_invoicing/models_purchases.py:294
+#: codenerix_invoicing/models_purchases.py:298
+#: codenerix_invoicing/models_sales.py:997
+#: codenerix_invoicing/models_sales.py:1002
+#: codenerix_invoicing/models_sales.py:1017
+#: codenerix_invoicing/models_sales.py:1027
+#: codenerix_invoicing/templates/sales/lineticketrectification_sublist.html:9
+#: codenerix_invoicing/views_purchases.py:1238
+#: codenerix_invoicing/views_sales.py:1053
+msgid "Ticket"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:314
+#: codenerix_invoicing/models_purchases.py:320
+#: codenerix_invoicing/models_purchases.py:327
+#: codenerix_invoicing/models_purchases.py:331
+#: codenerix_invoicing/models_sales.py:1033
+#: codenerix_invoicing/models_sales.py:1038
+msgid "Ticket rectification"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:315
+#: codenerix_invoicing/models_purchases.py:321
+#: codenerix_invoicing/models_sales.py:1034
+#: codenerix_invoicing/models_sales.py:1039
+msgid "Line ticket"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:342
+#: codenerix_invoicing/models_purchases.py:357
+#: codenerix_invoicing/models_purchases.py:361
+#: codenerix_invoicing/models_sales.py:1080
+#: codenerix_invoicing/models_sales.py:1099
+#: codenerix_invoicing/views_purchases.py:1549
+#: codenerix_invoicing/views_sales.py:1575
+msgid "Invoice"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:349
+#: codenerix_invoicing/models_sales.py:1085
+msgid "Ticket invoices"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:376
+#: codenerix_invoicing/models_purchases.py:389
+#: codenerix_invoicing/models_purchases.py:393
+#: codenerix_invoicing/models_sales.py:1115
+msgid "Invoice rectification"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:377
+#: codenerix_invoicing/models_purchases.py:383
+#: codenerix_invoicing/models_sales.py:1116
+#: codenerix_invoicing/models_sales.py:1121
+msgid "Line invoice"
+msgstr ""
+
+#: codenerix_invoicing/models_purchases.py:382
+#: codenerix_invoicing/models_sales.py:1120
+msgid "Invoices rectification"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:28
+#: codenerix_invoicing/models_sales.py:694
+msgid "Shopping cart"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:30
+#: codenerix_invoicing/models_sales.py:1184
+#: codenerix_invoicing/models_sales.py:1210
+msgid "Wish list"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:38
+msgid "Draft"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:39
+msgid "Pending payment"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:40
+#: codenerix_invoicing/models_sales.py:45
+msgid "Payment accepted"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:44
+msgid "Pending"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:54
+msgid "Private"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:59
+msgid "Muy baja"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:60
+msgid "Baja"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:61
+msgid "Media"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:62
+msgid "Alta"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:63
+msgid "Urgente"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:77
+#: codenerix_invoicing/models_sales.py:102
+#: codenerix_invoicing/models_sales.py:104
+msgid "Currency"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:86
+msgid "Apply equivalence surcharge"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:137
+#: codenerix_invoicing/models_sales.py:145
+#: codenerix_invoicing/templates/sales/customerdocument_sublist.html:10
+msgid "Type document"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:161
+msgid "Lock"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:163
+msgid "Parent pk"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:227
+msgid "Notes"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:253
+msgid "Recomended price"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:260
+#: codenerix_invoicing/models_sales.py:279
+#: codenerix_invoicing/templates/sales/linealbaran_sublist.html:14
+#: codenerix_invoicing/templates/sales/linebudget_sublist.html:13
+#: codenerix_invoicing/templates/sales/lineinvoice_sublist.html:14
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:14
+#: codenerix_invoicing/templates/sales/lineticket_sublist.html:14
+#: codenerix_invoicing/templates/sales/lineticketrectification_sublist.html:13
+msgid "Discount"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:403
+#: codenerix_invoicing/views_sales.py:280
+msgid "Hay lineas asignadas a pedidos"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:404
+#: codenerix_invoicing/views_sales.py:282
+msgid "Budget not found"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:413
+msgid "Unsigned budget"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:449
+msgid "Hay lineas asignadas a albaranes"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:450
+#: codenerix_invoicing/models_sales.py:468
+#: codenerix_invoicing/models_sales.py:488
+msgid "Order not found"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:467
+msgid "Hay lineas asignadas a ticket"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:487
+msgid "Hay lineas asignadas a facturas"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:518
+#: codenerix_invoicing/models_sales.py:547
+#: codenerix_invoicing/models_sales.py:569
+msgid "Pedido no encontrado"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:520
+#: codenerix_invoicing/models_sales.py:549
+#: codenerix_invoicing/models_sales.py:571
+msgid "Lineas no relacionadas con pedido"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:522
+#: codenerix_invoicing/models_sales.py:551
+#: codenerix_invoicing/models_sales.py:573
+msgid "Lineas no seleccionadas"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:611
+msgid "Created"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:618
+#: codenerix_invoicing/models_sales.py:626
+msgid "Basquet name"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:686
+msgid "Shopping Cart"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:697
+#: codenerix_invoicing/models_sales.py:740
+#: codenerix_invoicing/models_sales.py:748
+#: codenerix_invoicing/models_sales.py:860
+msgid "Signed"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:699
+#: codenerix_invoicing/models_sales.py:862
+#: codenerix_invoicing/models_sales.py:876
+msgid "Payment Request"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:703
+msgid "Budgets"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:748
+msgid "True"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:748
+msgid "False"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:859
+msgid "Rol basket"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:867
+msgid "Basket"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:878
+#: codenerix_invoicing/models_sales.py:891
+msgid "Payment detail"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:879
+#: codenerix_invoicing/models_sales.py:892
+msgid "Source of purchase"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:998
+#: codenerix_invoicing/models_sales.py:1003
+#: codenerix_invoicing/models_sales.py:1081
+#: codenerix_invoicing/models_sales.py:1086
+msgid "Line order"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:1109
+msgid "Invoices"
+msgstr ""
+
+#: codenerix_invoicing/models_sales.py:1213
+#: codenerix_invoicing/models_sales.py:1219
+msgid "Priority"
+msgstr ""
+
+#: codenerix_invoicing/templates/codenerix_invoicing/pdf/stockmovement_pdf.html:38
+msgid "Stock Movement"
+msgstr ""
+
+#: codenerix_invoicing/templates/codenerix_invoicing/pdf/stockmovement_pdf.html:39
+msgid "Batch Source"
+msgstr ""
+
+#: codenerix_invoicing/templates/codenerix_invoicing/pdf/stockmovement_pdf.html:41
+msgid "Batch Destination"
+msgstr ""
+
+#: codenerix_invoicing/templates/codenerix_invoicing/stockmovement_details.html:9
+#: codenerix_invoicing/templates/codenerix_invoicing/stockmovement_details.html:14
+#: codenerix_invoicing/templates/purchases/albaran_details.html:9
+#: codenerix_invoicing/templates/purchases/albaran_details.html:14
+#: codenerix_invoicing/templates/purchases/budget_details.html:9
+#: codenerix_invoicing/templates/purchases/budget_details.html:14
+#: codenerix_invoicing/templates/purchases/invoice_details.html:9
+#: codenerix_invoicing/templates/purchases/invoice_details.html:14
+#: codenerix_invoicing/templates/purchases/invoicerectification_details.html:9
+#: codenerix_invoicing/templates/purchases/invoicerectification_details.html:14
+#: codenerix_invoicing/templates/purchases/order_details.html:9
+#: codenerix_invoicing/templates/purchases/order_details.html:14
+#: codenerix_invoicing/templates/purchases/ticket_details.html:9
+#: codenerix_invoicing/templates/purchases/ticket_details.html:14
+#: codenerix_invoicing/templates/purchases/ticketrectification_details.html:9
+#: codenerix_invoicing/templates/purchases/ticketrectification_details.html:14
+#: codenerix_invoicing/templates/sales/albaran_details.html:9
+#: codenerix_invoicing/templates/sales/albaran_details.html:14
+#: codenerix_invoicing/templates/sales/budget_details.html:9
+#: codenerix_invoicing/templates/sales/budget_details.html:14
+#: codenerix_invoicing/templates/sales/invoice_details.html:9
+#: codenerix_invoicing/templates/sales/invoice_details.html:14
+#: codenerix_invoicing/templates/sales/invoicerectification_details.html:9
+#: codenerix_invoicing/templates/sales/invoicerectification_details.html:14
+#: codenerix_invoicing/templates/sales/order_details.html:9
+#: codenerix_invoicing/templates/sales/order_details.html:14
+#: codenerix_invoicing/templates/sales/ticket_details.html:9
+#: codenerix_invoicing/templates/sales/ticket_details.html:14
+#: codenerix_invoicing/templates/sales/ticketrectification_details.html:9
+#: codenerix_invoicing/templates/sales/ticketrectification_details.html:14
+msgid "Print"
+msgstr ""
+
+#: codenerix_invoicing/templates/purchases/document_sublist.html:12
+msgid "File name"
+msgstr ""
+
+#: codenerix_invoicing/templates/purchases/document_sublist.html:13
+#: codenerix_invoicing/templates/purchases/linealbaran_sublist.html:15
+#: codenerix_invoicing/templates/purchases/linebudget_sublist.html:15
+#: codenerix_invoicing/templates/purchases/linebudget_sublist_form.html:17
+#: codenerix_invoicing/templates/purchases/lineinvoice_sublist.html:15
+#: codenerix_invoicing/templates/purchases/lineinvoicerectification_sublist.html:15
+#: codenerix_invoicing/templates/purchases/lineorder_sublist.html:15
+#: codenerix_invoicing/templates/purchases/lineticket_sublist.html:15
+#: codenerix_invoicing/templates/purchases/lineticketrectification_sublist.html:15
+#: codenerix_invoicing/templates/sales/customerdocument_sublist.html:11
+#: codenerix_invoicing/templates/sales/linealbaran_sublist.html:17
+#: codenerix_invoicing/templates/sales/linebudget_sublist.html:16
+#: codenerix_invoicing/templates/sales/lineinvoice_sublist.html:17
+#: codenerix_invoicing/templates/sales/lineinvoicerectification_sublist.html:14
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:17
+#: codenerix_invoicing/templates/sales/lineticket_sublist.html:17
+#: codenerix_invoicing/templates/sales/lineticketrectification_sublist.html:16
+msgid "Delete"
+msgstr ""
+
+#: codenerix_invoicing/templates/purchases/document_sublist.html:33
+#: codenerix_invoicing/templates/purchases/linealbaran_sublist.html:43
+#: codenerix_invoicing/templates/purchases/linebudget_sublist.html:43
+#: codenerix_invoicing/templates/purchases/linebudget_sublist_form.html:48
+#: codenerix_invoicing/templates/purchases/lineinvoice_sublist.html:43
+#: codenerix_invoicing/templates/purchases/lineinvoicerectification_sublist.html:44
+#: codenerix_invoicing/templates/purchases/lineorder_sublist.html:43
+#: codenerix_invoicing/templates/purchases/lineticket_sublist.html:44
+#: codenerix_invoicing/templates/purchases/lineticketrectification_sublist.html:44
+#: codenerix_invoicing/templates/sales/customerdocument_sublist.html:25
+#: codenerix_invoicing/templates/sales/linealbaran_sublist.html:53
+#: codenerix_invoicing/templates/sales/linebudget_sublist.html:45
+#: codenerix_invoicing/templates/sales/lineinvoice_sublist.html:49
+#: codenerix_invoicing/templates/sales/lineinvoicerectification_sublist.html:37
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:50
+#: codenerix_invoicing/templates/sales/lineticket_sublist.html:50
+#: codenerix_invoicing/templates/sales/lineticketrectification_sublist.html:45
+msgid "Delete file?"
+msgstr ""
+
+#: codenerix_invoicing/templates/purchases/linealbaran_sublist.html:14
+#: codenerix_invoicing/templates/purchases/linebudget_sublist.html:14
+#: codenerix_invoicing/templates/purchases/linebudget_sublist_form.html:16
+#: codenerix_invoicing/templates/purchases/lineinvoice_sublist.html:14
+#: codenerix_invoicing/templates/purchases/lineinvoicerectification_sublist.html:14
+#: codenerix_invoicing/templates/purchases/lineorder_sublist.html:14
+#: codenerix_invoicing/templates/purchases/lineticket_sublist.html:14
+#: codenerix_invoicing/templates/purchases/lineticketrectification_sublist.html:14
+#: codenerix_invoicing/templates/sales/linealbaran_sublist.html:16
+#: codenerix_invoicing/templates/sales/linebudget_sublist.html:15
+#: codenerix_invoicing/templates/sales/lineinvoice_sublist.html:16
+#: codenerix_invoicing/templates/sales/lineinvoicerectification_sublist.html:13
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:16
+#: codenerix_invoicing/templates/sales/lineticket_sublist.html:16
+#: codenerix_invoicing/templates/sales/lineticketrectification_sublist.html:15
+msgid "Total"
+msgstr ""
+
+#: codenerix_invoicing/templates/purchases/linebudget_sublist_form.html:14
+msgid "Quantity for order"
+msgstr ""
+
+#: codenerix_invoicing/templates/purchases/linebudget_sublist_form.html:70
+#: codenerix_invoicing/templates/purchases/linebudget_sublist_form.html:71
+msgid "Save"
+msgstr ""
+
+#: codenerix_invoicing/templates/purchases/linebudget_sublist_form.html:72
+#: codenerix_invoicing/templates/purchases/linebudget_sublist_form.html:73
+msgid "Cancel"
+msgstr ""
+
+#: codenerix_invoicing/templates/purchases/lineinvoicerectification_sublist.html:23
+#: codenerix_invoicing/templates/purchases/lineticket_sublist.html:23
+#: codenerix_invoicing/templates/purchases/lineticketrectification_sublist.html:23
+msgid "Ya esta en un pedido"
+msgstr ""
+
+#: codenerix_invoicing/templates/purchases/order_from_bugget.html:9
+msgid "Adding new"
+msgstr ""
+
+#: codenerix_invoicing/templates/purchases/pdf/albaran_pdf.html:107
+#: codenerix_invoicing/templates/purchases/pdf/budget_pdf.html:107
+#: codenerix_invoicing/templates/purchases/pdf/invoice_pdf.html:107
+#: codenerix_invoicing/templates/purchases/pdf/invoicerectification_pdf.html:107
+#: codenerix_invoicing/templates/purchases/pdf/order_pdf.html:107
+#: codenerix_invoicing/templates/purchases/pdf/ticket_pdf.html:107
+#: codenerix_invoicing/templates/purchases/pdf/ticketrectification_pdf.html:107
+#: codenerix_invoicing/templates/sales/pdf/albaran_pdf.html:106
+#: codenerix_invoicing/templates/sales/pdf/budget_pdf.html:106
+#: codenerix_invoicing/templates/sales/pdf/invoice_pdf.html:106
+#: codenerix_invoicing/templates/sales/pdf/invoicerectification_pdf.html:106
+#: codenerix_invoicing/templates/sales/pdf/order_pdf.html:106
+#: codenerix_invoicing/templates/sales/pdf/ticket_pdf.html:106
+#: codenerix_invoicing/templates/sales/pdf/ticketrectification_pdf.html:106
+msgid "Nota"
+msgstr ""
+
+#: codenerix_invoicing/templates/sales/customerdocument_sublist.html:41
+#: codenerix_invoicing/templates/sales/customerdocument_sublist.html:42
+#: codenerix_invoicing/templates/sales/linebudget_sublist.html:72
+#: codenerix_invoicing/templates/sales/linebudget_sublist.html:73
+msgid "Create order"
+msgstr ""
+
+#: codenerix_invoicing/templates/sales/linealbaran_sublist.html:25
+msgid "Ya esta facturado"
+msgstr ""
+
+#: codenerix_invoicing/templates/sales/linealbaran_sublist.html:80
+#: codenerix_invoicing/templates/sales/linealbaran_sublist.html:81
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:80
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:81
+msgid "Create ticket"
+msgstr ""
+
+#: codenerix_invoicing/templates/sales/linealbaran_sublist.html:83
+#: codenerix_invoicing/templates/sales/linealbaran_sublist.html:84
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:83
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:84
+#: codenerix_invoicing/templates/sales/lineticket_sublist.html:78
+#: codenerix_invoicing/templates/sales/lineticket_sublist.html:79
+msgid "Create invoice"
+msgstr ""
+
+#: codenerix_invoicing/templates/sales/lineinvoice_sublist.html:76
+#: codenerix_invoicing/templates/sales/lineinvoice_sublist.html:77
+msgid "Create invoice rectification"
+msgstr ""
+
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:77
+#: codenerix_invoicing/templates/sales/lineorder_sublist.html:78
+msgid "Create albaran"
+msgstr ""
+
+#: codenerix_invoicing/templates/sales/lineticket_sublist.html:81
+#: codenerix_invoicing/templates/sales/lineticket_sublist.html:82
+msgid "Create ticket rectification"
+msgstr ""
+
+#: codenerix_invoicing/views.py:80
+msgid "There was an error producing pdf"
+msgstr ""
+
+#: codenerix_invoicing/views.py:103
+msgid "BillingSeries"
+msgstr ""
+
+#: codenerix_invoicing/views.py:103 codenerix_invoicing/views.py:132
+#: codenerix_invoicing/views.py:162 codenerix_invoicing/views.py:197
+#: codenerix_invoicing/views.py:277 codenerix_invoicing/views.py:302
+#: codenerix_invoicing/views.py:359 codenerix_invoicing/views_purchases.py:53
+#: codenerix_invoicing/views_purchases.py:125
+#: codenerix_invoicing/views_purchases.py:244
+#: codenerix_invoicing/views_purchases.py:323
+#: codenerix_invoicing/views_purchases.py:475
+#: codenerix_invoicing/views_purchases.py:546
+#: codenerix_invoicing/views_purchases.py:634
+#: codenerix_invoicing/views_purchases.py:1238
+#: codenerix_invoicing/views_purchases.py:1322
+#: codenerix_invoicing/views_purchases.py:1393
+#: codenerix_invoicing/views_purchases.py:1478
+#: codenerix_invoicing/views_purchases.py:1549
+#: codenerix_invoicing/views_purchases.py:1632
+#: codenerix_invoicing/views_purchases.py:1735
+#: codenerix_invoicing/views_purchases.py:1818
+#: codenerix_invoicing/views_purchases.py:1983
+#: codenerix_invoicing/views_purchases.py:2053
+#: codenerix_invoicing/views_purchases.py:2123
+#: codenerix_invoicing/views_purchases.py:2193
+#: codenerix_invoicing/views_purchases.py:2263
+#: codenerix_invoicing/views_purchases.py:2333
+#: codenerix_invoicing/views_purchases.py:2403
+#: codenerix_invoicing/views_sales.py:62
+#: codenerix_invoicing/views_sales.py:185
+#: codenerix_invoicing/views_sales.py:347
+#: codenerix_invoicing/views_sales.py:434
+#: codenerix_invoicing/views_sales.py:642
+#: codenerix_invoicing/views_sales.py:797
+#: codenerix_invoicing/views_sales.py:932
+#: codenerix_invoicing/views_sales.py:1053
+#: codenerix_invoicing/views_sales.py:1202
+#: codenerix_invoicing/views_sales.py:1365
+#: codenerix_invoicing/views_sales.py:1461
+#: codenerix_invoicing/views_sales.py:1575
+#: codenerix_invoicing/views_sales.py:1714
+#: codenerix_invoicing/views_sales.py:1870
+#: codenerix_invoicing/views_sales.py:1967
+#: codenerix_invoicing/views_sales.py:2139
+#: codenerix_invoicing/views_sales.py:2179
+#: codenerix_invoicing/views_sales.py:2244
+#: codenerix_invoicing/views_sales.py:2269
+msgid "People"
+msgstr ""
+
+#: codenerix_invoicing/views.py:132
+msgid "LegalNote"
+msgstr ""
+
+#: codenerix_invoicing/views.py:162
+msgid "TypeDocument"
+msgstr ""
+
+#: codenerix_invoicing/views.py:197 codenerix_invoicing/views.py:277
+msgid "ProductStock"
+msgstr ""
+
+#: codenerix_invoicing/views.py:302
+msgid "StockMovement"
+msgstr ""
+
+#: codenerix_invoicing/views.py:359
+msgid "StockMovementProduct"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:66
+msgid "The selected entry is already a provider, select another entry!"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:67
+#: codenerix_invoicing/views_purchases.py:92
+#: codenerix_invoicing/views_sales.py:76
+#: codenerix_invoicing/views_sales.py:100
+msgid "The selected entry is not available anymore, please, try again!"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:110
+#: codenerix_invoicing/views_sales.py:118
+msgid "Person addresses"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:159
+#: codenerix_invoicing/views_purchases.py:418
+#: codenerix_invoicing/views_purchases.py:580
+#: codenerix_invoicing/views_purchases.py:1272
+#: codenerix_invoicing/views_purchases.py:1426
+#: codenerix_invoicing/views_purchases.py:1583
+#: codenerix_invoicing/views_purchases.py:1768
+#: codenerix_invoicing/views_sales.py:119
+msgid "Documents"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:244
+#: codenerix_invoicing/views_sales.py:347
+msgid "LineBudget"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:289
+#: codenerix_invoicing/views_sales.py:392
+msgid "Create Order"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:394
+msgid "No se han seleccionado lineas"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:475
+#: codenerix_invoicing/views_sales.py:642
+msgid "LineOrder"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:634
+#: codenerix_invoicing/views_sales.py:932
+msgid "LineAlbaran"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:655
+msgid "Batch invalid"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:665
+#: codenerix_invoicing/views_purchases.py:795
+#: codenerix_invoicing/views_purchases.py:1654
+#: codenerix_invoicing/views_purchases.py:1683
+msgid "Product not selected"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:671
+#: codenerix_invoicing/views_purchases.py:808
+#: codenerix_invoicing/views_purchases.py:1045
+#: codenerix_invoicing/views_purchases.py:1659
+#: codenerix_invoicing/views_purchases.py:1688
+msgid "Product needs information of feature special"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:679
+#: codenerix_invoicing/views_purchases.py:815
+msgid "Quantity is not valid"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:687
+#: codenerix_invoicing/views_purchases.py:823
+#: codenerix_invoicing/views_purchases.py:1058
+msgid "Quantity and values of feature special not equals"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:692
+#: codenerix_invoicing/views_purchases.py:833
+#: codenerix_invoicing/views_purchases.py:1068
+msgid "Some value of feature special exists"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:696
+msgid "The special feature must be unique for all products"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:745
+msgid "Integrity Error"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:781
+msgid "Batch not selected"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:788
+msgid "Quantity is not valid."
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:850
+#: codenerix_invoicing/views_purchases.py:859
+#: codenerix_invoicing/views_purchases.py:976
+msgid "Products were bought, you can not change product"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:922
+#: codenerix_invoicing/views_purchases.py:1011
+msgid "Product were bought, you can not change product"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:1096
+#: codenerix_invoicing/views_purchases.py:1111
+msgid "Some features special can not be delete because it were bought"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:1115
+msgid "Product is not valid."
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:1179
+msgid "Quantity invalid, no stock"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:1322
+#: codenerix_invoicing/views_sales.py:1202
+msgid "LineTicket"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:1393
+#: codenerix_invoicing/views_sales.py:1365
+msgid "TicketRectification"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:1478
+#: codenerix_invoicing/views_sales.py:1461
+msgid "LineTicketRectification"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:1632
+#: codenerix_invoicing/views_sales.py:1714
+msgid "LineInvoice"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:1735
+#: codenerix_invoicing/views_sales.py:1870
+msgid "InvoiceRectification"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:1818
+#: codenerix_invoicing/views_sales.py:1967
+msgid "LineInvoiceRectification"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:1983
+msgid "BudgetDocument"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:2053
+msgid "OrderDocument"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:2123
+msgid "AlbaranDocument"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:2193
+msgid "TicketDocument"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:2263
+msgid "TicketRectificationDocument"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:2333
+msgid "InvoiceDocument"
+msgstr ""
+
+#: codenerix_invoicing/views_purchases.py:2403
+msgid "InvoiceRectificationDocument"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:75
+msgid "The selected entry is already a customer, select another entry!"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:276
+msgid "Order create"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:437
+msgid "Create order from budget"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:438
+msgid "Create order from shopping cart"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:686
+msgid "Create Albaran"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:687
+#: codenerix_invoicing/views_sales.py:1013
+msgid "Create Ticket"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:688
+#: codenerix_invoicing/views_sales.py:1014
+#: codenerix_invoicing/views_sales.py:1306
+msgid "Create Invoice"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:964
+msgid ""
+"La cantidad seleccionada es excesiva. Quedan pendiente {} unidades por "
+"albaranar"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:1184
+#: codenerix_invoicing/views_sales.py:1652
+msgid "No select lines"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:1239
+#: codenerix_invoicing/views_sales.py:1288
+msgid ""
+"La cantidad seleccionada es excesiva. Quedan pendiente {} unidades por crear "
+"ticket o factura"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:1307
+msgid "Create Ticket Rectification"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:1497
+#: codenerix_invoicing/views_sales.py:1531
+#: codenerix_invoicing/views_sales.py:2004
+#: codenerix_invoicing/views_sales.py:2038
+msgid ""
+"La cantidad seleccionada es excesiva. Las unidades maximas a devolver son {}"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:1747
+msgid ""
+"La cantidad seleccionada es excesiva. Quedan pendiente {} unidades por crear "
+"facturar"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:1793
+msgid ""
+"La cantidad seleccionada es excesiva. Quedan pendiente {} unidades por "
+"facturar"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:1812
+msgid "Create Invoice Rectification"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:2055
+msgid "Create Invoice leches"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:2139
+msgid "WishList"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:2179
+msgid "WishListProduct"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:2244
+msgid "SalesReservedProduct"
+msgstr ""
+
+#: codenerix_invoicing/views_sales.py:2269
+msgid "SalesShoppingCart"
+msgstr ""

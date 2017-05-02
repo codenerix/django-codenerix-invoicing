@@ -1,0 +1,88 @@
+{% extends extends_path %}
+{% load staticfiles %}
+{% load i18n %}
+{% load codenerix_common %}
+{% comment %}
+
+django-codenerix-invoicing
+
+Copyright 2017 Centrologic Computational Logistic Center S.L.
+
+Project URL : http://www.codenerix.com
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+{% endcomment %}
+{% block modal_title %}{% endblock %}
+
+{% block modal_content %}
+
+<style>
+    @page {
+        size: a4 portrait;
+        @frame header_frame {           /* Static Frame */
+            -pdf-frame-content: header_content;
+            left: 50pt; width: 512pt; top: 40pt; height: 40pt;
+        }
+        @frame content_frame {          /* Content Frame */
+            left: 50pt; width: 512pt; top: 90pt; height: 652pt;
+        }
+        @frame footer_frame {           /* Another static Frame */
+            -pdf-frame-content: footer_content;
+            left: 50pt; width: 512pt; top: 772pt; height: 40pt;
+        }
+
+
+    }
+</style>
+
+<table class="c-product-compare-table c-factura-print" summary="Detalles de facturación">
+    <thead>
+        <tr>
+            <th align="left" colspan="2" class="c-compare-info c-bg-white">
+                <img src="{{media_root}}{{corporate_image.company_logo}}" alt="Tienda CPU" style="width: 250px" class="c-print-logo">
+            </th>
+            <th class="">
+                <p><strong>Tienda CPU (Razón Social)</strong></p>
+            </th>
+            <th class="c-print-encabezado">
+                <h1 class="c-font-uppercase c-font-bold c-theme-font">{% trans 'Stock Movement' %}</h1>
+                <h4>{% trans 'Batch Source' %}</h4>
+                <p>{{movement.batch_source}}</p>
+                <h4>{% trans 'Batch Destination' %}</h4>
+                <p>{{movement.batch_destination}}</p>
+                <h4>{% trans 'Status' %}</h4>
+                <p>{{movement.get_status_display}}</p>
+            </th>
+        </tr>
+        <tr>
+            <td class="c-compare-item">
+                <h2>{% trans 'Product' %}</h2>
+            </td>
+            <td class="c-compare-item">
+                <h2>{% trans 'Quantity' %}</h2>
+            </td>
+       </tr>
+    </thead>
+    <tbody>
+        {% for lsm in line_stockmovements %}
+        <tr>
+            <td class="c-compare-info"> {{lsm.product_final}}</td>
+            <td class="c-compare-item"> {{lsm.quantity}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+    <tfoot>
+   </tfoot>
+</table>
+{% endblock %}

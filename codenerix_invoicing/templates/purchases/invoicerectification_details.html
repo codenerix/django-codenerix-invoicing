@@ -1,0 +1,36 @@
+{% extends "codenerix/details.html" %}
+{% load i18n %}
+{% load codenerix_lists %}
+{% load codenerix_common %}
+{% comment %}
+
+django-codenerix-invoicing
+
+Copyright 2017 Centrologic Computational Logistic Center S.L.
+
+Project URL : http://www.codenerix.com
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+{% endcomment %}
+
+
+
+{% block extra_btn_up %}
+	<a href="{% url 'CDNX_invoicing_invoicerectificationpurchasess_print' object.id %}" target="_blank" id="submit_print" class="btn btn-sm btn-info">{% trans "Print" %}</a>
+{% endblock %}
+
+
+{% block extra_btn_down %}
+	<a href="{% url 'CDNX_invoicing_invoicerectificationpurchasess_print' object.id %}" target="_blank" id="submit_print" class="btn btn-sm btn-info">{% trans "Print" %}</a>
+{% endblock %}

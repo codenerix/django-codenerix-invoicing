@@ -46,7 +46,7 @@ coverage.xml
 .hypothesis/
 
 # Translations
-*.mo
+#*.mo
 *.pot
 
 # Django stuff:
@@ -87,3 +87,9 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# vim temporal files
+*.swp
+
+# CODENERIX files
+/django_codenerix*.egg-info
