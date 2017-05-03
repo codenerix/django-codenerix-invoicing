@@ -666,7 +666,10 @@ class OrderPrint(PrinterHelper, GenOrderUrl, GenDetail):
         order = self.object
 
         # I take address for send.
-        send_address = order.customer.external.person_address.filter(main=True).first()
+        if hasattr(order.customer.external, 'person_address'):
+            send_address = order.customer.external.person_address.filter(main=True).first()
+        else:
+            send_address = None
 
         context["order"] = order
         lines = []
