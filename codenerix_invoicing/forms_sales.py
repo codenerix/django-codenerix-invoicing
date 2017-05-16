@@ -119,6 +119,10 @@ class BasketForm(GenModelForm):
         widgets = {
             'observations': WysiwygAngularInput()
         }
+        autofill = {
+            # 'address_delivery': ['select', 3, 'CDNX_invoicing_salesbaskets_foreignkey_budget', 'customer'],
+            # 'address_invoice': ['select', 3, 'CDNX_invoicing_salesbaskets_foreignkey_budget', 'customer'],
+        }
 
     def __groups__(self):
         g = [
@@ -127,6 +131,8 @@ class BasketForm(GenModelForm):
                 ['date', 2],
                 ['signed', 2],
                 ['public', 2],
+                ['address_delivery', 6],
+                ['address_invoice', 6],
                 ['name', 4],
                 ['point_sales', 4],
                 ['observations', 4],),
@@ -144,6 +150,8 @@ class BasketForm(GenModelForm):
                 ['code', 3],
                 ['date', 4],
                 ['observations', 6],
+                ['address_delivery', 6],
+                ['address_invoice', 6],
                 ['lock', 6],
                 ['role', 6],
                 ['point_sales', 6],),

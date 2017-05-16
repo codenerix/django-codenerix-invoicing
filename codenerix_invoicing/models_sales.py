@@ -282,6 +282,76 @@ class GenCustomer(GenInterface, ABSTRACT_GenCustomer):  # META: Abstract class
         # print({group: {'gperm': None, 'dperm': perms, 'model': None},})
 
 
+class Address(CodenerixModel):
+    def __unicode__(self):
+        if hasattr(self, 'address_delivery'):
+            return u"{}".format(smart_text(self.address_delivery.get_summary()))
+        elif hasattr(self, 'address_invoice'):
+            return u"{}".format(smart_text(self.address_invoice.get_summary()))
+        else:
+            return ''
+            # raise Exception(_('Address unkown'), self.__dict__)
+
+    def __fields__(self, info):
+        fields = []
+        if hasattr(self, 'address_delivery'):
+            fields.append(('address_delivery', _("Address delivery")))
+        elif hasattr(self, 'address_invoice'):
+            fields.append(('address_invoice', _("Address invoice")))
+        else:
+            raise Exception(_('Address unkown'))
+        return fields
+
+
+class ABSTRACT_GenAddress():  # META: Abstract class
+    class Meta(object):
+        abstract = True
+
+
+class GenAddress(GenInterface, ABSTRACT_GenAddress):  # META: Abstract class
+    class Meta(GenInterface.Meta, ABSTRACT_GenAddress.Meta):
+        abstract = True
+
+    class CodenerixMeta:
+        force_methods = {
+            'foreignkey_address': ('CDNX_get_fk_info_address', _('---')),
+            'get_summary': ('get_summary', ),
+        }
+
+    def save(self, *args, **kwards):
+        if hasattr(self, 'address_delivery') and self.address_delivery is None:
+            address = Address()
+        elif hasattr(self, 'address_delivery'):
+            address = self.address_delivery
+        elif hasattr(self, 'address_invoice') and self.address_invoice is None:
+            address = Address()
+        elif hasattr(self, 'address_invoice'):
+            address = self.address_invoice
+            
+        address.summary = self.get_summary()
+        address.save()
+
+        if hasattr(self, 'address_delivery'):
+            self.address_delivery = address
+        elif hasattr(self, 'address_invoice'):
+            self.address_invoice = address
+        return super(GenAddress, self).save(*args, **kwards)
+
+
+# address delivery
+class GenAddressDelivery(GenAddress):  # META: Abstract class
+    class Meta(object):
+        abstract = True
+    address_delivery = models.OneToOneField(Address, related_name='external_delivery', verbose_name=_("Address delivery"), null=True, on_delete=models.SET_NULL, blank=True, editable=False)
+    
+
+# address invoice
+class GenAddressInvoice(GenAddress):  # META: Abstract class
+    class Meta(object):
+        abstract = True
+    address_invoice = models.OneToOneField(Address, related_name='external_invoice', verbose_name=_("Address invoice"), null=True, on_delete=models.SET_NULL, blank=True, editable=False)
+    
+
 # documentos de clientes
 class CustomerDocument(CodenerixModel, GenDocumentFile):
     customer = models.ForeignKey(Customer, related_name='customer_documents', verbose_name=_("Customer"))
@@ -795,6 +865,8 @@ class SalesBasket(GenVersion):
     public = models.BooleanField(_("Public"), blank=False, default=False)
     payment = models.ManyToManyField(PaymentRequest, verbose_name=_(u"Payment Request"), blank=True, related_name='basket_sales')
     name = models.CharField(_("Name"), max_length=250, blank=False, null=False)
+    address_delivery = models.ForeignKey(Address, parent_link=True, related_name='order_sales_delivery', verbose_name=_("Address delivery"), blank=True, null=True)
+    address_invoice = models.ForeignKey(Address, parent_link=True, related_name='order_sales_invoice', verbose_name=_("Address invoice"), blank=True, null=True)
 
     def __unicode__(self):
         return u"Order-{}".format(smart_text(self.code))
@@ -808,6 +880,8 @@ class SalesBasket(GenVersion):
         fields.append(('role', _('Role basket')))
         fields.append(('signed', _('Signed')))
         fields.append(('public', _('Public')))
+        fields.append(('address_delivery', _('Address delivery')))
+        fields.append(('address_invoice', _('Address invoice')))
         return fields
 
     def pass_to_budget(self, lines=None):
@@ -910,6 +984,8 @@ class SalesOrder(GenVersion):
         fields.append(('source', _('Source of purchase')))
         fields.append(('haulier', _('Haulier')))
         fields.append(('number_tracking', _('Number of tracking')))
+        fields.append(('budget__address_delivery', _('Address delivery')))
+        fields.append(('budget__address_invoice', _('Address invoice')))
         return fields
 
     def calculate_price_doc(self):
@@ -942,6 +1018,7 @@ class SalesLineOrder(GenLineProduct):
 # albaranes
 class SalesAlbaran(GenVersion):
     tax = models.FloatField(_("Tax"), blank=False, null=False, default=0)
+    summary_delivery = models.TextField(_("Address delivery"), max_length=256, blank=True, null=True)
 
     def __unicode__(self):
         return u"Albaran-{}".format(smart_text(self.code))
@@ -951,6 +1028,7 @@ class SalesAlbaran(GenVersion):
         fields.append(('code', _('Code')))
         fields.append(('date', _('Date')))
         fields.append(('tax', _('Tax')))
+        fields.append(('summary_delivery', _('Address delivery')))
         return fields
 
     def calculate_price_doc(self):
@@ -1076,6 +1154,7 @@ class SalesLineTicketRectification(GenLineProductBasic):
 class SalesInvoice(GenVersion):
     customer = models.ForeignKey(Customer, related_name='invoice_sales', verbose_name=_("Customer"))
     tax = models.FloatField(_("Tax"), blank=False, null=False, default=0)
+    summary_invoice = models.TextField(_("Address invoice"), max_length=256, blank=True, null=True)
 
     def __unicode__(self):
         return u"Invoice-{}".format(smart_text(self.code))
@@ -1086,6 +1165,7 @@ class SalesInvoice(GenVersion):
         fields.append(('code', _('Code')))
         fields.append(('date', _('Date')))
         fields.append(('tax', _('Tax')))
+        fields.append(('summary_invoice', _('Address invoice')))
         return fields
 
     def calculate_price_doc(self):

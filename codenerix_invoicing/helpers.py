@@ -228,6 +228,11 @@ class ShoppingCartProxy(object):
     def user_cart(self):
         return self._cart
 
+    def set_address(self, address_invoice, address_delivery):
+        self._cart.address_invoice = address_invoice
+        self._cart.address_delivery = address_delivery
+        self._cart.save()
+
     def product(self, product_pk):
         product = ProductFinal.objects.get(pk=product_pk)
         price = product.calculate_price(self._apply_surcharge)
