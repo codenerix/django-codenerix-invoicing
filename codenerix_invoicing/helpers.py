@@ -24,7 +24,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import F
 
 from codenerix_invoicing.models import POS
-from codenerix_invoicing.models_sales import SalesBasket, SalesLineBasket, ROLE_BASKET_SHOPPINGCART
+from codenerix_invoicing.models_sales import Address, SalesBasket, SalesLineBasket, ROLE_BASKET_SHOPPINGCART
 from codenerix_products.models import ProductFinal
 
 
@@ -229,8 +229,8 @@ class ShoppingCartProxy(object):
         return self._cart
 
     def set_address(self, address_invoice, address_delivery):
-        self._cart.address_invoice = address_invoice
-        self._cart.address_delivery = address_delivery
+        self._cart.address_invoice = address_invoice.address_invoice
+        self._cart.address_delivery = address_delivery.address_delivery
         self._cart.save()
 
     def product(self, product_pk):

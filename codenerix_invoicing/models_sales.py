@@ -284,20 +284,20 @@ class GenCustomer(GenInterface, ABSTRACT_GenCustomer):  # META: Abstract class
 
 class Address(CodenerixModel):
     def __unicode__(self):
-        if hasattr(self, 'address_delivery'):
-            return u"{}".format(smart_text(self.address_delivery.get_summary()))
-        elif hasattr(self, 'address_invoice'):
-            return u"{}".format(smart_text(self.address_invoice.get_summary()))
+        if hasattr(self, 'external_delivery'):
+            return u"{}".format(smart_text(self.external_delivery.get_summary()))
+        elif hasattr(self, 'external_invoice'):
+            return u"{}".format(smart_text(self.external_invoice.get_summary()))
         else:
-            return ''
+            return _('No data!')
             # raise Exception(_('Address unkown'), self.__dict__)
 
     def __fields__(self, info):
         fields = []
-        if hasattr(self, 'address_delivery'):
-            fields.append(('address_delivery', _("Address delivery")))
-        elif hasattr(self, 'address_invoice'):
-            fields.append(('address_invoice', _("Address invoice")))
+        if hasattr(self, 'external_delivery'):
+            fields.append(('external_delivery', _("Address delivery")))
+        elif hasattr(self, 'external_invoice'):
+            fields.append(('external_invoice', _("Address invoice")))
         else:
             raise Exception(_('Address unkown'))
         return fields
@@ -320,21 +320,21 @@ class GenAddress(GenInterface, ABSTRACT_GenAddress):  # META: Abstract class
 
     def save(self, *args, **kwards):
         if hasattr(self, 'address_delivery') and self.address_delivery is None:
-            address = Address()
+            address_delivery = Address()
+            address_delivery.save()
         elif hasattr(self, 'address_delivery'):
-            address = self.address_delivery
-        elif hasattr(self, 'address_invoice') and self.address_invoice is None:
-            address = Address()
+            address_delivery = self.address_delivery
+        
+        if hasattr(self, 'address_invoice') and self.address_invoice is None:
+            address_invoice = Address()
+            address_invoice.save()
         elif hasattr(self, 'address_invoice'):
-            address = self.address_invoice
+            address_invoice = self.address_invoice
             
-        address.summary = self.get_summary()
-        address.save()
-
         if hasattr(self, 'address_delivery'):
-            self.address_delivery = address
-        elif hasattr(self, 'address_invoice'):
-            self.address_invoice = address
+            self.address_delivery = address_delivery
+        if hasattr(self, 'address_invoice'):
+            self.address_invoice = address_invoice
         return super(GenAddress, self).save(*args, **kwards)
 
 

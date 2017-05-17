@@ -91,9 +91,9 @@ class PrinterHelper(object):
             html = loader.render_to_string(self.template_model, context, **response_kwargs)
 
             # Render the full document
-            result = StringIO.StringIO()
+            result = StringIO()
 
-            pdf = pisa.pisaDocument(StringIO.StringIO(html.encode('UTF-8')), result, encoding='UTF-8')
+            pdf = pisa.pisaDocument(StringIO(html.encode('UTF-8')), result, encoding='UTF-8')
 
             # Check if we got an error
             if pdf.err:
