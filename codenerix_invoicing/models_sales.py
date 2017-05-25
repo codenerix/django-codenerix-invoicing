@@ -24,7 +24,7 @@ from django.core.urlresolvers import reverse
 from django.db import models, transaction
 from django.utils import timezone
 from django.utils.encoding import smart_text
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _
 
 from codenerix.models import GenInterface, CodenerixModel
 from codenerix.models_people import GenRole
@@ -33,10 +33,11 @@ from codenerix_extensions.files.models import GenDocumentFile
 
 from codenerix_invoicing.models import POS, Haulier
 from codenerix_invoicing.models_purchases import PAYMENT_DETAILS
+from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
 
 from codenerix_products.models import ProductFinal, TypeTax
 from codenerix_storages.models import Storage
-from codenerix_payments.models import PaymentRequest
+from codenerix_payments.models import PaymentRequest, PaymentConfirmation
 
     
 ROLE_BASKET_SHOPPINGCART = 'SC'
@@ -92,58 +93,9 @@ class ABSTRACT_GenCustomer(models.Model):  # META: Abstract class
 class Customer(GenRole, CodenerixModel):
     class CodenerixMeta:
         abstract = ABSTRACT_GenCustomer
-
-    currency = models.CharField(_("Currency"), max_length=250, blank=True, null=True)
-    # serie de facturacion
-    billing_series = models.ForeignKey("BillingSeries", related_name='billing_series', verbose_name='Billing series')
-    # datos de facturación
-    # saldo final
-    final_balance = models.CharField(_("Balance"), max_length=250, blank=True, null=True)
-    # credito o riesgo maximo autorizado
-    credit = models.CharField(_("Credit"), max_length=250, blank=True, null=True)
-    # Aplicar recargo de equivalencia
-    apply_equivalence_surcharge = models.BooleanField(_("Apply equivalence surcharge"), blank=False, default=False)
-    # Tipo de iva
-    type_tax = models.ForeignKey(TypeTax, related_name='customers', verbose_name=_("Type tax"), null=True)
-
-    @staticmethod
-    def foreignkey_external():
-        return get_external_method(Customer, GenCustomer.CodenerixMeta.force_methods['foreignkey_customer'][0])
-
-    def __unicode__(self):
-        return u"{}".format(smart_text(self.pk))
-
-    def __fields__(self, info):
-        fields = []
-        fields.append(('final_balance', _("Balance")))
-        fields.append(('credit', _("Credit")))
-        fields.append(('currency', _("Currency")))
-        fields.append(('billing_series', _("Billing series")))
-        fields.append(('apply_equivalence_surcharge', _("Currency")))
-        fields.append(('type_tax', _("Type tax")))
-        fields = get_external_method(Customer, '__fields_customer__', info, fields)
-        return fields
-
-    def buy_product(self, product_pk):
-        """
-        determina si el customer ha comprado un producto
-        """
-        if self.invoice_sales.filter(line_invoice_sales__line_order__product__pk=product_pk).exists() \
-        or self.ticket_sales.filter(line_ticket_sales__line_order__product__pk=product_pk).exists():
-            return True
-        else:
-            return False
-
-
-# customers
-class GenCustomer(GenInterface, ABSTRACT_GenCustomer):  # META: Abstract class
-    customer = models.OneToOneField(Customer, related_name='external', verbose_name=_("Customer"), null=True, on_delete=models.SET_NULL, blank=True)
-
-    class Meta(GenInterface.Meta, ABSTRACT_GenCustomer.Meta):
-        abstract = True
-
-    class CodenerixMeta:
-        rol_groups = ['Customer', 'Provider', ]
+        rol_groups = {
+            'Customer': CDNX_INVOICING_PERMISSIONS['customer'],
+        }
         rol_permissions = [
             'add_city',
             'add_citygeonameen',
@@ -270,6 +222,56 @@ class GenCustomer(GenInterface, ABSTRACT_GenCustomer):  # META: Abstract class
             'foreignkey_customer': ('CDNX_get_fk_info_customer', _('---')),
             'get_email': ('CDNX_get_email', ),
         }
+
+
+    currency = models.CharField(_("Currency"), max_length=250, blank=True, null=True)
+    # serie de facturacion
+    billing_series = models.ForeignKey("BillingSeries", related_name='billing_series', verbose_name='Billing series')
+    # datos de facturación
+    # saldo final
+    final_balance = models.CharField(_("Balance"), max_length=250, blank=True, null=True)
+    # credito o riesgo maximo autorizado
+    credit = models.CharField(_("Credit"), max_length=250, blank=True, null=True)
+    # Aplicar recargo de equivalencia
+    apply_equivalence_surcharge = models.BooleanField(_("Apply equivalence surcharge"), blank=False, default=False)
+    # Tipo de iva
+    type_tax = models.ForeignKey(TypeTax, related_name='customers', verbose_name=_("Type tax"), null=True)
+
+    @staticmethod
+    def foreignkey_external():
+        return get_external_method(Customer, Customer.CodenerixMeta.force_methods['foreignkey_customer'][0])
+
+    def __unicode__(self):
+        return u"{}".format(smart_text(self.pk))
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('final_balance', _("Balance")))
+        fields.append(('credit', _("Credit")))
+        fields.append(('currency', _("Currency")))
+        fields.append(('billing_series', _("Billing series")))
+        fields.append(('apply_equivalence_surcharge', _("Currency")))
+        fields.append(('type_tax', _("Type tax")))
+        fields = get_external_method(Customer, '__fields_customer__', info, fields)
+        return fields
+
+    def buy_product(self, product_pk):
+        """
+        determina si el customer ha comprado un producto
+        """
+        if self.invoice_sales.filter(line_invoice_sales__line_order__product__pk=product_pk).exists() \
+        or self.ticket_sales.filter(line_ticket_sales__line_order__product__pk=product_pk).exists():
+            return True
+        else:
+            return False
+
+
+# customers
+class GenCustomer(GenInterface, ABSTRACT_GenCustomer):  # META: Abstract class
+    customer = models.OneToOneField(Customer, related_name='external', verbose_name=_("Customer"), null=True, on_delete=models.SET_NULL, blank=True)
+
+    class Meta(GenInterface.Meta, ABSTRACT_GenCustomer.Meta):
+        abstract = True
 
     @classmethod
     def permissions(cls):
@@ -417,7 +419,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
                 if key in obj.__dict__ and key not in ['lock', 'role', 'updated', 'code', 'created'] and not key.startswith("_"):
                     if need_duplicate is False:
                         # Si son iguales, need_duplicate se mantendrá a false. Solo se activa si son distintos.
-                        if type(self.__dict__[key]) == datetime.datetime:
+                        if type(self.__dict__[key]) == datetime.datetime and obj.__dict__[key]:
                             need_duplicate = self.__dict__[key].strftime("%Y-%m-%d %H:%M") != obj.__dict__[key].strftime("%Y-%m-%d %H:%M")
                         else:
                             need_duplicate = self.__dict__[key] != obj.__dict__[key]
@@ -867,6 +869,7 @@ class SalesBasket(GenVersion):
     name = models.CharField(_("Name"), max_length=250, blank=False, null=False)
     address_delivery = models.ForeignKey(Address, parent_link=True, related_name='order_sales_delivery', verbose_name=_("Address delivery"), blank=True, null=True)
     address_invoice = models.ForeignKey(Address, parent_link=True, related_name='order_sales_invoice', verbose_name=_("Address invoice"), blank=True, null=True)
+    expiration_date = models.DateTimeField(_("Expiration date"), blank=True, null=True, editable=False)
 
     def __unicode__(self):
         return u"Order-{}".format(smart_text(self.code))
@@ -909,11 +912,7 @@ class SalesBasket(GenVersion):
         return self
 
     def pass_to_order(self, payment_request=None):
-        self.lock = True
-        self.role = ROLE_BASKET_BUDGET
-        if hasattr(self, 'order_sales'):
-            pass
-        else:
+        if not hasattr(self, 'order_sales'):
             with transaction.atomic():
                 if type(payment_request) == int:
                     payment_request = PaymentRequest.objects.get(pk=payment_request)
@@ -937,6 +936,9 @@ class SalesBasket(GenVersion):
                     lorder.quantity = line.quantity
                     lorder.save()
                 
+            self.lock = True
+            self.role = ROLE_BASKET_BUDGET
+            self.expiration_date = None
             self.save()
 
 

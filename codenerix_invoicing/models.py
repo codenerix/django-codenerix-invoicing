@@ -20,7 +20,7 @@
 
 from django.db import models
 from django.db import transaction
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import smart_text
 
 from codenerix.models import CodenerixModel, GenInterface

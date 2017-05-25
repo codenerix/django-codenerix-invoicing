@@ -19,12 +19,13 @@
 # limitations under the License.
 
 from django.db import models
-from django.utils.translation import ugettext as _
+from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import smart_text
 
 from codenerix.models import GenInterface, CodenerixModel
 from codenerix.models_people import GenRole
 from codenerix_extensions.helpers import get_external_method
+from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
 
 from codenerix_extensions.files.models import GenDocumentFile
 from codenerix_products.models import ProductFinal, TypeTax, Category
@@ -127,6 +128,13 @@ class ABSTRACT_GenProvider(models.Model):  # META: Abstract class
 class Provider(GenRole, CodenerixModel):
     class CodenerixMeta:
         abstract = ABSTRACT_GenProvider
+        rol_groups = {
+            'Provider': CDNX_INVOICING_PERMISSIONS['provider'],
+        }
+        rol_permissions = ['list_purchaseslineinvoice', 'list_productdocument', ]
+        force_methods = {
+            'foreignkey_provider': ('CDNX_get_fk_info_provider', _('---')),
+        }
 
     # person = models.OneToOneField(Person, related_name='providers', verbose_name=_("Person"))
     # saldo
@@ -143,7 +151,7 @@ class Provider(GenRole, CodenerixModel):
 
     @staticmethod
     def foreignkey_external():
-        return get_external_method(Provider, GenProvider.CodenerixMeta.force_methods['foreignkey_provider'][0])
+        return get_external_method(Provider, Provider.CodenerixMeta.force_methods['foreignkey_provider'][0])
 
     def __unicode__(self):
         return u"{}".format(smart_text(self.pk))
@@ -169,12 +177,6 @@ class GenProvider(GenInterface, ABSTRACT_GenProvider):  # META: Abstract class
 
     class Meta(GenInterface.Meta, ABSTRACT_GenProvider.Meta):
         abstract = True
-
-    class CodenerixMeta:
-        rol_permissions = ['list_purchaseslineinvoice', 'list_productdocument', ]
-        force_methods = {
-            'foreignkey_provider': ('CDNX_get_fk_info_provider', _('---')),
-        }
 
 
 # presupuestos

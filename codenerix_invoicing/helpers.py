@@ -21,10 +21,10 @@
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
-from django.db.models import F
+from django.db.models import F, Sum
 
 from codenerix_invoicing.models import POS
-from codenerix_invoicing.models_sales import Address, SalesBasket, SalesLineBasket, ROLE_BASKET_SHOPPINGCART
+from codenerix_invoicing.models_sales import SalesBasket, SalesLineBasket, ROLE_BASKET_SHOPPINGCART
 from codenerix_products.models import ProductFinal
 
 
@@ -163,6 +163,12 @@ class ShoppingCartProxy(object):
                 )
                 price = final_product.calculate_price(self._apply_surcharge)
 
+                stock_locked = final_product.line_basket_sales.filter(
+                    basket__expiration_date__isnull=False
+                ).aggregate(
+                    quantity=Sum('quantity')
+                )['quantity'] or 0
+
                 self._products['products'].append({
                     'pk': final_product.pk,
                     'name': final_product.name,
@@ -171,8 +177,8 @@ class ShoppingCartProxy(object):
                     'url': reverse('sluglevel_get', args=(final_product.slug,)),
                     'thumbnail': final_product.product.products_image.filter(principal=True).first().image.url,
                     'quantity': self._quantities[final_product.pk],
-                    'stock_real': final_product.stock_real,
-                    'force_stock': 1 if final_product.force_stock else 0,
+                    'stock_real': final_product.stock_real - stock_locked,
+                    'force_stock': int(final_product.force_stock),
                     'tax': self._quantities[final_product.pk] * price['tax'],
                     'base_price': price['price_base'],
                     'unit_price': price['price_total'],
@@ -189,8 +195,8 @@ class ShoppingCartProxy(object):
                 })
 
                 self._products['count'] += 1
-                self._products['subtotal'] += self._quantities[final_product.pk] * final_product.price
-                self._products['total'] += self._products['products'][-1]['total_price']
+                self._products['subtotal'] += self._quantities[final_product.pk] * price['price_base']
+                self._products['total'] += (price['price_base'] + self._products['products'][-1]['tax'])
                 self._products['tax'] += self._products['products'][-1]['tax']
 
         return self._products
@@ -243,13 +249,6 @@ class ShoppingCartProxy(object):
         return result
 
     def get_info_prices(self):
-        prices = {
-            'price_base': self.__price_base,
-            'price_tax': self.__price_tax,
-            'price_total': None,
-            'ws_line': self.__ws_line,
-            'wos_line': self.__wos_line,
-        }
         if not self.__price_tax or not self.__price_base:
 
             with_stock = []
@@ -289,15 +288,25 @@ class ShoppingCartProxy(object):
                 if wos_line:
                     without_stock.append(wos_line)
 
+            if without_stock:
+                without_stock += with_stock
+                with_stock = []
+
             prices = {
-                'price_base': float("{0:.2f}".format(price_base)),
-                'price_tax': float("{0:.2f}".format(price_tax)),
-                'price_total': float("{0:.2f}".format(price_tax + price_base)),
+                'price_base': round(float("{0:.2f}".format(price_base)) * 100, 2) / 100,
+                'price_tax': round(float("{0:.2f}".format(price_tax)) * 100, 2) / 100,
+                'price_total': round(float("{0:.2f}".format(price_tax + price_base)) * 100, 2) / 100,
                 'products_with_stock': with_stock,
                 'products_without_stock': without_stock,
             }
         else:
-            prices['price_total'] = float("{0:.2f}".format(self.__price_tax + self.__price_base))
+            prices = {
+                'price_base': round(float("{0:.2f}".format(self.__price_base)) * 100, 2) / 100,
+                'price_tax': round(float("{0:.2f}".format(self.__price_tax)) * 100, 2) / 100,
+                'price_total': round(float("{0:.2f}".format(self.__price_tax + self.__price_base)) * 100, 2) / 100,
+                'ws_line': self.__ws_line,
+                'wos_line': self.__wos_line,
+            }
         return prices
 
     def _reset_data(self):
