@@ -291,7 +291,7 @@ class Address(CodenerixModel):
         elif hasattr(self, 'external_invoice'):
             return u"{}".format(smart_text(self.external_invoice.get_summary()))
         else:
-            return _('No data!')
+            return 'No data!'
             # raise Exception(_('Address unkown'), self.__dict__)
 
     def __fields__(self, info):
@@ -867,10 +867,11 @@ class SalesBasket(GenVersion):
     public = models.BooleanField(_("Public"), blank=False, default=False)
     payment = models.ManyToManyField(PaymentRequest, verbose_name=_(u"Payment Request"), blank=True, related_name='basket_sales')
     name = models.CharField(_("Name"), max_length=250, blank=False, null=False)
-    address_delivery = models.ForeignKey(Address, parent_link=True, related_name='order_sales_delivery', verbose_name=_("Address delivery"), blank=True, null=True)
-    address_invoice = models.ForeignKey(Address, parent_link=True, related_name='order_sales_invoice', verbose_name=_("Address invoice"), blank=True, null=True)
+    address_delivery = models.ForeignKey(Address, related_name='order_sales_delivery', verbose_name=_("Address delivery"), blank=True, null=True)
+    address_invoice = models.ForeignKey(Address, related_name='order_sales_invoice', verbose_name=_("Address invoice"), blank=True, null=True)
     expiration_date = models.DateTimeField(_("Expiration date"), blank=True, null=True, editable=False)
-
+    haulier = models.ForeignKey(Haulier, related_name='basket_sales', verbose_name=_("Haulier"), blank=True, null=True)
+    
     def __unicode__(self):
         return u"Order-{}".format(smart_text(self.code))
 
@@ -885,6 +886,7 @@ class SalesBasket(GenVersion):
         fields.append(('public', _('Public')))
         fields.append(('address_delivery', _('Address delivery')))
         fields.append(('address_invoice', _('Address invoice')))
+        fields.append(('haulier', _('Haulier')))
         return fields
 
     def pass_to_budget(self, lines=None):
@@ -966,7 +968,6 @@ class SalesOrder(GenVersion):
     customer = models.ForeignKey(Customer, related_name='order_sales', verbose_name=_("Customer"))
     storage = models.ForeignKey(Storage, related_name='order_sales', verbose_name=_("Storage"), blank=True, null=True)
     payment = models.ForeignKey(PaymentRequest, related_name='order_sales', verbose_name=_(u"Payment Request"), blank=True, null=True)
-    haulier = models.ForeignKey(Haulier, related_name='order_sales', verbose_name=_("Haulier"), blank=True, null=True)
     number_tracking = models.CharField(_("Number of tracking"), max_length=128, blank=True, null=True)
     status_order = models.CharField(_("Status"), max_length=2, choices=STATUS_ORDER, blank=False, null=False, default='PE')
     payment_detail = models.CharField(_("Payment detail"), max_length=3, choices=PAYMENT_DETAILS, blank=True, null=True)
@@ -984,7 +985,6 @@ class SalesOrder(GenVersion):
         fields.append(('status_order', _('Status')))
         fields.append(('payment_detail', _('Payment detail')))
         fields.append(('source', _('Source of purchase')))
-        fields.append(('haulier', _('Haulier')))
         fields.append(('number_tracking', _('Number of tracking')))
         fields.append(('budget__address_delivery', _('Address delivery')))
         fields.append(('budget__address_invoice', _('Address invoice')))

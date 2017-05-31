@@ -23,7 +23,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db.models import F, Sum
 
-from codenerix_invoicing.models import POS
+from codenerix_invoicing.models import POS, Haulier
 from codenerix_invoicing.models_sales import SalesBasket, SalesLineBasket, ROLE_BASKET_SHOPPINGCART
 from codenerix_products.models import ProductFinal
 
@@ -59,6 +59,16 @@ class ShoppingCartProxy(object):
             except ObjectDoesNotExist:
                 pos = POS.objects.filter(default=True).first()
                 self._cart = SalesBasket(customer=customer, role=ROLE_BASKET_SHOPPINGCART, point_sales=pos)
+                self._cart.save()
+
+            if hasattr(request.body, 'transport'):
+                transport = Haulier.objects.filter(name=request.body.transport).first()
+                if transport is None:
+                    transport = Haulier()
+                    transport.name = request.body.transport
+                    transport.save()
+
+                self._cart.haulier = transport
                 self._cart.save()
 
             # Merge anonymous to user cart
