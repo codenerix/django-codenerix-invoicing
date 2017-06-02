@@ -67,6 +67,9 @@ class GenLineProduct(CodenerixModel):  # META: Abstract class
     def __unicode__(self):
         return u"{} - {}".format(smart_text(self.product), smart_text(self.quantity))
 
+    def __str__(self):
+        return self.__unicode__()
+
     def __fields__(self, info):
         fields = []
         fields.append(('product', _("Product")))
@@ -88,6 +91,9 @@ class GenBillingDocument(GenDocumentFile):  # META: Abstract class
     def __unicode__(self):
         return u"{} ({})".format(self.code, self.date)
 
+    def __str__(self):
+        return self.__unicode__()
+
     def __fields__(self, info):
         fields = []
         fields.append(('code', _('Code')))
@@ -108,6 +114,9 @@ class GenPurchase(CodenerixModel):  # META: Abstract class
 
     def __unicode__(self):
         return u"{}".format(smart_text(self.code))
+
+    def __str__(self):
+        return self.__unicode__()
 
     def __fields__(self, info):
         fields = []
@@ -155,6 +164,9 @@ class Provider(GenRole, CodenerixModel):
 
     def __unicode__(self):
         return u"{}".format(smart_text(self.pk))
+
+    def __str__(self):
+        return self.__unicode__()
 
     def __fields__(self, info):
         fields = []

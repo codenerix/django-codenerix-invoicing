@@ -60,6 +60,9 @@ class BillingSeries(CodenerixModel):
     def __unicode__(self):
         return u"{}".format(smart_text(self.code))
 
+    def __str__(self):
+        return self.__unicode__()
+
     def __fields__(self, info):
         fields = []
         fields.append(('code', _('Code')))
@@ -89,6 +92,9 @@ class LegalNote(CodenerixModel):
     def __unicode__(self):
         return u"{}".format(smart_text(self.updated))
 
+    def __str__(self):
+        return self.__unicode__()
+
     def __fields__(self, info):
         fields = []
         fields.append(('updated', _('Last update')))
@@ -115,6 +121,9 @@ class TypeDocument(CodenerixModel):
 
     def __unicode__(self):
         return u"{}".format(smart_text(self.code))
+
+    def __str__(self):
+        return self.__unicode__()
 
     def __fields__(self, info):
         fields = []
@@ -157,6 +166,9 @@ class ProductStock(CodenerixModel):
     def __unicode__(self):
         return u"{}".format(self.product_final)
 
+    def __str__(self):
+        return self.__unicode__()
+
 
 # movimiento de stock entre de almacenes
 class StockMovement(CodenerixModel):
@@ -174,6 +186,9 @@ class StockMovement(CodenerixModel):
     def __unicode__(self):
         return u"{} -> {}".format(self.batch_source, self.batch_destination)
 
+    def __str__(self):
+        return self.__unicode__()
+
 
 class StockMovementProduct(CodenerixModel):
     stock_movement = models.ForeignKey(StockMovement, related_name='stock_movement_products', verbose_name=_("Stock movement"), null=False, blank=False)
@@ -188,6 +203,9 @@ class StockMovementProduct(CodenerixModel):
 
     def __unicode__(self):
         return u"{} ({})".format(self.product_final, self.quantity)
+
+    def __str__(self):
+        return self.__unicode__()
 
 
 # #####################################
@@ -224,6 +242,9 @@ class POS(CodenerixModel):
     def __unicode__(self):
         return u"{}".format(self.billing_series)
 
+    def __str__(self):
+        return self.__unicode__()
+
     def save(self, *args, **kwards):
         with transaction.atomic():
             if self.default:
@@ -255,6 +276,9 @@ class Haulier(CodenerixModel, GenImageFileNull):
 
     def __unicode__(self):
         return u"{}".format(smart_text(self.name))
+
+    def __str__(self):
+        return self.__unicode__()
 
     def __fields__(self, info):
         fields = []

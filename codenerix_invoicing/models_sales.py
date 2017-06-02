@@ -244,6 +244,9 @@ class Customer(GenRole, CodenerixModel):
     def __unicode__(self):
         return u"{}".format(smart_text(self.pk))
 
+    def __str__(self):
+        return self.__unicode__()
+
     def __fields__(self, info):
         fields = []
         fields.append(('final_balance', _("Balance")))
@@ -293,6 +296,9 @@ class Address(CodenerixModel):
         else:
             return 'No data!'
             # raise Exception(_('Address unkown'), self.__dict__)
+
+    def __str__(self):
+        return self.__unicode__()
 
     def __fields__(self, info):
         fields = []
@@ -361,6 +367,9 @@ class CustomerDocument(CodenerixModel, GenDocumentFile):
 
     def __unicode__(self):
         return u"{}".format(smart_text(self.customer))
+
+    def __str__(self):
+        return self.__unicode__()
 
     def __fields__(self, info):
         fields = []
@@ -496,6 +505,9 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
         elif hasattr(self, 'line_ticket'):
             description = self.line_ticket.description
         return u"{} - {}".format(smart_text(description), smart_text(self.quantity))
+
+    def __str__(self):
+        return self.__unicode__()
 
     def __fields__(self, info):
         fields = []
@@ -833,6 +845,9 @@ class GenInvoiceRectification(GenVersion):  # META: Abstract class
     def __unicode__(self):
         return u"Rct-{}".format(smart_text(self.code))
 
+    def __str__(self):
+        return self.__unicode__()
+
     def __fields__(self, info):
         fields = []
         fields.append(('code', _('Code')))
@@ -848,6 +863,9 @@ class SalesReservedProduct(CodenerixModel):
 
     def __unicode__(self):
         return u"{}".format(smart_text(self.customer))
+
+    def __str__(self):
+        return self.__unicode__()
 
     def __fields__(self, info):
         fields = []
@@ -874,6 +892,9 @@ class SalesBasket(GenVersion):
     
     def __unicode__(self):
         return u"Order-{}".format(smart_text(self.code))
+
+    def __str__(self):
+        return self.__unicode__()
 
     def __fields__(self, info):
         fields = []
@@ -976,6 +997,9 @@ class SalesOrder(GenVersion):
     def __unicode__(self):
         return u"Order-{}".format(smart_text(self.code))
 
+    def __str__(self):
+        return self.__unicode__()
+
     def __fields__(self, info):
         fields = []
         fields.append(('customer', _('Customer')))
@@ -1025,6 +1049,9 @@ class SalesAlbaran(GenVersion):
     def __unicode__(self):
         return u"Albaran-{}".format(smart_text(self.code))
 
+    def __str__(self):
+        return self.__unicode__()
+
     def __fields__(self, info):
         fields = []
         fields.append(('code', _('Code')))
@@ -1048,6 +1075,9 @@ class SalesLineAlbaran(GenLineProductBasic):
 
     def __unicode__(self):
         return u"{} - {}".format(smart_text(self.line_order.product), smart_text(self.quantity))
+
+    def __str__(self):
+        return self.__unicode__()
 
     def __fields__(self, info):
         fields = []
@@ -1076,6 +1106,9 @@ class SalesTicket(GenVersion):
 
     def __unicode__(self):
         return u"Ticket-{}".format(smart_text(self.code))
+
+    def __str__(self):
+        return self.__unicode__()
 
     def __fields__(self, info):
         fields = []
@@ -1160,6 +1193,9 @@ class SalesInvoice(GenVersion):
 
     def __unicode__(self):
         return u"Invoice-{}".format(smart_text(self.code))
+
+    def __str__(self):
+        return self.__unicode__()
 
     def __fields__(self, info):
         fields = []
