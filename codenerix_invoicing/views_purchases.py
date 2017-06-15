@@ -736,7 +736,7 @@ class LineAlbaranCreate(GenLineAlbaranUrl, GenCreate):
                     pfs.save()
 
                 return result
-        except IntegrityError, e:
+        except IntegrityError as e:
             raise Exception(e)
             errors = form._errors.setdefault("product", ErrorList())
             errors.append(_("Integrity Error"))
