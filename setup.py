@@ -45,5 +45,6 @@ setup(
         'django-codenerix-extensions',
         'django-codenerix-products',
         'django-codenerix-storages',
+        'xhtml2pdf==0.2b1',
     ]
 )
