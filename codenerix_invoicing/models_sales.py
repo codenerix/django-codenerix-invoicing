@@ -593,6 +593,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
 
                     # context['url'] = reverse('ordersaless_details', kwargs={'pk': order.pk})
                     context['url'] = "{}#/{}".format(reverse(url_reverse), obj_final.pk)
+                    context['obj_final'] = obj_final
             else:
                 # _("Hay lineas asignadas a pedidos")
                 context['error'] = msg_error_relation
