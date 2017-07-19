@@ -1276,7 +1276,10 @@ class TicketPrint(PrinterHelper, GenTicketUrl, GenDetail):
         ticket = self.object
 
         # I take address for send.
-        send_address = ticket.customer.external.person_address.filter(main=True).first()
+        if hasattr(ticket.customer.external, 'person_address'):
+            send_address = ticket.customer.external.person_address.filter(main=True).first()
+        else:
+            send_address = None
 
         context["ticket"] = ticket
         lines = []
@@ -1609,7 +1612,10 @@ class TicketRectificationPrint(PrinterHelper, GenTicketRectificationUrl, GenDeta
                 customer = line.line_ticket.ticket.customer
 
         # I take address for send.
-        send_address = customer.external.person_address.filter(main=True).first()
+        if hasattr(ticket.customer.external, 'person_address'):
+            send_address = customer.external.person_address.filter(main=True).first()
+        else:
+            send_address = None
         corporate_image = CorporateImage.objects.filter(public=True).first()
 
         context['customer'] = customer
@@ -1846,7 +1852,10 @@ class InvoicePrint(PrinterHelper, GenInvoiceUrl, GenDetail):
         invoice = self.object
 
         # I take address for send.
-        send_address = invoice.customer.external.person_address.filter(main=True).first()
+        if hasattr(ticket.customer.external, 'person_address'):
+            send_address = invoice.customer.external.person_address.filter(main=True).first()
+        else:
+            send_address = None
 
         context["invoice"] = invoice
         lines = []
@@ -2112,7 +2121,10 @@ class InvoiceRectificationPrint(PrinterHelper, GenInvoiceRectificationUrl, GenDe
                 customer = line.line_invoice.invoice.customer
 
         # I take address for send.
-        send_address = customer.external.person_address.filter(main=True).first()
+        if hasattr(ticket.customer.external, 'person_address'):
+            send_address = customer.external.person_address.filter(main=True).first()
+        else:
+            send_address = None
         corporate_image = CorporateImage.objects.filter(public=True).first()
 
         context['customer'] = customer
