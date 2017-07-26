@@ -49,8 +49,9 @@ class CustomerForm(GenModelForm):
         g = [
             (_('Details'), 12,
                 ['codenerix_external_field', 6],
-                ['billing_series', 3],
-                ['currency', 3],
+                ['billing_series', 2],
+                ['currency', 2],
+                ['default_customer', 2],
                 ['credit', 3],
                 ['final_balance', 3],
                 ['type_tax', 3],
@@ -66,6 +67,7 @@ class CustomerForm(GenModelForm):
                 ['billing_series', 6],
                 ['credit', 6],
                 ['currency', 6],
+                ['default_customer', 6],
                 ['final_balance', 6],
                 ['apply_equivalence_surcharge', 3],
                 ['type_tax', 3],)
@@ -134,7 +136,7 @@ class BasketForm(GenModelForm):
                 ['address_delivery', 6],
                 ['address_invoice', 6],
                 ['name', 4],
-                ['point_sales', 4],
+                ['pos_slot', 4],
                 ['haulier', 4],
                 ['observations', 12],),
         ]
@@ -156,7 +158,7 @@ class BasketForm(GenModelForm):
                 ['lock', 6],
                 ['role', 6],
                 ['haulier', 4],
-                ['point_sales', 6],),
+                ['pos_slot', 6],),
         ]
         return g
 
@@ -598,7 +600,7 @@ class InvoiceForm(GenModelForm):
             (_('Details'), 12,
                 ['customer', 4],
                 ['date', 4],
-                ['tax', 4],
+                ['billing_series', 4],
                 ['observations', 12],)
         ]
         return g
@@ -610,7 +612,7 @@ class InvoiceForm(GenModelForm):
                 ['customer', 6],
                 ['date', 6],
                 ['code', 6],
-                ['tax', 6],
+                ['billing_series', 6],
                 ['observations', 6],)
         ]
         return g

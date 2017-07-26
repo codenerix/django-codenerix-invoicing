@@ -19,16 +19,14 @@
 # limitations under the License.
 
 from django.conf.urls import url
-from codenerix_invoicing.views import \
-    BillingSeriesCreate, BillingSeriesCreateModal, BillingSeriesDelete, BillingSeriesList, BillingSeriesUpdate, BillingSeriesUpdateModal, \
-    LegalNoteList, LegalNoteCreate, LegalNoteCreateModal, LegalNoteUpdate, LegalNoteUpdateModal, LegalNoteDelete, \
-    ProductStockList, ProductStockCreate, ProductStockCreateModal, ProductStockUpdate, ProductStockUpdateModal, ProductStockDelete, ProductStockDetailModal, \
-    ProductStockSubList, ProductStockOwnCreateModal, ProductStockOwnUpdateModal, \
-    TypeDocumentList, TypeDocumentCreate, TypeDocumentCreateModal, TypeDocumentUpdate, TypeDocumentUpdateModal, TypeDocumentDelete, \
-    StockMovementList, StockMovementCreate, StockMovementCreateModal, StockMovementUpdate, StockMovementUpdateModal, StockMovementDelete, StockMovementDetails, StockMovementPrint, \
-    StockMovementProductList, StockMovementProductCreate, StockMovementProductCreateModal, StockMovementProductUpdateModal, StockMovementProductDelete, StockMovementProductSubList, StockMovementProductDetailModal, \
-    POSList, POSCreate, POSCreateModal, POSUpdate, POSUpdateModal, POSDelete, \
-    HaulierList, HaulierCreate, HaulierCreateModal, HaulierUpdate, HaulierUpdateModal, HaulierDelete
+from codenerix_invoicing.views import BillingSeriesCreate, BillingSeriesCreateModal, BillingSeriesDelete, BillingSeriesList, BillingSeriesUpdate, BillingSeriesUpdateModal
+from codenerix_invoicing.views import LegalNoteList, LegalNoteCreate, LegalNoteCreateModal, LegalNoteUpdate, LegalNoteUpdateModal, LegalNoteDelete
+from codenerix_invoicing.views import ProductStockList, ProductStockCreate, ProductStockCreateModal, ProductStockUpdate, ProductStockUpdateModal, ProductStockDelete, ProductStockDetailModal
+from codenerix_invoicing.views import ProductStockSubList, ProductStockOwnCreateModal, ProductStockOwnUpdateModal
+from codenerix_invoicing.views import TypeDocumentList, TypeDocumentCreate, TypeDocumentCreateModal, TypeDocumentUpdate, TypeDocumentUpdateModal, TypeDocumentDelete
+from codenerix_invoicing.views import StockMovementList, StockMovementCreate, StockMovementCreateModal, StockMovementUpdate, StockMovementDelete, StockMovementDetails, StockMovementPrint
+from codenerix_invoicing.views import StockMovementProductCreateModal, StockMovementProductUpdateModal, StockMovementProductDelete, StockMovementProductSubList, StockMovementProductDetailModal
+from codenerix_invoicing.views import HaulierList, HaulierCreate, HaulierCreateModal, HaulierUpdate, HaulierUpdateModal, HaulierDelete
 
 from codenerix_invoicing.urls_sales import urlpatterns as url_sales
 from codenerix_invoicing.urls_purchases import urlpatterns as url_purchases
@@ -88,13 +86,6 @@ urlpatterns = [
     url(r'^stockmovementproducts/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', StockMovementProductDetailModal.as_view(), name='CDNX_invoicing_stockmovementproducts_sublist_details'),
     url(r'^stockmovementproducts/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', StockMovementProductUpdateModal.as_view(), name='CDNX_invoicing_stockmovementproducts_sublist_editmodal'),
     url(r'^stockmovementproducts/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', StockMovementProductDelete.as_view(), name='CDNX_invoicing_stockmovementproducts_sublist_delete'),
-
-    url(r'^poss$', POSList.as_view(), name='CDNX_invoicing_poss_list'),
-    url(r'^poss/add$', POSCreate.as_view(), name='CDNX_invoicing_poss_add'),
-    url(r'^poss/addmodal$', POSCreateModal.as_view(), name='CDNX_invoicing_poss_addmodal'),
-    url(r'^poss/(?P<pk>\w+)/edit$', POSUpdate.as_view(), name='CDNX_invoicing_poss_edit'),
-    url(r'^poss/(?P<pk>\w+)/editmodal$', POSUpdateModal.as_view(), name='CDNX_invoicing_poss_editmodal'),
-    url(r'^poss/(?P<pk>\w+)/delete$', POSDelete.as_view(), name='CDNX_invoicing_poss_delete'),
 
     url(r'^hauliers$', HaulierList.as_view(), name='CDNX_invoicing_hauliers_list'),
     url(r'^hauliers/add$', HaulierCreate.as_view(), name='CDNX_invoicing_hauliers_add'),

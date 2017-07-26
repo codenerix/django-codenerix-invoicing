@@ -31,13 +31,15 @@ from codenerix.models_people import GenRole
 from codenerix_extensions.helpers import get_external_method
 from codenerix_extensions.files.models import GenDocumentFile
 
-from codenerix_invoicing.models import POS, Haulier
+from codenerix_invoicing.models import Haulier, BillingSeries
 from codenerix_invoicing.models_purchases import PAYMENT_DETAILS
 from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
+ 
+from codenerix_pos.models import POSSlot
 
 from codenerix_products.models import ProductFinal, TypeTax
 from codenerix_storages.models import Storage
-from codenerix_payments.models import PaymentRequest, PaymentConfirmation
+from codenerix_payments.models import PaymentRequest
 
     
 ROLE_BASKET_SHOPPINGCART = 'SC'
@@ -223,10 +225,9 @@ class Customer(GenRole, CodenerixModel):
             'get_email': ('CDNX_get_email', ),
         }
 
-
     currency = models.CharField(_("Currency"), max_length=250, blank=True, null=True)
     # serie de facturacion
-    billing_series = models.ForeignKey("BillingSeries", related_name='billing_series', verbose_name='Billing series')
+    billing_series = models.ForeignKey(BillingSeries, related_name='billing_series', verbose_name='Billing series')
     # datos de facturación
     # saldo final
     final_balance = models.CharField(_("Balance"), max_length=250, blank=True, null=True)
@@ -236,6 +237,7 @@ class Customer(GenRole, CodenerixModel):
     apply_equivalence_surcharge = models.BooleanField(_("Apply equivalence surcharge"), blank=False, default=False)
     # Tipo de iva
     type_tax = models.ForeignKey(TypeTax, related_name='customers', verbose_name=_("Type tax"), null=True)
+    default_customer = models.BooleanField(_("Default customer"), blank=False, default=False)
 
     @staticmethod
     def foreignkey_external():
@@ -255,15 +257,25 @@ class Customer(GenRole, CodenerixModel):
         fields.append(('billing_series', _("Billing series")))
         fields.append(('apply_equivalence_surcharge', _("Currency")))
         fields.append(('type_tax', _("Type tax")))
+        fields.append(('default_customer', _("Default customer")))
         fields = get_external_method(Customer, '__fields_customer__', info, fields)
         return fields
+
+    def save(self, *args, **kwards):
+        with transaction.atomic():
+            if self.default_customer:
+                Customer.objects.exclude(pk=self.pk).update(default_customer=False)
+            else:
+                if not Customer.objects.exclude(pk=self.pk).filter(default_customer=True).exists():
+                    self.default_customer = True
+        return super(Customer, self).save(*args, **kwards)
 
     def buy_product(self, product_pk):
         """
         determina si el customer ha comprado un producto
         """
         if self.invoice_sales.filter(line_invoice_sales__line_order__product__pk=product_pk).exists() \
-        or self.ticket_sales.filter(line_ticket_sales__line_order__product__pk=product_pk).exists():
+            or self.ticket_sales.filter(line_ticket_sales__line_order__product__pk=product_pk).exists():
             return True
         else:
             return False
@@ -560,6 +572,8 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
                     obj_final = MODEL_FINAL()
                     obj_final.customer = obj_src.customer
                     obj_final.date = datetime.datetime.now()
+                    if isinstance(obj_final, SalesOrder):
+                        obj_final.budget = obj_src
                     obj_final.save()
 
                     for lb_pk in list_lines:
@@ -880,7 +894,7 @@ class SalesReservedProduct(CodenerixModel):
 # nueva cesta de la compra
 class SalesBasket(GenVersion):
     customer = models.ForeignKey(Customer, related_name='basket_sales', verbose_name=_("Customer"))
-    point_sales = models.ForeignKey(POS, related_name='basket_sales', verbose_name=_("Point of Sales"), null=True)
+    pos_slot = models.ForeignKey(POSSlot, related_name='basket_sales', verbose_name=_("Point of Sales"), null=True)
     role = models.CharField(_("Role basket"), max_length=2, choices=ROLE_BASKET, blank=False, null=False, default=ROLE_BASKET_SHOPPINGCART)
     signed = models.BooleanField(_("Signed"), blank=False, default=False)
     public = models.BooleanField(_("Public"), blank=False, default=False)
@@ -1189,8 +1203,8 @@ class SalesLineTicketRectification(GenLineProductBasic):
 # una factura puede contener varios ticket o albaranes
 class SalesInvoice(GenVersion):
     customer = models.ForeignKey(Customer, related_name='invoice_sales', verbose_name=_("Customer"))
-    tax = models.FloatField(_("Tax"), blank=False, null=False, default=0)
     summary_invoice = models.TextField(_("Address invoice"), max_length=256, blank=True, null=True)
+    billing_series = models.ForeignKey(BillingSeries, related_name='invoice_sales', verbose_name='Billing series')
 
     def __unicode__(self):
         return u"Invoice-{}".format(smart_text(self.code))
@@ -1203,7 +1217,7 @@ class SalesInvoice(GenVersion):
         fields.append(('customer', _('Customer')))
         fields.append(('code', _('Code')))
         fields.append(('date', _('Date')))
-        fields.append(('tax', _('Tax')))
+        fields.append(('billing_series', _('Billing series')))
         fields.append(('summary_invoice', _('Address invoice')))
         return fields
 

@@ -21,7 +21,7 @@
 from django.contrib import admin
 from django.conf import settings
 
-from codenerix_invoicing.models import BillingSeries, LegalNote, TypeDocument, ProductStock, StockMovement, StockMovementProduct, POS, MODELS
+from codenerix_invoicing.models import BillingSeries, LegalNote, TypeDocument, ProductStock, StockMovement, StockMovementProduct, MODELS
 from codenerix_invoicing.models_purchases import Provider, PurchasesBudget, PurchasesLineBudget, PurchasesBudgetDocument, PurchasesOrder, PurchasesLineOrder, PurchasesOrderDocument, PurchasesAlbaran, PurchasesLineAlbaran, PurchasesAlbaranDocument, PurchasesTicket, PurchasesLineTicket, PurchasesTicketDocument, PurchasesTicketRectification, PurchasesLineTicketRectification, PurchasesTicketRectificationDocument, PurchasesInvoice, PurchasesLineInvoice, PurchasesInvoiceDocument, PurchasesInvoiceRectification, PurchasesLineInvoiceRectification, PurchasesInvoiceRectificationDocument
 from codenerix_invoicing.models_sales import Address, Customer, CustomerDocument, SalesReservedProduct, SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, SalesLineInvoiceRectification, SalesBasket, SalesLineBasket
 
@@ -54,7 +54,6 @@ admin.site.register(TypeDocument)
 admin.site.register(ProductStock)
 admin.site.register(StockMovement)
 admin.site.register(StockMovementProduct)
-admin.site.register(POS)
 
 admin.site.register(Address)
 admin.site.register(Customer)

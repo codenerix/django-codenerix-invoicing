@@ -19,40 +19,40 @@
 # limitations under the License.
 
 from django.conf.urls import url
-from codenerix_invoicing.views_sales import AlbaranCreate, AlbaranCreateModal, AlbaranDelete, AlbaranList, AlbaranUpdate, AlbaranUpdateModal, \
-    CustomerCreate, CustomerCreateModal, CustomerDelete, CustomerList, CustomerUpdate, CustomerUpdateModal, CustomerDetails,  \
-    InvoiceRectificationCreate, InvoiceRectificationCreateModal, InvoiceRectificationDelete, InvoiceRectificationList, InvoiceRectificationUpdate, InvoiceRectificationUpdateModal, InvoiceRectificationDetails, InvoiceRectificationPrint,  \
-    InvoiceCreate, InvoiceCreateModal, InvoiceDelete, InvoiceList, InvoiceUpdate, InvoiceUpdateModal, InvoicePrint,  \
-    LineAlbaranCreate, LineAlbaranCreateModal, LineAlbaranDelete, LineAlbaranList, LineAlbaranUpdate, LineAlbaranUpdateModal, \
-    LineInvoiceRectificationCreate, LineInvoiceRectificationCreateModal, LineInvoiceRectificationDelete, LineInvoiceRectificationList, LineInvoiceRectificationUpdate, LineInvoiceRectificationUpdateModal, LineInvoiceRectificationSubList, LineInvoiceRectificationDetailModal, \
-    LineInvoiceCreate, LineInvoiceCreateModal, LineInvoiceDelete, LineInvoiceList, LineInvoiceUpdate, LineInvoiceUpdateModal, \
-    LineOrderCreateModal, LineOrderDelete, LineOrderDetailsModal, LineOrderList, LineOrderSubList, LineOrderUpdateModal, \
-    LineTicketRectificationCreate, LineTicketRectificationCreateModal, LineTicketRectificationDelete, LineTicketRectificationList, LineTicketRectificationUpdate, LineTicketRectificationUpdateModal, LineTicketRectificationSubList, LineTicketRectificationDetailModal,  \
-    LineTicketCreate, LineTicketCreateModal, LineTicketDelete, LineTicketList, LineTicketUpdate, LineTicketUpdateModal, \
-    OrderCreate, OrderCreateModal, OrderDelete, OrderDetails, OrderList, OrderUpdate, OrderUpdateModal, OrderPrint, \
-    TicketRectificationCreate, TicketRectificationCreateModal, TicketRectificationDelete, TicketRectificationList, TicketRectificationUpdate, TicketRectificationUpdateModal, TicketRectificationDetails, \
-    TicketCreate, TicketCreateModal, TicketDelete, TicketList, TicketUpdate, TicketUpdateModal, \
-    AlbaranDetails, LineAlbaranSubList, AlbaranPrint, LineAlbaranDetailsModal, \
-    TicketDetails, LineTicketSubList, TicketPrint, LineTicketDetailsModal, \
-    InvoiceDetails, InvoicePrint, LineInvoiceSubList, LineInvoiceDetailsModal, \
-    OrderCreateAlbaran, OrderCreateTicket, OrderCreateInvoice,  \
-    AlbaranCreateTicket, AlbaranCreateInvoice, \
-    TicketCreateInvoice, \
-    OrderForeign, LineOrderForeign, LineOrderForeignCustom, \
-    InvoiceCreateRectification, LineInvoiceForeign, TicketCreateRectification, LineTicketForeign, TicketRectificationPrint, \
-    CustomerDocumentSubList, CustomerDocumentCreateModal, CustomerDocumentDetailsModal, CustomerDocumentUpdateModal, CustomerDocumentDelete, \
-    ReservedProductList, ReservedProductCreate, ReservedProductUpdate, ReservedProductDelete, \
-    BasketCreate, BasketCreateModal, BasketUpdate, BasketUpdateModal, BasketDetails, BasketDelete, \
-    BasketListSHOPPINGCART, BasketDetailsSHOPPINGCART, BasketCreateSHOPPINGCART, BasketCreateSHOPPINGCARTModal, BasketUpdateSHOPPINGCART, BasketDeleteSHOPPINGCART, \
-    BasketListBUDGET, BasketDetailsBUDGET, BasketCreateBUDGET, BasketCreateBUDGETModal, BasketUpdateBUDGET, BasketDeleteBUDGET, \
-    BasketListWISHLIST, BasketDetailsWISHLIST, BasketCreateWISHLIST, BasketCreateWISHLISTModal, BasketUpdateWISHLIST, BasketDeleteWISHLIST, \
-    BasketPassToBudget, \
-    BasketPassToOrder, \
-    LineBasketList, LineBasketCreate, LineBasketCreateModal, LineBasketUpdate, LineBasketUpdateModal, LineBasketDelete, LineBasketSubList, LineBasketDetails, LineBasketDetailModal, \
-    ShoppingCartManagement, \
-    CustomerForeignBudget, CustomerForeignShoppingCart, \
-    BasketForeignShoppingCart, BasketForeignBudget, \
-    OrderCreateModalFromBudget, OrderCreateModalFromShoppingCart
+from codenerix_invoicing.views_sales import AlbaranCreate, AlbaranCreateModal, AlbaranDelete, AlbaranList, AlbaranUpdate, AlbaranUpdateModal
+from codenerix_invoicing.views_sales import CustomerCreate, CustomerCreateModal, CustomerDelete, CustomerList, CustomerUpdate, CustomerUpdateModal, CustomerDetails
+from codenerix_invoicing.views_sales import InvoiceRectificationCreate, InvoiceRectificationCreateModal, InvoiceRectificationDelete, InvoiceRectificationList, InvoiceRectificationUpdate, InvoiceRectificationUpdateModal, InvoiceRectificationDetails, InvoiceRectificationPrint
+from codenerix_invoicing.views_sales import InvoiceCreate, InvoiceCreateModal, InvoiceDelete, InvoiceList, InvoiceUpdate, InvoiceUpdateModal, InvoicePrint
+from codenerix_invoicing.views_sales import LineAlbaranCreate, LineAlbaranCreateModal, LineAlbaranDelete, LineAlbaranList, LineAlbaranUpdate, LineAlbaranUpdateModal
+from codenerix_invoicing.views_sales import LineInvoiceRectificationCreate, LineInvoiceRectificationCreateModal, LineInvoiceRectificationDelete, LineInvoiceRectificationList, LineInvoiceRectificationUpdate, LineInvoiceRectificationUpdateModal, LineInvoiceRectificationSubList, LineInvoiceRectificationDetailModal
+from codenerix_invoicing.views_sales import LineInvoiceCreate, LineInvoiceCreateModal, LineInvoiceDelete, LineInvoiceList, LineInvoiceUpdate, LineInvoiceUpdateModal
+from codenerix_invoicing.views_sales import LineOrderCreateModal, LineOrderDelete, LineOrderDetailsModal, LineOrderList, LineOrderSubList, LineOrderUpdateModal
+from codenerix_invoicing.views_sales import LineTicketRectificationCreate, LineTicketRectificationCreateModal, LineTicketRectificationDelete, LineTicketRectificationList, LineTicketRectificationUpdate, LineTicketRectificationUpdateModal, LineTicketRectificationSubList, LineTicketRectificationDetailModal
+from codenerix_invoicing.views_sales import LineTicketCreate, LineTicketCreateModal, LineTicketDelete, LineTicketList, LineTicketUpdate, LineTicketUpdateModal
+from codenerix_invoicing.views_sales import OrderCreate, OrderCreateModal, OrderDelete, OrderDetails, OrderList, OrderUpdate, OrderUpdateModal, OrderPrint
+from codenerix_invoicing.views_sales import TicketRectificationCreate, TicketRectificationCreateModal, TicketRectificationDelete, TicketRectificationList, TicketRectificationUpdate, TicketRectificationUpdateModal, TicketRectificationDetails
+from codenerix_invoicing.views_sales import TicketCreate, TicketCreateModal, TicketDelete, TicketList, TicketUpdate, TicketUpdateModal
+from codenerix_invoicing.views_sales import AlbaranDetails, LineAlbaranSubList, AlbaranPrint, LineAlbaranDetailsModal
+from codenerix_invoicing.views_sales import TicketDetails, LineTicketSubList, TicketPrint, LineTicketDetailsModal
+from codenerix_invoicing.views_sales import InvoiceDetails, InvoicePrint, LineInvoiceSubList, LineInvoiceDetailsModal
+from codenerix_invoicing.views_sales import OrderCreateAlbaran, OrderCreateTicket, OrderCreateInvoice
+from codenerix_invoicing.views_sales import AlbaranCreateTicket, AlbaranCreateInvoice
+from codenerix_invoicing.views_sales import TicketCreateInvoice
+from codenerix_invoicing.views_sales import OrderForeign, LineOrderForeign, LineOrderForeignCustom
+from codenerix_invoicing.views_sales import InvoiceCreateRectification, LineInvoiceForeign, TicketCreateRectification, LineTicketForeign, TicketRectificationPrint
+from codenerix_invoicing.views_sales import CustomerDocumentSubList, CustomerDocumentCreateModal, CustomerDocumentDetailsModal, CustomerDocumentUpdateModal, CustomerDocumentDelete
+from codenerix_invoicing.views_sales import ReservedProductList, ReservedProductCreate, ReservedProductUpdate, ReservedProductDelete
+from codenerix_invoicing.views_sales import BasketCreate, BasketCreateModal, BasketUpdate, BasketUpdateModal, BasketDetails, BasketDelete
+from codenerix_invoicing.views_sales import BasketListSHOPPINGCART, BasketDetailsSHOPPINGCART, BasketCreateSHOPPINGCART, BasketCreateSHOPPINGCARTModal, BasketUpdateSHOPPINGCART, BasketDeleteSHOPPINGCART
+from codenerix_invoicing.views_sales import BasketListBUDGET, BasketDetailsBUDGET, BasketCreateBUDGET, BasketCreateBUDGETModal, BasketUpdateBUDGET, BasketDeleteBUDGET
+from codenerix_invoicing.views_sales import BasketListWISHLIST, BasketDetailsWISHLIST, BasketCreateWISHLIST, BasketCreateWISHLISTModal, BasketUpdateWISHLIST, BasketDeleteWISHLIST
+from codenerix_invoicing.views_sales import BasketPassToBudget
+from codenerix_invoicing.views_sales import BasketPassToOrder
+from codenerix_invoicing.views_sales import LineBasketList, LineBasketCreate, LineBasketCreateModal, LineBasketUpdate, LineBasketUpdateModal, LineBasketDelete, LineBasketSubList, LineBasketDetails, LineBasketDetailModal
+from codenerix_invoicing.views_sales import ShoppingCartManagement
+from codenerix_invoicing.views_sales import CustomerForeignBudget, CustomerForeignShoppingCart
+from codenerix_invoicing.views_sales import BasketForeignShoppingCart, BasketForeignBudget
+from codenerix_invoicing.views_sales import OrderCreateModalFromBudget, OrderCreateModalFromShoppingCart
 
 
 urlpatterns = [

@@ -433,6 +433,7 @@ class BasketPassToOrder(View):
         list_lines = ast.literal_eval(request._body)['lines']
         context = SalesLineBasket.create_order_from_budget(pk, list_lines)
         try:
+            context['obj_final'] = None
             json_answer = json.dumps(context)
         except TypeError:
             raise TypeError("The structure can not be encoded to JSON")
@@ -1612,7 +1613,7 @@ class TicketRectificationPrint(PrinterHelper, GenTicketRectificationUrl, GenDeta
                 customer = line.line_ticket.ticket.customer
 
         # I take address for send.
-        if hasattr(ticket.customer.external, 'person_address'):
+        if customer and hasattr(customer.external, 'person_address'):
             send_address = customer.external.person_address.filter(main=True).first()
         else:
             send_address = None
@@ -2121,7 +2122,7 @@ class InvoiceRectificationPrint(PrinterHelper, GenInvoiceRectificationUrl, GenDe
                 customer = line.line_invoice.invoice.customer
 
         # I take address for send.
-        if hasattr(ticket.customer.external, 'person_address'):
+        if customer and hasattr(customer.external, 'person_address'):
             send_address = customer.external.person_address.filter(main=True).first()
         else:
             send_address = None

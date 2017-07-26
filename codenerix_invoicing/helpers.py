@@ -23,7 +23,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db.models import F, Sum
 
-from codenerix_invoicing.models import POS, Haulier
+from codenerix_invoicing.models import Haulier
 from codenerix_invoicing.models_sales import SalesBasket, SalesLineBasket, ROLE_BASKET_SHOPPINGCART
 from codenerix_products.models import ProductFinal
 
@@ -57,8 +57,8 @@ class ShoppingCartProxy(object):
             try:
                 self._cart = SalesBasket.objects.get(customer=customer, role=ROLE_BASKET_SHOPPINGCART)
             except ObjectDoesNotExist:
-                pos = POS.objects.filter(default=True).first()
-                self._cart = SalesBasket(customer=customer, role=ROLE_BASKET_SHOPPINGCART, point_sales=pos)
+                pos = None
+                self._cart = SalesBasket(customer=customer, role=ROLE_BASKET_SHOPPINGCART, pos_slot=pos)
                 self._cart.save()
 
             if hasattr(request.body, 'transport'):

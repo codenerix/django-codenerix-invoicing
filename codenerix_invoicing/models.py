@@ -23,10 +23,9 @@ from django.db import transaction
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import smart_text
 
-from codenerix.models import CodenerixModel, GenInterface
+from codenerix.models import CodenerixModel
 from django.conf import settings
 
-from codenerix_extensions.helpers import get_external_method
 from codenerix_extensions.files.models import GenImageFileNull
 
 from codenerix_products.models import ProductFinal
@@ -206,66 +205,6 @@ class StockMovementProduct(CodenerixModel):
 
     def __str__(self):
         return self.__unicode__()
-
-
-# #####################################
-# ######## Point of Sell (POS) ########
-# #####################################
-
-class ABSTRACT_GenPOS(models.Model):
-
-    class Meta(object):
-        abstract = True
-
-
-class POS(CodenerixModel):
-
-    class CodenerixMeta:
-        abstract = ABSTRACT_GenPOS
-
-    billing_series = models.ForeignKey(BillingSeries, related_name='poss', verbose_name=_("Billing Series"))
-    default = models.BooleanField(_("Default"), blank=False, default=False)
-
-    @staticmethod
-    def foreignkey_external():
-        return get_external_method(POS, GenPOS.CodenerixMeta.force_methods['foreignkey_pos'][0])
-
-    def __fields__(self, info):
-
-        fields = [
-            ('billing_series', _("Billing series")),
-            ('default', _("Default")),
-        ]
-        fields = get_external_method(POS, '__fields_invoicing_pos__', info, fields)
-        return fields
-
-    def __unicode__(self):
-        return u"{}".format(self.billing_series)
-
-    def __str__(self):
-        return self.__unicode__()
-
-    def save(self, *args, **kwards):
-        with transaction.atomic():
-            if self.default:
-                POS.objects.exclude(pk=self.pk).update(default=False)
-            else:
-                if not POS.objects.exclude(pk=self.pk).filter(default=True).exists():
-                    self.default = True
-        return super(POS, self).save(*args, **kwards)
-
-
-# pos
-class GenPOS(GenInterface, ABSTRACT_GenPOS):  # META: Abstract class
-    pos = models.OneToOneField(POS, related_name='external', verbose_name=_("Point of Sales"), null=True, on_delete=models.SET_NULL, blank=True)
-
-    class Meta(GenInterface.Meta):
-        abstract = True
-
-    class CodenerixMeta:
-        force_methods = {
-            'foreignkey_pos': ('CDNX_get_fk_info_invoicing_pos', _('---')),
-        }
 
 
 # transportista

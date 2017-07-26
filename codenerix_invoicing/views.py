@@ -40,8 +40,8 @@ from codenerix.views import GenList, GenCreate, GenCreateModal, GenUpdate, GenUp
 from codenerix_invoicing.models import BillingSeries, LegalNote, TypeDocument, MODELS, ProductStock
 from codenerix_invoicing.forms import BillingSeriesForm, LegalNoteForm, TypeDocumentForm, ProductStockForm, ProductStockOwnForm
 
-from codenerix_invoicing.models import StockMovement, StockMovementProduct, POS, Haulier
-from codenerix_invoicing.forms import StockMovementForm, StockMovementProductForm, POSForm, HaulierForm
+from codenerix_invoicing.models import StockMovement, StockMovementProduct, Haulier
+from codenerix_invoicing.forms import StockMovementForm, StockMovementProductForm, HaulierForm
 
 from codenerix_storages.models import StorageBatch
 from codenerix_extensions.corporate.models import CorporateImage
@@ -404,32 +404,6 @@ class StockMovementProductDetails(GenDetail):
 
 class StockMovementProductDetailModal(GenDetailModal, StockMovementProductDetails):
     pass
-
-
-class POSList(GenList):
-    model = POS
-
-
-class POSCreate(GenCreate):
-    model = POS
-    form_class = POSForm
-
-
-class POSCreateModal(GenCreateModal, POSCreate):
-    pass
-
-
-class POSUpdate(GenUpdate):
-    model = POS
-    form_class = POSForm
-
-
-class POSUpdateModal(GenUpdateModal, POSUpdate):
-    pass
-
-
-class POSDelete(GenDelete):
-    model = POS
 
 
 # ###########################################

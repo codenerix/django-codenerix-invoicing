@@ -20,14 +20,11 @@
 
 from django.utils.translation import ugettext as _
 from django.conf import settings
-from django import forms
 
 from codenerix.forms import GenModelForm
 from codenerix.widgets import WysiwygAngularInput
 
-from codenerix_extensions.helpers import get_external_model
-
-from codenerix_invoicing.models import BillingSeries, LegalNote, TypeDocument, MODELS, ProductStock, StockMovement, StockMovementProduct, POS, Haulier
+from codenerix_invoicing.models import BillingSeries, LegalNote, TypeDocument, MODELS, ProductStock, StockMovement, StockMovementProduct, Haulier
 
 
 class BillingSeriesForm(GenModelForm):
@@ -195,35 +192,6 @@ class StockMovementProductForm(GenModelForm):
                 ['quantity', 6],)
         ]
         return g
-
-
-class POSForm(GenModelForm):
-    codenerix_external_field = forms.ModelChoiceField(
-        label=POS.foreignkey_external()['label'],
-        queryset=get_external_model(POS).objects.all()
-    )
-
-    class Meta:
-        model = POS
-        exclude = []
-
-        autofill = {
-            'codenerix_external_field': ['select', 3, POS.foreignkey_external()['related']],
-        }
-
-    @staticmethod
-    def __groups_details__():
-        return [
-            (
-                _('Details'), 12,
-                ['codenerix_external_field', 4],
-                ['billing_series', 4],
-                ['default', 4],
-            ),
-        ]
-
-    def __groups__(self):
-        return self.__groups_details__()
 
 
 class HaulierForm(GenModelForm):
