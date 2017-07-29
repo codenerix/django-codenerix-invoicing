@@ -21,7 +21,7 @@
 import copy
 import datetime
 from django.core.urlresolvers import reverse
-from django.db import models, transaction
+from django.db import models, transaction, IntegrityError
 from django.utils import timezone
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
@@ -979,6 +979,25 @@ class SalesBasket(GenVersion):
             self.expiration_date = None
             self.save()
 
+    def lock_delete(self, request=None):
+        # Solo se puede eliminar si:
+        # * el pedido no tiene un pago realizado
+        # * no se ha generado un albaran, ticket o factura relaciondos a una linea
+
+        if hasattr(self, 'order_sales') and self.order_sales:
+            if self.order_sales.payment is not None:
+                return _('Cannot delete, it is related to payment')
+            if self.order_sales.line_order_sales.count() != 0:
+                lines_order = [x['pk'] for x in self.order_sales.line_order_sales.all().values('pk')]
+                if SalesLineAlbaran.objects.filter(line_order__in=lines_order).count() != 0:
+                    return _('Cannot delete, it is related to albaran')
+                if SalesLineTicket.objects.filter(line_order__in=lines_order).count() != 0:
+                    return _('Cannot delete, it is related to tickets')
+                if SalesLineInvoice.objects.filter(line_order__in=lines_order).count() != 0:
+                    return _('Cannot delete, it is related to invoices')
+
+        return super(SalesBasket, self).lock_delete()
+
 
 # nueva linea de la cesta de la compra
 class SalesLineBasket(GenLineProduct):
@@ -990,12 +1009,27 @@ class SalesLineBasket(GenLineProduct):
         fields.insert(0, ('basket', _("Basket")))
         return fields
 
+    def lock_delete(self, request=None):
+        # Solo se puede eliminar si no se ha generado un albaran, ticket o factura apartir de ella
+        if hasattr(self.basket, 'order_sales') and hasattr(self, 'line_order_sales'):
+            if self.line_order_sales.line_albaran_sales.count() != 0:
+                return _("Cannot delete line, it is related to albaran")
+            elif self.line_order_sales.line_ticket_sales.count() != 0:
+                return _("Cannot delete line, it is related to tickets")
+            elif self.line_order_sales.line_invoice_sales.count() != 0:
+                return _("Cannot delete line, it is related to invoices")
+
+        return super(SalesLineBasket, self).lock_delete(request)
+
     def save(self, *args, **kwargs):
-        if 'standard_save' in kwargs:
-            kwargs.pop('standard_save')
-            return super(self._meta.model, self).save(*args, **kwargs)
+        if self.basket.lock:
+            raise IntegrityError(_('You can not modify, locked document'))
         else:
-            return self.__save__(args, kwargs)
+            if 'standard_save' in kwargs:
+                kwargs.pop('standard_save')
+                return super(self._meta.model, self).save(*args, **kwargs)
+            else:
+                return self.__save__(args, kwargs)
 
 
 # pedidos
@@ -1039,7 +1073,7 @@ class SalesOrder(GenVersion):
 # lineas de pedidos
 class SalesLineOrder(GenLineProduct):
     order = models.ForeignKey(SalesOrder, related_name='line_order_sales', verbose_name=_("Order"))
-    line_budget = models.ForeignKey(SalesLineBasket, related_name='line_order_sales', verbose_name=_("Line budget"), null=True)
+    line_budget = models.OneToOneField(SalesLineBasket, related_name='line_order_sales', verbose_name=_("Line budget"), null=True)
     product = models.ForeignKey(ProductFinal, related_name='line_order_sales', verbose_name=_("Product"))
 
     def __fields__(self, info):
@@ -1049,11 +1083,14 @@ class SalesLineOrder(GenLineProduct):
         return fields
 
     def save(self, *args, **kwargs):
-        if 'standard_save' in kwargs:
-            kwargs.pop('standard_save')
-            return super(self._meta.model, self).save(*args, **kwargs)
+        if self.order.lock:
+            raise IntegrityError(_('You can not modify, locked document'))
         else:
-            return self.__save__(args, kwargs, order=self.order, line_budget=self.line_budget)
+            if 'standard_save' in kwargs:
+                kwargs.pop('standard_save')
+                return super(self._meta.model, self).save(*args, **kwargs)
+            else:
+                return self.__save__(args, kwargs, order=self.order, line_budget=self.line_budget)
 
 
 # albaranes
@@ -1103,11 +1140,14 @@ class SalesLineAlbaran(GenLineProductBasic):
         return fields
 
     def save(self, *args, **kwargs):
-        if 'standard_save' in kwargs:
-            kwargs.pop('standard_save')
-            return super(self._meta.model, self).save(*args, **kwargs)
+        if self.albaran.lock:
+            raise IntegrityError(_('You can not modify, locked document'))
         else:
-            return self.__save__(args, kwargs, albaran=self.albaran, line_order=self.line_order)
+            if 'standard_save' in kwargs:
+                kwargs.pop('standard_save')
+                return super(self._meta.model, self).save(*args, **kwargs)
+            else:
+                return self.__save__(args, kwargs, albaran=self.albaran, line_order=self.line_order)
 
     def calculate_total(self):
         price_base = self.line_order.price * self.quantity
@@ -1151,11 +1191,14 @@ class SalesLineTicket(GenLineProduct):
         return fields
 
     def save(self, *args, **kwargs):
-        if 'standard_save' in kwargs:
-            kwargs.pop('standard_save')
-            return super(self._meta.model, self).save(*args, **kwargs)
+        if self.ticket.lock:
+            raise IntegrityError(_('You can not modify, locked document'))
         else:
-            return self.__save__(args, kwargs, ticket=self.ticket, line_order=self.line_order)
+            if 'standard_save' in kwargs:
+                kwargs.pop('standard_save')
+                return super(self._meta.model, self).save(*args, **kwargs)
+            else:
+                return self.__save__(args, kwargs, ticket=self.ticket, line_order=self.line_order)
 
 
 # puede haber facturas o tickets rectificativos
@@ -1188,11 +1231,14 @@ class SalesLineTicketRectification(GenLineProductBasic):
         return fields
 
     def save(self, *args, **kwargs):
-        if 'standard_save' in kwargs:
-            kwargs.pop('standard_save')
-            return super(self._meta.model, self).save(*args, **kwargs)
+        if self.ticket_rectification.lock:
+            raise IntegrityError(_('You can not modify, locked document'))
         else:
-            return self.__save__(args, kwargs, ticket_rectification=self.ticket_rectification, line_ticket=self.line_ticket)
+            if 'standard_save' in kwargs:
+                kwargs.pop('standard_save')
+                return super(self._meta.model, self).save(*args, **kwargs)
+            else:
+                return self.__save__(args, kwargs, ticket_rectification=self.ticket_rectification, line_ticket=self.line_ticket)
 
     def calculate_total(self):
         price_base = self.line_ticket.price * self.quantity
@@ -1239,11 +1285,14 @@ class SalesLineInvoice(GenLineProduct):
         return fields
 
     def save(self, *args, **kwargs):
-        if 'standard_save' in kwargs:
-            kwargs.pop('standard_save')
-            return super(self._meta.model, self).save(*args, **kwargs)
+        if self.invoice.lock:
+            raise IntegrityError(_('You can not modify, locked document'))
         else:
-            return self.__save__(args, kwargs, invoice=self.invoice, line_order=self.line_order)
+            if 'standard_save' in kwargs:
+                kwargs.pop('standard_save')
+                return super(self._meta.model, self).save(*args, **kwargs)
+            else:
+                return self.__save__(args, kwargs, invoice=self.invoice, line_order=self.line_order)
 
 
 # factura rectificativa
@@ -1275,11 +1324,14 @@ class SalesLineInvoiceRectification(GenLineProductBasic):
         return fields
 
     def save(self, *args, **kwargs):
-        if 'standard_save' in kwargs:
-            kwargs.pop('standard_save')
-            return super(self._meta.model, self).save(*args, **kwargs)
+        if self.invoice_rectification.lock:
+            raise IntegrityError(_('You can not modify, locked document'))
         else:
-            return self.__save__(args, kwargs, invoice_rectification=self.invoice_rectification, line_invoice=self.line_invoice)
+            if 'standard_save' in kwargs:
+                kwargs.pop('standard_save')
+                return super(self._meta.model, self).save(*args, **kwargs)
+            else:
+                return self.__save__(args, kwargs, invoice_rectification=self.invoice_rectification, line_invoice=self.line_invoice)
 
     def calculate_total(self):
         price_base = self.line_invoice.price * self.quantity

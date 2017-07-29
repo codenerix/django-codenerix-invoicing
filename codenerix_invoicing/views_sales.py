@@ -710,7 +710,9 @@ class OrderCreateAlbaran(View):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body)['lines']
         try:
-            json_answer = json.dumps(SalesLineOrder.create_albaran_from_order(pk, list_lines))
+            context = SalesLineOrder.create_albaran_from_order(pk, list_lines)
+            context.pop('obj_final')
+            json_answer = json.dumps(context)
         except TypeError:
             raise TypeError("The structure can not be encoded to JSON")
         # Return the new context
@@ -727,7 +729,9 @@ class OrderCreateTicket(View):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body)['lines']
         try:
-            json_answer = json.dumps(SalesLineOrder.create_ticket_from_order(pk, list_lines))
+            context = SalesLineOrder.create_ticket_from_order(pk, list_lines)
+            context.pop('obj_final')
+            json_answer = json.dumps(context)
         except TypeError:
             raise TypeError("The structure can not be encoded to JSON")
         # Return the new context
@@ -744,7 +748,9 @@ class OrderCreateInvoice(View):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body)['lines']
         try:
-            json_answer = json.dumps(SalesLineOrder.create_invoice_from_order(pk, list_lines))
+            context = SalesLineOrder.create_invoice_from_order(pk, list_lines)
+            context.pop('obj_final')
+            json_answer = json.dumps(context)
         except TypeError:
             raise TypeError("The structure can not be encoded to JSON")
         # Return the new context
