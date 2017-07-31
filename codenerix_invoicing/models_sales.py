@@ -998,6 +998,29 @@ class SalesBasket(GenVersion):
 
         return super(SalesBasket, self).lock_delete()
 
+    def calculate_price_doc(self):
+        subtotal = 0
+        tax = {}
+        discount = {}
+        total = 0
+        for line in self.line_basket_sales.all():
+            price_base = line.price * line.quantity
+            subtotal += price_base
+            
+            if line.tax not in tax:
+                tax[line.tax] = 0
+            price_tax = (price_base * line.tax / 100.0)
+            tax[line.tax] += price_tax
+            
+            if line.discount not in discount:
+                discount[line.discount] = 0
+            price_discount = (price_base * line.discount / 100.0)
+            discount[line.discount] += price_discount
+            
+            total += price_base - price_discount + price_tax
+    
+        return {'subtotal': subtotal, 'taxes': tax, 'total': total, 'discounts': discount}
+
 
 # nueva linea de la cesta de la compra
 class SalesLineBasket(GenLineProduct):
