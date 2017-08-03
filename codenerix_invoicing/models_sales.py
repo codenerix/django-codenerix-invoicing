@@ -37,7 +37,7 @@ from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
  
 from codenerix_pos.models import POSSlot
 
-from codenerix_products.models import ProductFinal, TypeTax
+from codenerix_products.models import ProductFinal, TypeTax, ProductFinalOption
 from codenerix_storages.models import Storage
 from codenerix_payments.models import PaymentRequest
 
@@ -1025,6 +1025,7 @@ class SalesBasket(GenVersion):
         # retorna todos los tickets en los que hay lineas de la cesta
         return SalesTicket.objects.filter(line_ticket_sales__line_order__order__budget=self).distinct()
 
+
 # nueva linea de la cesta de la compra
 class SalesLineBasket(GenLineProduct):
     basket = models.ForeignKey(SalesBasket, related_name='line_basket_sales', verbose_name=_("Basket"))
@@ -1056,6 +1057,26 @@ class SalesLineBasket(GenLineProduct):
                 return super(self._meta.model, self).save(*args, **kwargs)
             else:
                 return self.__save__(args, kwargs)
+
+
+class SalesLineBasketOption(CodenerixModel):
+    line_budget = models.ForeignKey(SalesLineBasket, related_name='line_basket_option_sales', verbose_name=_("Line budget"))
+    product_option = models.ForeignKey(ProductFinalOption, related_name='line_basket_option_sales', verbose_name=_("Option"))
+    product_final = models.ForeignKey(ProductFinal, related_name='line_basket_option_sales', verbose_name=_("Product"))
+    quantity = models.FloatField(_("Quantity"), blank=False, null=False)
+
+    def __unicode__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return u"Order-{}".format(smart_text(self.code))
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('line_budget', _('Line budget')))
+        fields.append(('product_option', _('Product option')))
+        fields.append(('product_final', _('Product final')))
+        return fields
 
 
 # pedidos
@@ -1094,6 +1115,31 @@ class SalesOrder(GenVersion):
         for line in self.line_order_sales.all():
             total += line.calculate_total()
         return total
+    
+    def calculate_price_doc_complete(self):
+        subtotal = 0
+        tax = {}
+        discount = {}
+        total = 0
+        for opts in self.line_order_sales.all():
+            for line in opts:
+                price_base = line.price * line.quantity
+                subtotal += price_base
+                
+                if line.tax not in tax:
+                    tax[line.tax] = 0
+                price_tax = (price_base * line.tax / 100.0)
+                tax[line.tax] += price_tax
+                
+                if line.discount not in discount:
+                    discount[line.discount] = 0
+                price_discount = (price_base * line.discount / 100.0)
+                discount[line.discount] += price_discount
+                
+                total += price_base - price_discount + price_tax
+
+        return {'subtotal': subtotal, 'taxes': tax, 'total': total, 'discounts': discount}
+
 
 
 # lineas de pedidos
