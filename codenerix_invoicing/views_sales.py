@@ -272,6 +272,7 @@ class BasketDetailsWISHLIST(GenBasketWISHLISTUrl, BasketDetails):
 class BasketCreate(GenBasketUrl, GenCreate):
     model = SalesBasket
     form_class = BasketForm
+    show_details = True
 
 
 class BasketCreateModal(GenCreateModal, BasketCreate):
@@ -317,6 +318,7 @@ class BasketCreateWISHLISTModal(GenCreateModal, BasketCreateWISHLIST):
 class BasketUpdate(GenBasketUrl, GenUpdate):
     model = SalesBasket
     form_class = BasketForm
+    show_details = True
 
 
 class BasketUpdateModal(GenUpdateModal, BasketUpdate):
