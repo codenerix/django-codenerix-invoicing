@@ -601,6 +601,15 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
                             line_final.discount = line_src.discount
                             line_final.save()
 
+                            if hasattr(line_src, 'line_basket_option_sales') and line_src.line_basket_option_sales.exists():
+                                for opt_src in line_src.line_basket_option_sales.all():
+                                    opt_dst = SalesLineOrderOption()
+                                    opt_dst.line_order = line_final
+                                    opt_dst.product_option = opt_src.product_option
+                                    opt_dst.product_final = opt_src.product_final
+                                    opt_dst.quantity = opt_src.quantity
+                                    opt_dst.save()
+
                     # bloqueamos el documento origen
                     obj_src.lock = True
                     obj_src.save()
@@ -1076,6 +1085,7 @@ class SalesLineBasketOption(CodenerixModel):
         fields.append(('line_budget', _('Line budget')))
         fields.append(('product_option', _('Product option')))
         fields.append(('product_final', _('Product final')))
+        fields.append(('quantity', _('Quantity')))
         return fields
 
 
@@ -1141,7 +1151,6 @@ class SalesOrder(GenVersion):
         return {'subtotal': subtotal, 'taxes': tax, 'total': total, 'discounts': discount}
 
 
-
 # lineas de pedidos
 class SalesLineOrder(GenLineProduct):
     order = models.ForeignKey(SalesOrder, related_name='line_order_sales', verbose_name=_("Order"))
@@ -1163,6 +1172,27 @@ class SalesLineOrder(GenLineProduct):
                 return super(self._meta.model, self).save(*args, **kwargs)
             else:
                 return self.__save__(args, kwargs, order=self.order, line_budget=self.line_budget)
+
+
+class SalesLineOrderOption(CodenerixModel):
+    line_order = models.ForeignKey(SalesLineOrder, related_name='line_order_option_sales', verbose_name=_("Line Order"))
+    product_option = models.ForeignKey(ProductFinalOption, related_name='line_order_option_sales', verbose_name=_("Option"))
+    product_final = models.ForeignKey(ProductFinal, related_name='line_order_option_sales', verbose_name=_("Product"))
+    quantity = models.FloatField(_("Quantity"), blank=False, null=False)
+
+    def __unicode__(self):
+        return self.__str__()
+
+    def __str__(self):
+        return u"Order-{}".format(smart_text(self.code))
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('line_order', _('Line order')))
+        fields.append(('product_option', _('Product option')))
+        fields.append(('product_final', _('Product final')))
+        fields.append(('quantity', _('Quantity')))
+        return fields
 
 
 # albaranes
