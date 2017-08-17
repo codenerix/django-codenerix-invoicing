@@ -732,6 +732,7 @@ class LineAlbaranCreate(GenLineAlbaranUrl, GenCreate):
                 else:
                     # product unique by default
                     pfs = ProductUnique()
+                    pfs.product_final = product_final
                     pfs.stock_real = self.object.quantity
                     pfs.save()
 
