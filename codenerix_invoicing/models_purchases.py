@@ -30,15 +30,26 @@ from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
 from codenerix_extensions.files.models import GenDocumentFile
 from codenerix_products.models import ProductFinal, TypeTax, Category
 
+PAYMENT_DETAILS_AMAZON = 'AMA'
+PAYMENT_DETAILS_TRANSFER = 'TRA'
+PAYMENT_DETAILS_CARD = 'CAR'
+PAYMENT_DETAILS_CASH = 'CAS'
+PAYMENT_DETAILS_CREDIT = 'CRE'
+PAYMENT_DETAILS_PAYPAL = 'PYP'
+PAYMENT_DETAILS_30CREDIT = '30C'
+PAYMENT_DETAILS_60CREDIT = '60C'
+PAYMENT_DETAILS_90CREDIT = '90C'
+
 PAYMENT_DETAILS = (
-    ('AMA', _('Amazon')),
-    ('TRA', _('Wire transfer')),
-    ('CAR', _('Card')),
-    ('CRE', _('Credit')),
-    ('PYP', _('Paypal')),
-    ('30C', _('30 day credit')),
-    ('60C', _('60 day credit')),
-    ('90C', _('90 day credit')),
+    (PAYMENT_DETAILS_AMAZON, _('Amazon')),
+    (PAYMENT_DETAILS_TRANSFER, _('Wire transfer')),
+    (PAYMENT_DETAILS_CARD, _('Card')),
+    (PAYMENT_DETAILS_CASH, _('Cash')),
+    (PAYMENT_DETAILS_CREDIT, _('Credit')),
+    (PAYMENT_DETAILS_PAYPAL, _('Paypal')),
+    (PAYMENT_DETAILS_30CREDIT, _('30 day credit')),
+    (PAYMENT_DETAILS_60CREDIT, _('60 day credit')),
+    (PAYMENT_DETAILS_90CREDIT, _('90 day credit')),
 )
 
 FINANCE_SURCHARGE_STATUS_CHOICE = (
