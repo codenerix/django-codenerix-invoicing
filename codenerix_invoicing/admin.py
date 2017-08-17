@@ -24,6 +24,7 @@ from django.conf import settings
 from codenerix_invoicing.models import BillingSeries, LegalNote, TypeDocument, ProductStock, StockMovement, StockMovementProduct, MODELS
 from codenerix_invoicing.models_purchases import Provider, PurchasesBudget, PurchasesLineBudget, PurchasesBudgetDocument, PurchasesOrder, PurchasesLineOrder, PurchasesOrderDocument, PurchasesAlbaran, PurchasesLineAlbaran, PurchasesAlbaranDocument, PurchasesTicket, PurchasesLineTicket, PurchasesTicketDocument, PurchasesTicketRectification, PurchasesLineTicketRectification, PurchasesTicketRectificationDocument, PurchasesInvoice, PurchasesLineInvoice, PurchasesInvoiceDocument, PurchasesInvoiceRectification, PurchasesLineInvoiceRectification, PurchasesInvoiceRectificationDocument
 from codenerix_invoicing.models_sales import Address, Customer, CustomerDocument, SalesReservedProduct, SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, SalesLineInvoiceRectification, SalesBasket, SalesLineBasket
+from codenerix_invoicing.models_sales import SalesLineBasketOption
 
 admin.site.register(Provider)
 admin.site.register(PurchasesBudget)
@@ -74,6 +75,7 @@ admin.site.register(SalesLineInvoice)
 admin.site.register(SalesInvoiceRectification)
 admin.site.register(SalesLineInvoiceRectification)
 
+admin.site.register(SalesLineBasketOption)
 
 for info in MODELS:
     model = info[1]
