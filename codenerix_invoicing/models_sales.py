@@ -1020,17 +1020,17 @@ class SalesBasket(GenVersion):
         discount = {}
         total = 0
         for line in self.line_basket_sales.all():
-            price_base = line.price * line.quantity
+            price_base = round(line.price * line.quantity, 2)
             subtotal += price_base
             
             if line.tax not in tax:
                 tax[line.tax] = 0
-            price_tax = (price_base * line.tax / 100.0)
+            price_tax = round((price_base * line.tax / 100.0), 2)
             tax[line.tax] += price_tax
             
             if line.discount not in discount:
                 discount[line.discount] = 0
-            price_discount = (price_base * line.discount / 100.0)
+            price_discount = round((price_base * line.discount / 100.0), 2)
             discount[line.discount] += price_discount
             
             total += price_base - price_discount + price_tax
@@ -1081,17 +1081,17 @@ class SalesLineBasket(GenLineProduct):
         discount = {}
         total = 0
         
-        price_base = self.price * self.quantity
+        price_base = round(self.price * self.quantity, 2)
         subtotal += price_base
                 
         if self.tax not in tax:
             tax[self.tax] = 0
-            price_tax = (price_base * self.tax / 100.0)
+            price_tax = round((price_base * self.tax / 100.0), 2)
             tax[self.tax] += price_tax
                 
         if self.discount not in discount:
             discount[self.discount] = 0
-        price_discount = (price_base * self.discount / 100.0)
+        price_discount = round((price_base * self.discount / 100.0), 2)
         discount[self.discount] += price_discount
         total += price_base - price_discount + price_tax
 
@@ -1199,17 +1199,17 @@ class SalesOrder(GenVersion):
         total = 0
         for opts in self.line_order_sales.all():
             for line in opts:
-                price_base = line.price * line.quantity
+                price_base = round(line.price * line.quantity, 2)
                 subtotal += price_base
                 
                 if line.tax not in tax:
                     tax[line.tax] = 0
-                price_tax = (price_base * line.tax / 100.0)
+                price_tax = round((price_base * line.tax / 100.0), 2)
                 tax[line.tax] += price_tax
                 
                 if line.discount not in discount:
                     discount[line.discount] = 0
-                price_discount = (price_base * line.discount / 100.0)
+                price_discount = round((price_base * line.discount / 100.0), 2)
                 discount[line.discount] += price_discount
                 
                 total += price_base - price_discount + price_tax
@@ -1353,17 +1353,17 @@ class SalesTicket(GenVersion):
         discount = {}
         total = 0
         for line in self.line_ticket_sales.all():
-            price_base = line.price * line.quantity
+            price_base = round(line.price * line.quantity, 2)
             subtotal += price_base
             
             if line.tax not in tax:
                 tax[line.tax] = 0
-            price_tax = (price_base * line.tax / 100.0)
+            price_tax = round((price_base * line.tax / 100.0), 2)
             tax[line.tax] += price_tax
             
             if line.discount not in discount:
                 discount[line.discount] = 0
-            price_discount = (price_base * line.discount / 100.0)
+            price_discount = round((price_base * line.discount / 100.0), 2)
             discount[line.discount] += price_discount
             
             total += price_base - price_discount + price_tax
