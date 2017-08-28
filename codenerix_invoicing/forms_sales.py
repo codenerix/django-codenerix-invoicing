@@ -203,6 +203,48 @@ class LineBasketForm(GenModelForm):
         return g
 
 
+class LineBasketFormPack(GenModelForm):
+    packs = forms.CharField()  # widget=forms.HiddenInput())
+
+    class Meta:
+        model = SalesLineBasket
+        exclude = ['basket', 'price_recommended', 'tax', ]
+        autofill = {
+            'product': ['select', 3, 'CDNX_products_productfinals_foreign_sales_pack', ],
+        }
+        widgets = {
+            'notes': WysiwygAngularInput()
+        }
+
+    def __groups__(self):
+        g = [
+            (_('Details'), 12,
+                ['product', 6],
+                ['description', 6],
+                ['quantity', 6],
+                ['price', 6],
+                ['discount', 6],
+                ['notes', 6],)
+        ]
+        return g
+
+    @staticmethod
+    def __groups_details__():
+        g = [
+            (_('Details'), 12,
+                ['budget', 6],
+                ['product', 6],
+                ['description', 6],
+                ['quantity', 6],
+                ['price', 6],
+                ['price_recommended', 6],
+                ['discount', 6],
+                ['tax', 6],
+                ['notes', 12]),
+        ]
+        return g
+
+
 class OrderFromBudgetForm(GenModelForm):
     class Meta:
         model = SalesOrder

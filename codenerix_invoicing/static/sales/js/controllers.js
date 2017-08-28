@@ -211,4 +211,61 @@ angular.module('codenerixSalesControllers', [])
             openmodal($scope, $timeout, $uibModal, 'lg', functions, callback);
         };
     }
+])
+.controller('codenerixSalesListPackCtrl', ['$scope', '$rootScope', '$timeout', '$location', '$uibModal', '$templateCache', '$http', '$state', 'Register', 'ListMemory', 'hotkeys',
+    function($scope, $rootScope, $timeout, $location, $uibModal, $templateCache, $http, $state, Register, ListMemory, hotkeys) {
+        if (ws_entry_point==undefined) { ws_entry_point=""; }
+        multilist($scope, $rootScope, $timeout, $location, $uibModal, $templateCache, $http, $state, Register, ListMemory, 0, "/"+ws_entry_point, undefined, undefined, hotkeys);
+    }
+])
+.controller('codenerixSalesSubListPackCtrl', ['$scope', '$rootScope', '$timeout', '$location', '$uibModal', '$templateCache', '$http', '$state', 'Register', 'ListMemory','hotkeys',
+    function($scope, $rootScope, $timeout, $location, $uibModal, $templateCache, $http, $state, Register, ListMemory, hotkeys) {
+        if (ws_entry_point==undefined) { ws_entry_point=""; }
+        var listid=$state.params.listid;
+        if (listid!='') {
+            if (CDNX_tabsref==undefined) {
+                angular.forEach($scope.tabs_autorender, function(value,key) {
+                    $scope.tabs_autorender['t'+key]=false;
+                });
+                $scope.tabs_autorender['t'+$scope.tabsref[listid]]=true;
+                CDNX_tabsref=$scope.tabsref;
+            }
+            $state.go('details0.sublist'+listid+'.rows',{'listid':listid});
+            var register = angular.injector(['codenerixInlineServices']).get('Register'+listid);
+            hotkeys = undefined; // Don't use it rignt now on sublist
+            var ws = subws_entry_point[listid];
+            multilist($scope, $rootScope, $timeout, $location, $uibModal, $templateCache, $http, $state, register, ListMemory, listid, ws, undefined, true, hotkeys);
+            
+            $scope.addnewpack = function () {
+                if ($scope.data.meta.linkadd) {
+                    // Base window
+                    $scope.ws=ws+"/addpackmodal";
+                    
+                    // Base Window functions
+                    var functions = function(scope) {};
+                    var callback = function(scope) {
+                        // Close our window
+                        if (scope.base_window) {
+                            scope.base_window.dismiss('cancel');
+                        }
+                        $state.go($state.current, {listid:scope.listid});
+                        refresh(scope, $timeout, Register, undefined);
+                    };
+                    
+                    // Start modal window
+                    openmodal($scope, $timeout, $uibModal, 'lg', functions, callback);
+                }
+            };
+
+        } else {
+            // Activate autorender tabs
+            angular.forEach(tabs_js, function(tab, i){
+                if (tab.auto_open) {
+                    $state.go('details0.sublist'+i+'.rows',{'listid':i});
+                    return;
+                }
+            });
+        }
+
+    }
 ]);

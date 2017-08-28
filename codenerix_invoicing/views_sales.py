@@ -23,7 +23,7 @@ import datetime
 import json
 
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, F
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.forms.utils import ErrorList
@@ -39,18 +39,21 @@ from codenerix.views import GenList, GenCreate, GenCreateModal, GenUpdate, GenUp
 from codenerix_extensions.views import GenCreateBridge, GenUpdateBridge
 from codenerix_extensions.corporate.models import CorporateImage
 from codenerix_extensions.files.views import DocumentFileView
+from codenerix_extensions.helpers import get_language_database
+from codenerix_products.models import ProductFinal
 
 from codenerix_invoicing.models_sales import Customer, CustomerDocument, \
     SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, \
     SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, \
     SalesLineInvoiceRectification, SalesReservedProduct, SalesBasket, SalesLineBasket
 from codenerix_invoicing.models_sales import ROLE_BASKET_SHOPPINGCART, ROLE_BASKET_BUDGET, ROLE_BASKET_WISHLIST
+from codenerix_invoicing.models_sales import SalesLineBasketOption
 
 from codenerix_invoicing.forms_sales import CustomerForm, CustomerDocumentForm, \
     OrderForm, LineOrderForm, AlbaranForm, LineAlbaranForm, TicketForm, LineTicketForm, \
     TicketRectificationForm, TicketRectificationUpdateForm, LineTicketRectificationLinkedForm, LineTicketRectificationForm, InvoiceForm, LineInvoiceForm, \
     InvoiceRectificationForm, InvoiceRectificationUpdateForm, LineInvoiceRectificationForm, LineInvoiceRectificationLinkedForm, \
-    ReservedProductForm, BasketForm, LineBasketForm, OrderFromBudgetForm, OrderFromShoppingCartForm
+    ReservedProductForm, BasketForm, LineBasketForm, OrderFromBudgetForm, OrderFromShoppingCartForm, LineBasketFormPack
 from codenerix_invoicing.views import PrinterHelper
 
 from .helpers import ShoppingCartProxy
@@ -254,6 +257,7 @@ class BasketDetails(GenBasketUrl, GenDetail):
     exclude_fields = ['parent_pk', 'payment']
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslinebaskets_sublist', 'rows': 'base'},
+        {'id': 'lines2', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslinebaskets_sublist', 'rows': 'base'},
     ]
 
 
@@ -517,13 +521,152 @@ class LineBasketCreateModal(GenCreateModal, LineBasketCreate):
         return super(LineBasketCreateModal, self).form_valid(form)
 
 
+class LineBasketCreateModalPack(GenCreateModal, LineBasketCreate):
+    form_class = LineBasketFormPack
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(LineBasketCreateModalPack, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        product_pk = self.request.POST.get("product", None)
+        quantity = self.request.POST.get("quantity", None)
+        product = ProductFinal.objects.filter(pk=product_pk).first()
+        if product and quantity:
+            if product.is_pack():
+                options = product.productfinals_option.filter(active=True)
+                options_pack = []
+                for option in options:
+                    field = 'packs[{}]'.format(option.pk)
+                    opt = self.request.POST.get(field, None)
+                    if opt:
+                        opt_product = ProductFinal.objects.filter(pk=opt).first()
+                        if opt_product:
+                            options_pack.append({
+                                'product_option': option,
+                                'product_final': opt_product,
+                                'quantity': quantity
+                            })
+                        else:
+                            errors = form._errors.setdefault(field, ErrorList())
+                            errors.append(_("Product Option invalid"))
+                            return super(LineBasketCreateModalPack, self).form_invalid(form)
+                    else:
+                        errors = form._errors.setdefault(field, ErrorList())
+                        errors.append(_("Option invalid"))
+                        return super(LineBasketCreateModalPack, self).form_invalid(form)
+            else:
+                errors = form._errors.setdefault("product", ErrorList())
+                errors.append(_("The product does not pack"))
+                return super(LineBasketCreateModalPack, self).form_invalid(form)
+        else:
+            errors = form._errors.setdefault("product", ErrorList())
+            errors.append(_("Product invalid"))
+            return super(LineBasketCreateModalPack, self).form_invalid(form)
+
+        if self.__pk:
+            obj = SalesBasket.objects.get(pk=self.__pk)
+            self.request.basket = obj
+            form.instance.basket = obj
+        ret = super(LineBasketCreateModalPack, self).form_valid(form)
+        # raise Exception(ret)
+        # raise Exception(self.object, type(self.object), isinstance(self.object, SalesLineBasket), self.object.__dict__)
+        self.object.set_options(options_pack)
+        return ret
+
+
 class LineBasketUpdate(GenLineBasketUrl, GenUpdate):
     model = SalesLineBasket
     form_class = LineBasketForm
 
 
-class LineBasketUpdateModal(GenUpdateModal, LineBasketUpdate):
+class ZZZ___LineBasketUpdateModal(GenUpdateModal, LineBasketUpdate):
     pass
+
+
+class LineBasketUpdateModal(GenUpdateModal, LineBasketUpdate):
+    form_class = LineBasketForm
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        self.__line_pk = kwargs.get('pk', None)
+        if SalesLineBasketOption.objects.filter(line_budget__pk=self.__line_pk).exists():
+            self.form_class = LineBasketFormPack
+            self.__is_pack = True
+        else:
+            self.__is_pack = False
+        return super(LineBasketUpdateModal, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        # form_kwargs = super(LineBasketUpdateModal, self).get_form_kwargs(*args, **kwargs)
+        form = super(LineBasketUpdateModal, self).get_form(form_class)
+        if self.__is_pack:
+            options = []
+            lang = get_language_database()
+            initial = form.initial
+
+            for option in SalesLineBasketOption.objects.filter(line_budget__pk=self.__line_pk):
+                initial['packs[{}]'.format(option.product_option.pk)] = option.product_final.pk
+                a = {
+                    'id': option.product_option.pk,
+                    'label': getattr(option.product_option, lang).name,
+                    'products': list(option.product_option.products_pack.all().values('pk').annotate(name=F('{}__name'.format(lang)))),
+                    'selected': option.product_final.pk,
+                }
+                options.append(a)
+            # compatibility with GenForeignKey
+            initial['packs'] = json.dumps({'__JSON_DATA__': options})
+        return form
+
+    def form_valid(self, form):
+        lb = SalesLineBasket.objects.filter(pk=self.__line_pk).first()
+
+        product_old = lb.product
+        product_pk = self.request.POST.get("product", None)
+        quantity = self.request.POST.get("quantity", None)
+        product = ProductFinal.objects.filter(pk=product_pk).first()
+        if product and quantity:
+            if product.is_pack():
+                options = product.productfinals_option.filter(active=True)
+                options_pack = []
+                for option in options:
+                    field = 'packs[{}]'.format(option.pk)
+                    opt = self.request.POST.get(field, None)
+                    if opt:
+                        opt_product = ProductFinal.objects.filter(pk=opt).first()
+                        if opt_product:
+                            options_pack.append({
+                                'product_option': option,
+                                'product_final': opt_product,
+                                'quantity': quantity
+                            })
+                        else:
+                            errors = form._errors.setdefault(field, ErrorList())
+                            errors.append(_("Product Option invalid"))
+                            return super(LineBasketUpdateModal, self).form_invalid(form)
+                    else:
+                        errors = form._errors.setdefault(field, ErrorList())
+                        errors.append(_("Option invalid"))
+                        return super(LineBasketUpdateModal, self).form_invalid(form)
+            else:
+                errors = form._errors.setdefault("product", ErrorList())
+                errors.append(_("The product does not pack"))
+                return super(LineBasketUpdateModal, self).form_invalid(form)
+        else:
+            errors = form._errors.setdefault("product", ErrorList())
+            errors.append(_("Product invalid"))
+            return super(LineBasketUpdateModal, self).form_invalid(form)
+
+        # raise Exception(product_old.pk, self.object.product.pk)
+        ret = super(LineBasketUpdateModal, self).form_valid(form)
+        # raise Exception(self.object.pk, options_pack, product_old != self.object.product)
+        # raise Exception(ret)
+        # raise Exception(self.object, type(self.object), isinstance(self.object, SalesLineBasket), self.object.__dict__)
+        if product_old != self.object.product:
+            self.object.remove_options()
+        self.object.set_options(options_pack)
+        return ret
 
 
 class LineBasketDelete(GenLineBasketUrl, GenDelete):

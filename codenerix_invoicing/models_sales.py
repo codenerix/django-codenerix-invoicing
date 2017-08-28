@@ -479,14 +479,19 @@ class GenLineProductBasic(CodenerixModel):  # META: Abstract class
             other_line = other_line.exclude(pk=self.pk)
         other_line = other_line.first()
         if not self.pk and other_line:
-            other_line.quantity += self.quantity
-            other_line.save()
-            return None
-        elif self.pk and other_line:
+            if hasattr(self, 'product') and not self.product.is_pack():
+                other_line.quantity += self.quantity
+                other_line.save()
+                return other_line.pk
+            else:
+                kwargs['standard_save'] = True
+                return self.save(*args, **kwargs)
+
+        elif self.pk and other_line and not other_line.product.is_pack():
             other_line.quantity += self.quantity
             self.delete()
             other_line.save()
-            return None
+            return other_line.pk
         else:
             kwargs['standard_save'] = True
             return self.save(*args, **kwargs)
@@ -642,9 +647,11 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
         """
         si al guardar una linea asociada a un documento bloqueado (lock==True), duplicar el documento en una nueva versión
         """
+        # raise Exception(self.pk)
         return super(GenLineProduct, self).save(*args, **kwards)
 
     def __save__(self, args, kwargs, **conditional):
+        # raise Exception("B")
         if hasattr(self, 'product'):
             conditional["product"] = self.product
         if hasattr(self, 'line_order'):
@@ -1043,6 +1050,7 @@ class SalesLineBasket(GenLineProduct):
     def __fields__(self, info):
         fields = super(SalesLineBasket, self).__fields__(info)
         fields.insert(0, ('basket', _("Basket")))
+        fields.append(('line_basket_option_sales', _('Options')))
         return fields
 
     def lock_delete(self, request=None):
@@ -1067,6 +1075,64 @@ class SalesLineBasket(GenLineProduct):
             else:
                 return self.__save__(args, kwargs)
 
+    def calculate_price_doc_complete(self):
+        subtotal = 0
+        tax = {}
+        discount = {}
+        total = 0
+        
+        price_base = self.price * self.quantity
+        subtotal += price_base
+                
+        if self.tax not in tax:
+            tax[self.tax] = 0
+            price_tax = (price_base * self.tax / 100.0)
+            tax[self.tax] += price_tax
+                
+        if self.discount not in discount:
+            discount[self.discount] = 0
+        price_discount = (price_base * self.discount / 100.0)
+        discount[self.discount] += price_discount
+        total += price_base - price_discount + price_tax
+
+        return {'subtotal': subtotal, 'taxes': tax, 'total': total, 'discounts': discount}
+
+    def remove_options(self):
+        self.line_basket_option_sales.all().delete()
+
+    def set_options(self, options):
+        """
+        options = [{
+            'product_option': instance of ProductFinalOption,
+            'product_final': instance of ProductFinal,
+            'quantity': Float
+        }, ]
+        """
+        with transaction.atomic():
+            for option in options:
+                opt = self.line_basket_option_sales.filter(
+                    product_option=option['product_option']
+                ).first()
+                if opt:  # edit
+                    change = False
+                    if opt.quantity != option['quantity']:
+                        opt.quantity = option['quantity']
+                        change = True
+                    if opt.product_final != option['product_final']:
+                        opt.product_final = option['product_final']
+                        change = True
+                    if change:
+                        opt.save()
+                else:  # new
+                    opt = SalesLineBasketOption()
+                    # raise Exception(self.pk, self.__dict__, self)
+                    # raise Exception(self.pk)
+                    opt.line_budget = SalesLineBasket.objects.get(pk=self.pk)
+                    opt.product_option = option['product_option']
+                    opt.product_final = option['product_final']
+                    opt.quantity = option['quantity']
+                    opt.save()
+
 
 class SalesLineBasketOption(CodenerixModel):
     line_budget = models.ForeignKey(SalesLineBasket, related_name='line_basket_option_sales', verbose_name=_("Line budget"))
@@ -1078,7 +1144,7 @@ class SalesLineBasketOption(CodenerixModel):
         return self.__str__()
 
     def __str__(self):
-        return u"Order-{}".format(smart_text(self.code))
+        return u"{} - {}".format(self.product_option, self.product_final)
 
     def __fields__(self, info):
         fields = []
