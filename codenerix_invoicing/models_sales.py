@@ -244,10 +244,10 @@ class Customer(GenRole, CodenerixModel):
         return get_external_method(Customer, Customer.CodenerixMeta.force_methods['foreignkey_customer'][0])
 
     def __unicode__(self):
-        return u"{}".format(smart_text(self.pk))
+        return self.__str__()
 
     def __str__(self):
-        return self.__unicode__()
+        return u"{}".format(smart_text(self.external))
 
     def __fields__(self, info):
         fields = []
@@ -1325,7 +1325,6 @@ class SalesLineAlbaran(GenLineProductBasic):
 # ticket y facturas son lo mismo con un check de "tengo datos del customere"
 class SalesTicket(GenVersion):
     customer = models.ForeignKey(Customer, related_name='ticket_sales', verbose_name=_("Customer"))
-    tax = models.FloatField(_("Tax"), blank=False, null=False, default=0)
 
     def __unicode__(self):
         return u"Ticket-{}".format(smart_text(self.code))
@@ -1337,15 +1336,13 @@ class SalesTicket(GenVersion):
         fields = []
         fields.append(('customer', _('Customer')))
         fields.append(('code', _('Code')))
+        fields.append(('line_ticket_sales__line_order__product', _('Products')))
         fields.append(('date', _('Date')))
-        fields.append(('tax', _('Tax')))
+        fields.append(('calculate_price_doc', _('Total')))
         return fields
 
     def calculate_price_doc(self):
-        total = 0
-        for line in self.line_ticket_sales.all():
-            total += line.calculate_total()
-        return total
+        return self.calculate_price_doc_complete()['total']
 
     def calculate_price_doc_complete(self):
         subtotal = 0

@@ -456,9 +456,8 @@ class TicketForm(GenModelForm):
     def __groups__(self):
         g = [
             (_('Details'), 12,
-                ['customer', 4],
+                ['customer', 8],
                 ['date', 4],
-                ['tax', 4],
                 ['observations', 12],)
         ]
         return g
@@ -470,7 +469,6 @@ class TicketForm(GenModelForm):
                 ['customer', 6],
                 ['date', 6],
                 ['code', 6],
-                ['tax', 6],
                 ['lock', 6],
                 ['observations', 6],)
         ]
