@@ -52,11 +52,11 @@ limitations under the License.
 
 
 
-<table class="c-product-compare-table c-factura-print" summary="Detalles de facturación">
+<table class="c-product-compare-table c-factura-print">
 	<thead>
 		<tr>
             <th align="left" colspan="2" class="c-compare-info c-bg-white">
-                <img src="{{media_root}}{{corporate_image.company_logo}}" alt="Tienda CPU" style="width: 250px" class="c-print-logo">
+                <img src="{{media_root}}{{corporate_image.company_logo}}" style="width: 250px" class="c-print-logo">
             </th>
             <th class="">
                 <p><strong>{{ corporate_image.business_name }}</strong></p>
@@ -67,7 +67,7 @@ limitations under the License.
                 <p>{{customer.external.phone}}</p>
             </th>
             <th class="c-print-encabezado">
-                <h1 class="c-font-uppercase c-font-bold c-theme-font">{% trans "FACTURA" %}</h1>
+                <h1 class="c-font-uppercase c-font-bold c-theme-font">{% trans "INVOICE RECTIFICATION" %}</h1>
                 <h2>{% trans "Número" %}</h2>
                 <p>{{invoicerectification.code}}</p>
                 <h4>{% trans "Fecha" %}</h4>
