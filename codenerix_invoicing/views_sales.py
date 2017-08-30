@@ -377,9 +377,7 @@ class BasketForeignBudget(GenBasketBUDGETUrl, GenForeignKey):
         qs = queryset.exclude(order_sales__isnull=False)
         qs = qs.filter(role=ROLE_BASKET_BUDGET)
 
-        customer_pk = filters.get('customer', None)
-        if customer_pk:
-            qs.filter(customer=filters['customer'])
+        qs.filter(customer=filters.get('customer', None))
 
         return qs[:settings.LIMIT_FOREIGNKEY]
 
@@ -392,9 +390,7 @@ class BasketForeignShoppingCart(GenBasketSHOPPINGCARTUrl, GenForeignKey):
         qs = queryset.exclude(order_sales__isnull=False)
         qs = qs.filter(role=ROLE_BASKET_SHOPPINGCART)
 
-        customer_pk = filters.get('customer', None)
-        if customer_pk:
-            qs.filter(customer=filters['customer'])
+        qs.filter(customer=filters.get('customer', None))
 
         return qs[:settings.LIMIT_FOREIGNKEY]
 
@@ -749,6 +745,7 @@ class OrderCreateModal(GenCreateModal, OrderCreate):
 
 class OrderCreateModalFromBudget(GenCreateModal, OrderCreate):
     form_class = OrderFromBudgetForm
+    hide_foreignkey_button = True
 
     def form_valid(self, form):
         r = super(OrderCreateModalFromBudget, self).form_valid(form)
@@ -763,6 +760,7 @@ class OrderCreateModalFromBudget(GenCreateModal, OrderCreate):
 
 class OrderCreateModalFromShoppingCart(GenCreateModal, OrderCreate):
     form_class = OrderFromShoppingCartForm
+    hide_foreignkey_button = True
 
     def form_valid(self, form):
         r = super(OrderCreateModalFromShoppingCart, self).form_valid(form)
