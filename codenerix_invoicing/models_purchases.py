@@ -30,6 +30,18 @@ from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
 from codenerix_extensions.files.models import GenDocumentFile
 from codenerix_products.models import ProductFinal, TypeTax, Category
 
+KIND_CARD_VISA = 'VIS'
+KIND_CARD_MASTER = 'MAS'
+KIND_CARD_AMERICAN = 'AME'
+KIND_CARD_OTHER = 'OTH'
+
+KIND_CARD = (
+    (KIND_CARD_VISA, _('Visa')),
+    (KIND_CARD_MASTER, _('MasterCard')),
+    (KIND_CARD_AMERICAN, _('American Express')),
+    (KIND_CARD_OTHER, _('Other')),
+)
+
 PAYMENT_DETAILS_AMAZON = 'AMA'
 PAYMENT_DETAILS_TRANSFER = 'TRA'
 PAYMENT_DETAILS_CARD = 'CAR'
