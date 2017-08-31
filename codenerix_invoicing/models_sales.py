@@ -411,6 +411,11 @@ class GenVersion(CodenerixModel):  # META: Abstract class
     """
     si al guardar una linea asociada a un documento bloqueado (lock==True), duplicar el documento en una nueva versión
     """
+    # additional information
+    subtotal = models.FloatField(_("Subtotal"), blank=False, null=False, default=0, editable=False)
+    discounts = models.FloatField(_("Discounts"), blank=False, null=False, default=0, editable=False)
+    taxes = models.FloatField(_("Taxes"), blank=False, null=False, default=0, editable=False)
+    total = models.FloatField(_("Total"), blank=False, null=False, default=0, editable=False)
 
     @staticmethod
     def getcode(model, real=False):
@@ -466,12 +471,52 @@ class GenVersion(CodenerixModel):  # META: Abstract class
 
         return super(GenVersion, self).save(*args, **kwards)
 
+    def update_totales(self):
+        # calculate totals and save
+        totales = self.calculate_price_doc_complete()
+        self.subtotal = totales['subtotal']
+        self.total = totales['total']
+        self.discounts = sum(totales['discounts'].values())
+        self.taxes = sum(totales['taxes'].values())
+        self.save()
+
+    def calculate_price_doc_complete(self, queryset=None):
+        # calculate totals with details
+        if queryset:
+            subtotal = 0
+            tax = {}
+            discount = {}
+            total = 0
+            for line in queryset:
+                subtotal += line.subtotal
+                
+                if line.tax not in tax:
+                    tax[line.tax] = 0
+                price_tax = line.taxes
+                tax[line.tax] += price_tax
+                
+                if line.discount not in discount:
+                    discount[line.discount] = 0
+                price_discount = line.discounts
+                discount[line.discount] += price_discount
+                
+                total += line.subtotal - price_discount + price_tax
+        
+            return {'subtotal': subtotal, 'taxes': tax, 'total': total, 'discounts': discount}
+        else:
+            raise Exception(_("Queryset undefined!!"))
+
 
 class GenLineProductBasic(CodenerixModel):  # META: Abstract class
     class Meta(CodenerixModel.Meta):
         abstract = True
     quantity = models.FloatField(_("Quantity"), blank=False, null=False)
     notes = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
+    # additional information
+    subtotal = models.FloatField(_("Subtotal"), blank=False, null=False, default=0, editable=False)
+    discounts = models.FloatField(_("Discounts"), blank=False, null=False, default=0, editable=False)
+    taxes = models.FloatField(_("Taxes"), blank=False, null=False, default=0, editable=False)
+    total = models.FloatField(_("Total"), blank=False, null=False, default=0, editable=False)
 
     def __save__(self, args, kwargs, **conditional):
         other_line = self._meta.model.objects.filter(**conditional)
@@ -513,7 +558,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
     price = models.FloatField(_("Price"), blank=False, null=False)
     tax = models.FloatField(_("Tax"), blank=True, null=True, default=0)
 
-    def __unicode__(self):
+    def __str__(self):
         description = ''
         if hasattr(self, 'description'):
             description = self.description
@@ -523,8 +568,8 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
             description = self.line_ticket.description
         return u"{} - {}".format(smart_text(description), smart_text(self.quantity))
 
-    def __str__(self):
-        return self.__unicode__()
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
@@ -533,11 +578,21 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
         fields.append(('price', _("Price")))
         fields.append(('discount', _("Discount")))
         fields.append(('tax', _("Tax")))
+        fields.append(('total', _("Total")))
         return fields
 
     def calculate_total(self):
-        price_base = self.price * self.quantity
-        return price_base - (price_base * self.discount / 100.0) + (price_base * self.tax / 100.0)
+        # compatibility with old version
+        return self.total
+
+    def update_total(self, force_save=True):
+        # calculate totals
+        self.subtotal = self.price * self.quantity
+        self.taxes = (self.subtotal * self.tax / 100.0)
+        self.discounts = (self.subtotal * self.discount / 100.0)
+        self.total = self.subtotal - self.discounts + self.taxes
+        if force_save:
+            self.save()
 
     @staticmethod
     def create_document_from_another(pk, list_lines,
@@ -647,11 +702,10 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
         """
         si al guardar una linea asociada a un documento bloqueado (lock==True), duplicar el documento en una nueva versión
         """
-        # raise Exception(self.pk)
+        self.update_total(force_save=False)
         return super(GenLineProduct, self).save(*args, **kwards)
 
     def __save__(self, args, kwargs, **conditional):
-        # raise Exception("B")
         if hasattr(self, 'product'):
             conditional["product"] = self.product
         if hasattr(self, 'line_order'):
@@ -939,6 +993,10 @@ class SalesBasket(GenVersion):
         fields.append(('address_delivery', _('Address delivery')))
         fields.append(('address_invoice', _('Address invoice')))
         fields.append(('haulier', _('Haulier')))
+        fields.append(('subtotal', _('Subtotal')))
+        fields.append(('discounts', _('Discounts')))
+        fields.append(('taxes', _('Taxes')))
+        fields.append(('total', _('Total')))
         return fields
 
     def pass_to_budget(self, lines=None):
@@ -1015,28 +1073,8 @@ class SalesBasket(GenVersion):
         return super(SalesBasket, self).lock_delete()
 
     def calculate_price_doc_complete(self):
-        subtotal = 0
-        tax = {}
-        discount = {}
-        total = 0
-        for line in self.line_basket_sales.all():
-            price_base = round(line.price * line.quantity, 2)
-            subtotal += price_base
-            
-            if line.tax not in tax:
-                tax[line.tax] = 0
-            price_tax = round((price_base * line.tax / 100.0), 2)
-            tax[line.tax] += price_tax
-            
-            if line.discount not in discount:
-                discount[line.discount] = 0
-            price_discount = round((price_base * line.discount / 100.0), 2)
-            discount[line.discount] += price_discount
-            
-            total += price_base - price_discount + price_tax
-    
-        return {'subtotal': subtotal, 'taxes': tax, 'total': total, 'discounts': discount}
-
+        return super(SalesBasket, self).calculate_price_doc_complete(self.line_basket_sales.all())
+        
     def list_tickets(self):
         # retorna todos los tickets en los que hay lineas de la cesta
         return SalesTicket.objects.filter(line_ticket_sales__line_order__order__budget=self).distinct()
@@ -1071,31 +1109,11 @@ class SalesLineBasket(GenLineProduct):
         else:
             if 'standard_save' in kwargs:
                 kwargs.pop('standard_save')
-                return super(self._meta.model, self).save(*args, **kwargs)
+                result = super(self._meta.model, self).save(*args, **kwargs)
+                self.basket.update_totales()
+                return result
             else:
                 return self.__save__(args, kwargs)
-
-    def calculate_price_doc_complete(self):
-        subtotal = 0
-        tax = {}
-        discount = {}
-        total = 0
-        
-        price_base = round(self.price * self.quantity, 2)
-        subtotal += price_base
-                
-        if self.tax not in tax:
-            tax[self.tax] = 0
-            price_tax = round((price_base * self.tax / 100.0), 2)
-            tax[self.tax] += price_tax
-                
-        if self.discount not in discount:
-            discount[self.discount] = 0
-        price_discount = round((price_base * self.discount / 100.0), 2)
-        discount[self.discount] += price_discount
-        total += price_base - price_discount + price_tax
-
-        return {'subtotal': subtotal, 'taxes': tax, 'total': total, 'discounts': discount}
 
     def remove_options(self):
         self.line_basket_option_sales.all().delete()
@@ -1187,34 +1205,10 @@ class SalesOrder(GenVersion):
         return fields
 
     def calculate_price_doc(self):
-        total = 0
-        for line in self.line_order_sales.all():
-            total += line.calculate_total()
-        return total
+        return self.total
     
     def calculate_price_doc_complete(self):
-        subtotal = 0
-        tax = {}
-        discount = {}
-        total = 0
-        for opts in self.line_order_sales.all():
-            for line in opts:
-                price_base = round(line.price * line.quantity, 2)
-                subtotal += price_base
-                
-                if line.tax not in tax:
-                    tax[line.tax] = 0
-                price_tax = round((price_base * line.tax / 100.0), 2)
-                tax[line.tax] += price_tax
-                
-                if line.discount not in discount:
-                    discount[line.discount] = 0
-                price_discount = round((price_base * line.discount / 100.0), 2)
-                discount[line.discount] += price_discount
-                
-                total += price_base - price_discount + price_tax
-
-        return {'subtotal': subtotal, 'taxes': tax, 'total': total, 'discounts': discount}
+        return super(SalesBasket, self).calculate_price_doc_complete(self.line_order_sales.all())
 
 
 # lineas de pedidos
@@ -1235,7 +1229,9 @@ class SalesLineOrder(GenLineProduct):
         else:
             if 'standard_save' in kwargs:
                 kwargs.pop('standard_save')
-                return super(self._meta.model, self).save(*args, **kwargs)
+                result = super(self._meta.model, self).save(*args, **kwargs)
+                self.order.update_totales()
+                return result
             else:
                 return self.__save__(args, kwargs, order=self.order, line_budget=self.line_budget)
 
@@ -1281,10 +1277,10 @@ class SalesAlbaran(GenVersion):
         return fields
 
     def calculate_price_doc(self):
-        total = 0
-        for line in self.line_albaran_sales.all():
-            total += line.calculate_total()
-        return total
+        return self.total
+    
+    def calculate_price_doc_complete(self):
+        return super(SalesBasket, self).calculate_price_doc_complete(self.line_albaran_sales.all())
 
 
 # lineas de albaranes
@@ -1307,19 +1303,29 @@ class SalesLineAlbaran(GenLineProductBasic):
         fields.append(('invoiced', _("Invoiced")))
         return fields
 
+    def update_total(self, force_save=True):
+        self.subtotal = self.line_order.price * self.quantity
+        self.taxes = (self.subtotal * self.tax / 100.0)
+        self.discounts = (self.subtotal * self.discount / 100.0)
+        self.total = self.subtotal - self.discounts + self.taxes
+        if force_save:
+            self.save()
+
     def save(self, *args, **kwargs):
         if self.albaran.lock:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
             if 'standard_save' in kwargs:
                 kwargs.pop('standard_save')
-                return super(self._meta.model, self).save(*args, **kwargs)
+                self.update_total(force_save=False)
+                result = super(self._meta.model, self).save(*args, **kwargs)
+                self.albaran.update_totales()
+                return result
             else:
                 return self.__save__(args, kwargs, albaran=self.albaran, line_order=self.line_order)
 
     def calculate_total(self):
-        price_base = self.line_order.price * self.quantity
-        return price_base - (price_base * self.line_order.discount / 100.0) + (price_base * self.line_order.tax / 100.0)
+        return self.total
 
 
 # ticket y facturas son lo mismo con un check de "tengo datos del customere"
@@ -1338,34 +1344,14 @@ class SalesTicket(GenVersion):
         fields.append(('code', _('Code')))
         fields.append(('line_ticket_sales__line_order__product', _('Products')))
         fields.append(('date', _('Date')))
-        fields.append(('calculate_price_doc', _('Total')))
+        fields.append(('total', _('Total')))
         return fields
 
     def calculate_price_doc(self):
-        return self.calculate_price_doc_complete()['total']
+        return self.total
 
     def calculate_price_doc_complete(self):
-        subtotal = 0
-        tax = {}
-        discount = {}
-        total = 0
-        for line in self.line_ticket_sales.all():
-            price_base = round(line.price * line.quantity, 2)
-            subtotal += price_base
-            
-            if line.tax not in tax:
-                tax[line.tax] = 0
-            price_tax = round((price_base * line.tax / 100.0), 2)
-            tax[line.tax] += price_tax
-            
-            if line.discount not in discount:
-                discount[line.discount] = 0
-            price_discount = round((price_base * line.discount / 100.0), 2)
-            discount[line.discount] += price_discount
-            
-            total += price_base - price_discount + price_tax
-    
-        return {'subtotal': subtotal, 'taxes': tax, 'total': total, 'discounts': discount}
+        return super(SalesBasket, self).calculate_price_doc_complete(self.line_ticket_sales.all())
 
 
 class SalesLineTicket(GenLineProduct):
@@ -1384,7 +1370,9 @@ class SalesLineTicket(GenLineProduct):
         else:
             if 'standard_save' in kwargs:
                 kwargs.pop('standard_save')
-                return super(self._meta.model, self).save(*args, **kwargs)
+                result = super(self._meta.model, self).save(*args, **kwargs)
+                self.ticket.update_totales()
+                return result
             else:
                 return self.__save__(args, kwargs, ticket=self.ticket, line_order=self.line_order)
 
@@ -1394,17 +1382,17 @@ class SalesLineTicket(GenLineProduct):
 class SalesTicketRectification(GenInvoiceRectification):
     ticket = models.ForeignKey(SalesTicket, related_name='ticketrectification_sales', verbose_name=_("Ticket"), null=True)
 
-    def calculate_price_doc(self):
-        total = 0
-        for line in self.line_ticketrectification_sales.all():
-            total += line.calculate_total()
-        return total
-
     def __fields__(self, info):
         fields = super(SalesTicketRectification, self).__fields__(info)
         fields.insert(0, ('ticket', _("Ticket")))
         fields.insert(0, ('ticket__customer', _("Customer")))
         return fields
+
+    def calculate_price_doc(self):
+        return self.total
+
+    def calculate_price_doc_complete(self):
+        return super(SalesBasket, self).calculate_price_doc_complete(self.line_ticketrectification_sales.all())
 
 
 class SalesLineTicketRectification(GenLineProductBasic):
@@ -1418,19 +1406,29 @@ class SalesLineTicketRectification(GenLineProductBasic):
         fields.append(('quantity', _("Quantity")))
         return fields
 
+    def update_total(self, force_save=True):
+        self.subtotal = self.line_ticket.price * self.quantity
+        self.taxes = (self.subtotal * self.tax / 100.0)
+        self.discounts = (self.subtotal * self.discount / 100.0)
+        self.total = self.subtotal - self.discounts + self.taxes
+        if force_save:
+            self.save()
+
     def save(self, *args, **kwargs):
         if self.ticket_rectification.lock:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
             if 'standard_save' in kwargs:
                 kwargs.pop('standard_save')
-                return super(self._meta.model, self).save(*args, **kwargs)
+                self.update_total(force_save=False)
+                result = super(self._meta.model, self).save(*args, **kwargs)
+                self.create_ticket_from_order.update_totales()
+                return result
             else:
                 return self.__save__(args, kwargs, ticket_rectification=self.ticket_rectification, line_ticket=self.line_ticket)
 
     def calculate_total(self):
-        price_base = self.line_ticket.price * self.quantity
-        return price_base - (price_base * self.line_ticket.discount / 100.0) + (price_base * self.line_ticket.tax / 100.0)
+        return self.total
 
 
 # facturas
@@ -1456,10 +1454,10 @@ class SalesInvoice(GenVersion):
         return fields
 
     def calculate_price_doc(self):
-        total = 0
-        for line in self.line_invoice_sales.all():
-            total += line.calculate_total()
-        return total
+        return self.total
+
+    def calculate_price_doc_complete(self):
+        return super(SalesBasket, self).calculate_price_doc_complete(self.line_invoice_sales.all())
 
 
 class SalesLineInvoice(GenLineProduct):
@@ -1478,7 +1476,9 @@ class SalesLineInvoice(GenLineProduct):
         else:
             if 'standard_save' in kwargs:
                 kwargs.pop('standard_save')
-                return super(self._meta.model, self).save(*args, **kwargs)
+                result = super(self._meta.model, self).save(*args, **kwargs)
+                self.invoice.update_totales()
+                return result
             else:
                 return self.__save__(args, kwargs, invoice=self.invoice, line_order=self.line_order)
 
@@ -1487,17 +1487,17 @@ class SalesLineInvoice(GenLineProduct):
 class SalesInvoiceRectification(GenInvoiceRectification):
     invoice = models.ForeignKey(SalesInvoice, related_name='invoicerectification_sales', verbose_name=_("Invoice"), null=True)
 
-    def calculate_price_doc(self):
-        total = 0
-        for line in self.line_invoicerectification_sales.all():
-            total += line.calculate_total()
-        return total
-
     def __fields__(self, info):
         fields = super(SalesInvoiceRectification, self).__fields__(info)
         fields.insert(0, ('invoice', _("Invoices")))
         fields.insert(0, ('invoice__customer', _("Customer")))
         return fields
+
+    def calculate_price_doc(self):
+        return self.total
+
+    def calculate_price_doc_complete(self):
+        return super(SalesBasket, self).calculate_price_doc_complete(self.line_invoicerectification_sales.all())
 
 
 class SalesLineInvoiceRectification(GenLineProductBasic):
@@ -1511,16 +1511,26 @@ class SalesLineInvoiceRectification(GenLineProductBasic):
         fields.append(('quantity', _("Quantity")))
         return fields
 
+    def update_total(self, force_save=True):
+        self.subtotal = self.line_invoice.price * self.quantity
+        self.taxes = (self.subtotal * self.tax / 100.0)
+        self.discounts = (self.subtotal * self.discount / 100.0)
+        self.total = self.subtotal - self.discounts + self.taxes
+        if force_save:
+            self.save()
+
     def save(self, *args, **kwargs):
         if self.invoice_rectification.lock:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
             if 'standard_save' in kwargs:
                 kwargs.pop('standard_save')
-                return super(self._meta.model, self).save(*args, **kwargs)
+                result = super(self._meta.model, self).save(*args, **kwargs)
+                self.update_total(force_save=False)
+                self.invoice_rectification.update_totales()
+                return result
             else:
                 return self.__save__(args, kwargs, invoice_rectification=self.invoice_rectification, line_invoice=self.line_invoice)
 
     def calculate_total(self):
-        price_base = self.line_invoice.price * self.quantity
-        return price_base - (price_base * self.line_invoice.discount / 100.0) + (price_base * self.line_invoice.tax / 100.0)
+        return self.total
