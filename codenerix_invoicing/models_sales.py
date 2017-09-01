@@ -25,6 +25,7 @@ from django.db import models, transaction, IntegrityError
 from django.utils import timezone
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
+from django.conf import settings
 
 from codenerix.models import GenInterface, CodenerixModel
 from codenerix.models_people import GenRole
@@ -416,6 +417,8 @@ class GenVersion(CodenerixModel):  # META: Abstract class
     discounts = models.FloatField(_("Discounts"), blank=False, null=False, default=0, editable=False)
     taxes = models.FloatField(_("Taxes"), blank=False, null=False, default=0, editable=False)
     total = models.FloatField(_("Total"), blank=False, null=False, default=0, editable=False)
+    # logical deletion
+    removed = models.BooleanField(_("Removed"), blank=False, default=False, editable=False)
 
     @staticmethod
     def getcode(model, real=False):
@@ -430,6 +433,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
         return code
 
     def save(self, *args, **kwards):
+        force_save = kwargs.get('force_save', False)
         if self.pk:
             obj = self._meta.model.objects.get(pk=self.pk)
 
@@ -457,7 +461,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
             #####################
 
             # Si está bloqueado y además se ha cambiado algo más, además del lock, se duplica
-            if obj.lock is True and need_duplicate is True:
+            if force_save is False and obj.lock is True and need_duplicate is True:
                 # parent pk
                 if self.parent_pk is None:
                     self.parent_pk = self.pk
@@ -471,14 +475,22 @@ class GenVersion(CodenerixModel):  # META: Abstract class
 
         return super(GenVersion, self).save(*args, **kwards)
 
-    def update_totales(self):
+    def delete(self):
+        if not hasattr(settings, 'CDNX_INVOICING_LOGICAL_DELETION') or settings.CDNX_INVOICING_LOGICAL_DELETION is False:
+            return super(GenVersion, self).delete()
+        else:
+            self.removed = True
+            self.save(force_save=True)
+
+    def update_totales(self, force_save=True):
         # calculate totals and save
         totales = self.calculate_price_doc_complete()
         self.subtotal = totales['subtotal']
         self.total = totales['total']
         self.discounts = sum(totales['discounts'].values())
         self.taxes = sum(totales['taxes'].values())
-        self.save()
+        if force_save:
+            self.save()
 
     def calculate_price_doc_complete(self, queryset=None):
         # calculate totals with details
@@ -517,6 +529,8 @@ class GenLineProductBasic(CodenerixModel):  # META: Abstract class
     discounts = models.FloatField(_("Discounts"), blank=False, null=False, default=0, editable=False)
     taxes = models.FloatField(_("Taxes"), blank=False, null=False, default=0, editable=False)
     total = models.FloatField(_("Total"), blank=False, null=False, default=0, editable=False)
+    # logical deletion
+    removed = models.BooleanField(_("Removed"), blank=False, default=False, editable=False)
 
     def __save__(self, args, kwargs, **conditional):
         other_line = self._meta.model.objects.filter(**conditional)
@@ -540,6 +554,13 @@ class GenLineProductBasic(CodenerixModel):  # META: Abstract class
         else:
             kwargs['standard_save'] = True
             return self.save(*args, **kwargs)
+
+    def delete(self):
+        if not hasattr(settings, 'CDNX_INVOICING_LOGICAL_DELETION') or settings.CDNX_INVOICING_LOGICAL_DELETION is False:
+            return super(GenLineProductBasic, self).delete()
+        else:
+            self.removed = True
+            self.save(force_save=True)
 
 
 # lineas de productos
@@ -703,6 +724,8 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
         si al guardar una linea asociada a un documento bloqueado (lock==True), duplicar el documento en una nueva versión
         """
         self.update_total(force_save=False)
+        if 'force_save' in kwards:
+            kwards.pop('force_save')
         return super(GenLineProduct, self).save(*args, **kwards)
 
     def __save__(self, args, kwargs, **conditional):
@@ -1073,7 +1096,7 @@ class SalesBasket(GenVersion):
         return super(SalesBasket, self).lock_delete()
 
     def calculate_price_doc_complete(self):
-        return super(SalesBasket, self).calculate_price_doc_complete(self.line_basket_sales.all())
+        return super(SalesBasket, self).calculate_price_doc_complete(self.line_basket_sales.filter(removed=False))
         
     def list_tickets(self):
         # retorna todos los tickets en los que hay lineas de la cesta
@@ -1104,7 +1127,8 @@ class SalesLineBasket(GenLineProduct):
         return super(SalesLineBasket, self).lock_delete(request)
 
     def save(self, *args, **kwargs):
-        if self.basket.lock:
+        force = kwargs.get('force_save', False)
+        if self.basket.lock and force is False:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
             if 'standard_save' in kwargs:
@@ -1208,7 +1232,7 @@ class SalesOrder(GenVersion):
         return self.total
     
     def calculate_price_doc_complete(self):
-        return super(SalesBasket, self).calculate_price_doc_complete(self.line_order_sales.all())
+        return super(SalesOrder, self).calculate_price_doc_complete(self.line_order_sales.filter(removed=False))
 
 
 # lineas de pedidos
@@ -1224,7 +1248,8 @@ class SalesLineOrder(GenLineProduct):
         return fields
 
     def save(self, *args, **kwargs):
-        if self.order.lock:
+        force = kwargs.get('force_save', False)
+        if self.order.lock and force is False:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
             if 'standard_save' in kwargs:
@@ -1280,7 +1305,7 @@ class SalesAlbaran(GenVersion):
         return self.total
     
     def calculate_price_doc_complete(self):
-        return super(SalesBasket, self).calculate_price_doc_complete(self.line_albaran_sales.all())
+        return super(SalesAlbaran, self).calculate_price_doc_complete(self.line_albaran_sales.filter(removed=False))
 
 
 # lineas de albaranes
@@ -1312,7 +1337,8 @@ class SalesLineAlbaran(GenLineProductBasic):
             self.save()
 
     def save(self, *args, **kwargs):
-        if self.albaran.lock:
+        force = kwargs.get('force_save', False)
+        if self.albaran.lock and force is False:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
             if 'standard_save' in kwargs:
@@ -1351,7 +1377,7 @@ class SalesTicket(GenVersion):
         return self.total
 
     def calculate_price_doc_complete(self):
-        return super(SalesBasket, self).calculate_price_doc_complete(self.line_ticket_sales.all())
+        return super(SalesTicket, self).calculate_price_doc_complete(self.line_ticket_sales.filter(removed=False))
 
 
 class SalesLineTicket(GenLineProduct):
@@ -1365,7 +1391,8 @@ class SalesLineTicket(GenLineProduct):
         return fields
 
     def save(self, *args, **kwargs):
-        if self.ticket.lock:
+        force = kwargs.get('force_save', False)
+        if self.ticket.lock and force is False:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
             if 'standard_save' in kwargs:
@@ -1392,7 +1419,7 @@ class SalesTicketRectification(GenInvoiceRectification):
         return self.total
 
     def calculate_price_doc_complete(self):
-        return super(SalesBasket, self).calculate_price_doc_complete(self.line_ticketrectification_sales.all())
+        return super(SalesTicketRectification, self).calculate_price_doc_complete(self.line_ticketrectification_sales.filter(removed=False))
 
 
 class SalesLineTicketRectification(GenLineProductBasic):
@@ -1415,7 +1442,8 @@ class SalesLineTicketRectification(GenLineProductBasic):
             self.save()
 
     def save(self, *args, **kwargs):
-        if self.ticket_rectification.lock:
+        force = kwargs.get('force_save', False)
+        if self.ticket_rectification.lock and force is False:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
             if 'standard_save' in kwargs:
@@ -1457,7 +1485,7 @@ class SalesInvoice(GenVersion):
         return self.total
 
     def calculate_price_doc_complete(self):
-        return super(SalesBasket, self).calculate_price_doc_complete(self.line_invoice_sales.all())
+        return super(SalesInvoice, self).calculate_price_doc_complete(self.line_invoice_sales.filter(removed=False))
 
 
 class SalesLineInvoice(GenLineProduct):
@@ -1471,7 +1499,8 @@ class SalesLineInvoice(GenLineProduct):
         return fields
 
     def save(self, *args, **kwargs):
-        if self.invoice.lock:
+        force = kwargs.get('force_save', False)
+        if self.invoice.lock and force is False:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
             if 'standard_save' in kwargs:
@@ -1497,7 +1526,7 @@ class SalesInvoiceRectification(GenInvoiceRectification):
         return self.total
 
     def calculate_price_doc_complete(self):
-        return super(SalesBasket, self).calculate_price_doc_complete(self.line_invoicerectification_sales.all())
+        return super(SalesInvoiceRectification, self).calculate_price_doc_complete(self.line_invoicerectification_sales.filter(removed=False))
 
 
 class SalesLineInvoiceRectification(GenLineProductBasic):
@@ -1520,7 +1549,8 @@ class SalesLineInvoiceRectification(GenLineProductBasic):
             self.save()
 
     def save(self, *args, **kwargs):
-        if self.invoice_rectification.lock:
+        force = kwargs.get('force_save', False)
+        if self.invoice_rectification.lock and force is False:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
             if 'standard_save' in kwargs:

@@ -38,6 +38,7 @@ Quickstart
     CDNX_INVOICING_URL_COMMON = 'invoicing'
     CDNX_INVOICING_URL_PURCHASES = 'purchases'
     CDNX_INVOICING_URL_SALES = 'sales'
+    CDNX_INVOICING_LOGICAL_DELETION = True  # Mark registers as 'removed', but it doesn't really delete them.
 
 4. Since Codenerix Invoicing is a library, you only need to import its parts into your project and use them.
 
