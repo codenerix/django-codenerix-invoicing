@@ -24,12 +24,17 @@ from django.utils.translation import ugettext as _
 from codenerix.forms import GenModelForm
 from codenerix.widgets import WysiwygAngularInput
 from codenerix_extensions.helpers import get_external_model
+from codenerix_products.models import TypeTax
 
-from codenerix_invoicing.models_sales import Customer, CustomerDocument, \
-    SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, \
-    SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, \
-    SalesLineInvoiceRectification, SalesReservedProduct, \
-    SalesBasket, SalesLineBasket
+from .models_sales import Customer, CustomerDocument
+from .models_sales import SalesBasket, SalesLineBasket
+from .models_sales import SalesOrder, SalesLineOrder
+from .models_sales import SalesAlbaran, SalesLineAlbaran
+from .models_sales import SalesTicket, SalesLineTicket
+from .models_sales import SalesTicketRectification, SalesLineTicketRectification
+from .models_sales import SalesInvoice, SalesLineInvoice
+from .models_sales import SalesInvoiceRectification, SalesLineInvoiceRectification
+from .models_sales import SalesReservedProduct
 
 
 class CustomerForm(GenModelForm):
@@ -159,16 +164,28 @@ class BasketForm(GenModelForm):
                 ['role', 6],
                 ['haulier', 4],
                 ['pos_slot', 6],),
+            (
+                _('Total'), 12,
+                ['subtotal', 6],
+                ['discounts', 6],
+                ['taxes', 6],
+                ['total', 6],
+            )
         ]
         return g
 
 
 class LineBasketForm(GenModelForm):
+    price = forms.FloatField(label=_('Price with tax'), widget=forms.NumberInput(attrs={"disabled": 'disabled'}))
+    tax = forms.FloatField(label=_('Tax hidden'), widget=forms.NumberInput(attrs={"disabled": 'disabled'}))
+    type_tax = forms.ModelChoiceField(label=_('Tax'), queryset=TypeTax.objects.all())
+
     class Meta:
         model = SalesLineBasket
-        exclude = ['basket', 'price_recommended', 'tax', ]
+        exclude = ['basket', 'price_recommended', ]
         autofill = {
             'product': ['select', 3, 'CDNX_products_productfinals_foreign_sales', ],
+            'type_tax': ['select', 3, 'CDNX_products_typetaxs_foreing', ],
         }
         widgets = {
             'notes': WysiwygAngularInput()
@@ -180,7 +197,10 @@ class LineBasketForm(GenModelForm):
                 ['product', 6],
                 ['description', 6],
                 ['quantity', 6],
+                ['price_base', 6, {'extra': ['ng-controller=codenerixSalesLineBasketCtrl', 'ng-change=update_price()']}],
                 ['price', 6],
+                ['type_tax', 6, {'extra': ['ng-controller=codenerixSalesLineBasketCtrl', 'ng-blur=update_price()']}],
+                ['tax', 6],
                 ['discount', 6],
                 ['notes', 6],)
         ]
@@ -194,7 +214,7 @@ class LineBasketForm(GenModelForm):
                 ['product', 6],
                 ['description', 6],
                 ['quantity', 6],
-                ['price', 6],
+                ['price_base', 6],
                 ['price_recommended', 6],
                 ['discount', 6],
                 ['tax', 6],
@@ -222,7 +242,7 @@ class LineBasketFormPack(GenModelForm):
                 ['product', 6],
                 ['description', 6],
                 ['quantity', 6],
-                ['price', 6],
+                ['price_base', 6],
                 ['discount', 6],
                 ['notes', 6],)
         ]
@@ -236,7 +256,7 @@ class LineBasketFormPack(GenModelForm):
                 ['product', 6],
                 ['description', 6],
                 ['quantity', 6],
-                ['price', 6],
+                ['price_base', 6],
                 ['price_recommended', 6],
                 ['discount', 6],
                 ['tax', 6],
@@ -310,14 +330,24 @@ class OrderForm(GenModelForm):
         g = [
             (_('Details'), 12,
                 ['customer', 6],
+                ['budget', 6],
                 ['date', 6],
                 ['code', 6],
                 ['storage', 6],
                 ['status_order', 6],
                 ['payment_detail', 6],
+                ['payment', 6],
                 ['source', 6],
+                ['number_tracking', 6],
                 ['observations', 6],
-                ['lock', 6],)
+                ['lock', 6],),
+            (
+                _('Total'), 12,
+                ['subtotal', 6],
+                ['discounts', 6],
+                ['taxes', 6],
+                ['total', 6],
+            )
         ]
         return g
 
@@ -347,7 +377,7 @@ class LineOrderForm(GenModelForm):
                 ['product', 6],
                 ['description', 6],
                 ['quantity', 6],
-                ['price', 6],
+                ['price_base', 6],
                 ['discount', 6],
                 ['notes', 12])
         ]
@@ -362,7 +392,7 @@ class LineOrderForm(GenModelForm):
                 ['product', 6],
                 ['description', 6],
                 ['quantity', 6],
-                ['price', 6],
+                ['price_base', 6],
                 ['price_recommended', 6],
                 ['discount', 6],
                 ['tax', 6],
@@ -396,7 +426,14 @@ class AlbaranForm(GenModelForm):
                 ['code', 6],
                 ['tax', 6],
                 ['lock', 6],
-                ['observations', 6],)
+                ['observations', 6],),
+            (
+                _('Total'), 12,
+                ['subtotal', 6],
+                ['discounts', 6],
+                ['taxes', 6],
+                ['total', 6],
+            )
         ]
         return g
 
@@ -436,7 +473,7 @@ class LineAlbaranForm(GenModelForm):
                 ['line_order__description', 6],
                 ['invoiced', 6],
                 ['quantity', 6],
-                ['line_order__price', 6],
+                ['line_order__price_base', 6],
                 ['line_order__price_recommended', 6],
                 ['line_order__discount', 6],
                 ['line_order__tax', 6],
@@ -470,7 +507,14 @@ class TicketForm(GenModelForm):
                 ['date', 6],
                 ['code', 6],
                 ['lock', 6],
-                ['observations', 6],)
+                ['observations', 6],),
+            (
+                _('Total'), 12,
+                ['subtotal', 6],
+                ['discounts', 6],
+                ['taxes', 6],
+                ['total', 6],
+            )
         ]
         return g
 
@@ -497,7 +541,7 @@ class LineTicketForm(GenModelForm):
                 ['line_order', 6],
                 ['description', 6],
                 ['quantity', 6],
-                ['price', 6],
+                ['price_base', 6],
                 ['discount', 6],
                 ['notes', 12])
         ]
@@ -513,7 +557,7 @@ class LineTicketForm(GenModelForm):
                 ['description', 6],
                 ['quantity', 6],
                 ['discount', 6],
-                ['price', 6],
+                ['price_base', 6],
                 ['price_recommended', 6],
                 ['tax', 6],
                 ['notes', 6])
@@ -547,7 +591,14 @@ class TicketRectificationForm(GenModelForm):
                 ['date', 6],
                 ['code', 6],
                 ['tax', 6],
-                ['observations', 6],)
+                ['observations', 6],),
+            (
+                _('Total'), 12,
+                ['subtotal', 6],
+                ['discounts', 6],
+                ['taxes', 6],
+                ['total', 6],
+            )
         ]
         return g
 
@@ -601,7 +652,7 @@ class LineTicketRectificationForm(GenModelForm):
                 ['line_ticket__product', 6],
                 ['line_ticket__description', 6],
                 ['quantity', 6],
-                ['line_ticket__price', 6],
+                ['line_ticket__price_base', 6],
                 ['line_ticket__tax', 6],
                 ['line_ticket__price_recommended', 6],
                 ['line_ticket__discount', 6],
@@ -653,7 +704,14 @@ class InvoiceForm(GenModelForm):
                 ['date', 6],
                 ['code', 6],
                 ['billing_series', 6],
-                ['observations', 6],)
+                ['observations', 6],),
+            (
+                _('Total'), 12,
+                ['subtotal', 6],
+                ['discounts', 6],
+                ['taxes', 6],
+                ['total', 6],
+            )
         ]
         return g
 
@@ -680,7 +738,7 @@ class LineInvoiceForm(GenModelForm):
                 ['description', 6],
                 ['order', 6],
                 ['quantity', 6],
-                ['price', 6],
+                ['price_base', 6],
                 ['discount', 6],
                 ['notes', 12])
         ]
@@ -695,7 +753,7 @@ class LineInvoiceForm(GenModelForm):
                 ['product', 6],
                 ['description', 6],
                 ['quantity', 6],
-                ['price', 6],
+                ['price_base', 6],
                 ['price_recommended', 6],
                 ['discount', 6],
                 ['tax', 6],
@@ -729,7 +787,14 @@ class InvoiceRectificationForm(GenModelForm):
                 ['date', 6],
                 ['code', 6],
                 ['tax', 6],
-                ['observations', 6],)
+                ['observations', 6],),
+            (
+                _('Total'), 12,
+                ['subtotal', 6],
+                ['discounts', 6],
+                ['taxes', 6],
+                ['total', 6],
+            )
         ]
         return g
 
@@ -781,7 +846,7 @@ class LineInvoiceRectificationForm(GenModelForm):
                 ['line_invoice', 6],
                 ['line_invoice__description', 6],
                 ['quantity', 6],
-                ['line_invoice__price', 6],
+                ['line_invoice__price_base', 6],
                 ['line_invoice__tax', 6],
                 ['line_invoice__discount', 6],
                 ['notes', 6])

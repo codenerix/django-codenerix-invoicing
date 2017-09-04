@@ -197,6 +197,7 @@ angular.module('codenerixSalesControllers', [])
             $scope.ws = $scope.ws_base + "/addfrombudget";
             openmodal($scope, $timeout, $uibModal, 'lg', functions, callback);
         };
+
         $scope.create_order_from_shopping_cart = function(){
 
             var functions = function(scope) {
@@ -267,5 +268,24 @@ angular.module('codenerixSalesControllers', [])
             });
         }
 
+    }
+])
+.controller('codenerixSalesLineBasketCtrl', ['$scope', '$rootScope', '$timeout', '$location', '$uibModal', '$templateCache', '$http', '$state', 'Register', 'ListMemory','hotkeys',
+    function($scope){
+        $scope.update_price = function(){
+            var tax = $scope.tax;
+            var price_base = $scope.price_base;
+            if (isNaN(price_base)){
+                price_base = 0;
+            }
+            if (isNaN(tax)){
+                tax = 0;
+            }else{
+                tax = tax * price_base / 100;
+            }
+            var price = parseFloat(price_base) + parseFloat(tax);
+            $scope[$scope.form_name]['price'].$setViewValue(price.toFixed(2));
+            $scope[$scope.form_name]['price'].$render();
+        }
     }
 ]);

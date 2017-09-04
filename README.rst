@@ -38,7 +38,19 @@ Quickstart
     CDNX_INVOICING_URL_COMMON = 'invoicing'
     CDNX_INVOICING_URL_PURCHASES = 'purchases'
     CDNX_INVOICING_URL_SALES = 'sales'
+
     CDNX_INVOICING_LOGICAL_DELETION = True  # Mark registers as 'removed', but it doesn't really delete them.
+    
+    # Code format
+    CDNX_INVOICING_CODE_FORMAT_BUDGET = 'B{year}{day}{month}-{hour}{minute}-{serial}-{pk}'
+    CDNX_INVOICING_CODE_FORMAT_WISHLIST = 'W{year}{day}{month}-{hour}{minute}-{serial}-{pk}'
+    CDNX_INVOICING_CODE_FORMAT_SHOPPINGCART = 'S{year}{day}{month}-{hour}{minute}-{serial}-{pk}'
+    CDNX_INVOICING_CODE_FORMAT_ORDER = 'O{year}{day}{month}-{hour}{minute}-{serial}-{pk}'
+    CDNX_INVOICING_CODE_FORMAT_ALBARAN = 'A{year}{day}{month}-{hour}{minute}-{serial}-{pk}'
+    CDNX_INVOICING_CODE_FORMAT_TICKET = 'T{year}{day}{month}-{hour}{minute}-{serial}-{pk}'
+    CDNX_INVOICING_CODE_FORMAT_TICKETRECTIFICATION = 'TR{year}{day}{month}-{hour}{minute}-{serial}-{pk}'
+    CDNX_INVOICING_CODE_FORMAT_INVOICE = 'I{year}{day}{month}-{hour}{minute}-{serial}-{pk}'
+    CDNX_INVOICING_CODE_FORMAT_INVOICERECTIFCATION = 'IT{year}{day}{month}-{hour}{minute}-{serial}-{pk}'
 
 4. Since Codenerix Invoicing is a library, you only need to import its parts into your project and use them.
 

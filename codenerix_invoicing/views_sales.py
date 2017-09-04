@@ -259,6 +259,17 @@ class BasketDetails(GenBasketUrl, GenDetail):
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslinebaskets_sublist', 'rows': 'base'},
         {'id': 'lines2', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslinebaskets_sublist', 'rows': 'base'},
     ]
+    linkedit = False
+    linkdelete = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = self.model.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkedit = True
+            self.linkdelete = True
+
+        return super(BasketDetails, self).dispatch(*args, **kwargs)
 
 
 class BasketDetailsSHOPPINGCART(GenBasketSHOPPINGCARTUrl, BasketDetails):
@@ -466,7 +477,7 @@ class BasketPassToOrder(View):
                         lo.line_budget = lb
                         lo.product = lb.product
                         lo.quantity = lb.quantity
-                        lo.price = lb.price
+                        lo.price_base = lb.price_base
                         lo.tax = lb.tax
                         lo.save()
 
@@ -622,8 +633,12 @@ class LineBasketUpdateModal(GenUpdateModal, LineBasketUpdate):
         product_pk = self.request.POST.get("product", None)
         quantity = self.request.POST.get("quantity", None)
         product = ProductFinal.objects.filter(pk=product_pk).first()
+        if product:
+            is_pack = product.is_pack()
+        else:
+            is_pack = False
         if product and quantity:
-            if product.is_pack():
+            if is_pack:
                 options = product.productfinals_option.filter(active=True)
                 options_pack = []
                 for option in options:
@@ -645,23 +660,16 @@ class LineBasketUpdateModal(GenUpdateModal, LineBasketUpdate):
                         errors = form._errors.setdefault(field, ErrorList())
                         errors.append(_("Option invalid"))
                         return super(LineBasketUpdateModal, self).form_invalid(form)
-            else:
-                errors = form._errors.setdefault("product", ErrorList())
-                errors.append(_("The product does not pack"))
-                return super(LineBasketUpdateModal, self).form_invalid(form)
         else:
             errors = form._errors.setdefault("product", ErrorList())
             errors.append(_("Product invalid"))
             return super(LineBasketUpdateModal, self).form_invalid(form)
 
-        # raise Exception(product_old.pk, self.object.product.pk)
         ret = super(LineBasketUpdateModal, self).form_valid(form)
-        # raise Exception(self.object.pk, options_pack, product_old != self.object.product)
-        # raise Exception(ret)
-        # raise Exception(self.object, type(self.object), isinstance(self.object, SalesLineBasket), self.object.__dict__)
         if product_old != self.object.product:
             self.object.remove_options()
-        self.object.set_options(options_pack)
+        if is_pack:
+            self.object.set_options(options_pack)
         return ret
 
 
@@ -671,7 +679,7 @@ class LineBasketDelete(GenLineBasketUrl, GenDelete):
 
 class LineBasketSubList(GenLineBasketUrl, GenList):
     model = SalesLineBasket
-    field_delete = True
+    field_delete = False
     field_check = False
     ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_linebasket.html"}
     gentrans = {
@@ -679,9 +687,16 @@ class LineBasketSubList(GenLineBasketUrl, GenList):
         'CreateOrder': _("Create Order"),
         'Debeseleccionarproducto': ('Debe seleccionar los productos'),
     }
+    linkadd = False
+    linkedit = False
 
     def dispatch(self, *args, **kwargs):
         self.__pk = kwargs.get('pk', None)
+        obj = SalesBasket.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkadd = True
+            self.linkedit = True
+            self.field_delete = True
         return super(LineBasketSubList, self).dispatch(*args, **kwargs)
     
     def get_context_json(self, context):
@@ -795,6 +810,17 @@ class OrderDetails(GenOrderUrl, GenDetail):
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineordersaless_sublist', 'rows': 'base'},
     ]
+    linkedit = False
+    linkdelete = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = self.model.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkedit = True
+            self.linkdelete = True
+
+        return super(OrderDetails, self).dispatch(*args, **kwargs)
 
 
 class OrderPrint(PrinterHelper, GenOrderUrl, GenDetail):
@@ -819,12 +845,12 @@ class OrderPrint(PrinterHelper, GenOrderUrl, GenDetail):
         lines = []
         total_order = 0
         for line in order.line_order_sales.all():
-            base = (line.price * line.quantity)
+            base = (line.price_base * line.quantity)
             subtotal = base + (base * line.tax / 100.0)
             total_order += subtotal
             lines.append({
                 'product': line.product,
-                'price': line.price,
+                'price_base': line.price_base,
                 'quantity': line.quantity,
                 'tax': line.tax,
                 'total': subtotal
@@ -1010,7 +1036,7 @@ class LineOrderDelete(GenLineOrderUrl, GenDelete):
 
 class LineOrderSubList(GenLineOrderUrl, GenList):
     model = SalesLineOrder
-    field_delete = True
+    field_delete = False
     field_check = False
     ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_lineorder.html"}
     gentrans = {
@@ -1018,6 +1044,17 @@ class LineOrderSubList(GenLineOrderUrl, GenList):
         'CreateTicket': _("Create Ticket"),
         'CreateInvoice': _("Create Invoice"),
     }
+    linkadd = False
+    linkedit = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = SalesOrder.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkadd = True
+            self.linkedit = True
+            self.field_delete = True
+        return super(LineOrderSubList, self).dispatch(*args, **kwargs)
 
     def __limitQ__(self, info):
         limit = {}
@@ -1089,10 +1126,10 @@ class LineOrderForeignCustom(GenLineOrderUrl, GenForeignKey):
 
         answer = {}
         answer['rows'] = []
-        answer['clear'] = ['price', 'discount']
-        answer['readonly'] = ['price', 'discount']
+        answer['clear'] = ['price_base', 'discount']
+        answer['readonly'] = ['price_base', 'discount']
         answer['rows'].append({
-            'price': 0,
+            'price_base': 0,
             'description': "",
             'discount': 0,
             'label': "---------",
@@ -1100,7 +1137,7 @@ class LineOrderForeignCustom(GenLineOrderUrl, GenForeignKey):
         })
         for product in queryset[:settings.LIMIT_FOREIGNKEY]:
             answer['rows'].append({
-                'price': product.price,
+                'price_base': product.price_base,
                 'description': product.__unicode__(),
                 'discount': product.discount,
                 'label': product.__unicode__(),
@@ -1160,6 +1197,17 @@ class AlbaranDetails(GenAlbaranUrl, GenDetail):
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_linealbaransaless_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['parent_pk']
+    linkedit = False
+    linkdelete = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = self.model.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkedit = True
+            self.linkdelete = True
+
+        return super(AlbaranDetails, self).dispatch(*args, **kwargs)
 
 
 class AlbaranPrint(PrinterHelper, GenAlbaranUrl, GenDetail):
@@ -1181,12 +1229,12 @@ class AlbaranPrint(PrinterHelper, GenAlbaranUrl, GenDetail):
         lines = []
         total_albaran = 0
         for line in albaran.line_albaran_sales.all():
-            base = (line.line_order.price * line.line_order.quantity)
+            base = (line.line_order.price_base * line.line_order.quantity)
             subtotal = base + (base * line.line_order.tax / 100.0)
             total_albaran += subtotal
             lines.append({
                 'product': line.line_order.product,
-                'price': line.line_order.price,
+                'price_base': line.line_order.price_base,
                 'quantity': line.line_order.quantity,
                 'tax': line.line_order.tax,
                 'total': subtotal
@@ -1332,13 +1380,24 @@ class LineAlbaranDelete(GenLineAlbaranUrl, GenDelete):
 
 class LineAlbaranSubList(GenLineAlbaranUrl, GenList):
     model = SalesLineAlbaran
-    field_delete = True
+    field_delete = False
     field_check = False
     ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_linealbaran.html"}
     gentrans = {
         'CreateTicket': _("Create Ticket"),
         'CreateInvoice': _("Create Invoice"),
     }
+    linkadd = False
+    linkedit = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = SalesAlbaran.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkadd = True
+            self.linkedit = True
+            self.field_delete = True
+        return super(LineOrderSubList, self).dispatch(*args, **kwargs)
 
     def __limitQ__(self, info):
         limit = {}
@@ -1411,6 +1470,17 @@ class TicketDetails(GenTicketUrl, GenDetail):
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineticketsaless_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['parent_pk']
+    linkedit = False
+    linkdelete = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = self.model.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkedit = True
+            self.linkdelete = True
+
+        return super(TicketDetails, self).dispatch(*args, **kwargs)
 
 
 class TicketPrint(PrinterHelper, GenTicketUrl, GenDetail):
@@ -1435,12 +1505,12 @@ class TicketPrint(PrinterHelper, GenTicketUrl, GenDetail):
         lines = []
         total_ticket = 0
         for line in ticket.line_ticket_sales.all():
-            base = (line.price * line.quantity)
+            base = (line.price_base * line.quantity)
             subtotal = base + (base * line.tax / 100.0)
             total_ticket += subtotal
             lines.append({
                 'product': line.line_order.product,
-                'price': line.price,
+                'price_base': line.price_base,
                 'quantity': line.quantity,
                 'tax': line.tax,
                 'total': subtotal
@@ -1628,13 +1698,24 @@ class LineTicketDelete(GenLineTicketUrl, GenDelete):
 
 class LineTicketSubList(GenLineTicketUrl, GenList):
     model = SalesLineTicket
+    field_delete = False
     field_check = False
-    field_delete = True
     ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_lineticket.html"}
     gentrans = {
         'CreateInvoice': _("Create Invoice"),
         'CreateTicketRectification': _("Create Ticket Rectification"),
     }
+    linkadd = False
+    linkedit = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = SalesTicket.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkadd = True
+            self.linkedit = True
+            self.field_delete = True
+        return super(LineTicketSubList, self).dispatch(*args, **kwargs)
 
     def __limitQ__(self, info):
         limit = {}
@@ -1728,6 +1809,17 @@ class TicketRectificationDetails(GenTicketRectificationUrl, GenDetail):
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineticketrectificationsaless_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['lock', 'parent_pk']
+    linkedit = False
+    linkdelete = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = self.model.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkedit = True
+            self.linkdelete = True
+
+        return super(TicketRectificationDetails, self).dispatch(*args, **kwargs)
 
 
 class TicketRectificationPrint(PrinterHelper, GenTicketRectificationUrl, GenDetail):
@@ -1748,12 +1840,12 @@ class TicketRectificationPrint(PrinterHelper, GenTicketRectificationUrl, GenDeta
         lines = []
         total_ticketrectification = 0
         for line in ticketrectification.line_ticketrectification_sales.all():
-            base = (line.line_ticket.price * line.line_ticket.quantity)
+            base = (line.line_ticket.price_base * line.line_ticket.quantity)
             subtotal = base + (base * line.line_ticket.tax / 100.0)
             total_ticketrectification += subtotal
             lines.append({
                 'product': line.line_ticket.line_order.product,
-                'price': line.line_ticket.price,
+                'price_base': line.line_ticket.price_base,
                 'quantity': line.line_ticket.quantity,
                 'tax': line.line_ticket.tax,
                 'total': subtotal
@@ -1876,6 +1968,16 @@ class LineTicketRectificationDelete(GenLineTicketRectificationUrl, GenDelete):
 
 class LineTicketRectificationSubList(GenLineTicketRectificationUrl, GenList):
     model = SalesLineTicketRectification
+    linkadd = False
+    linkedit = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = SalesTicketRectification.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkadd = True
+            self.linkedit = True
+        return super(LineTicketRectificationSubList, self).dispatch(*args, **kwargs)
 
     def __limitQ__(self, info):
         limit = {}
@@ -1939,6 +2041,17 @@ class InvoiceDetails(GenInvoiceUrl, GenDetail):
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineinvoicesaless_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['lock', 'parent_pk']
+    linkedit = False
+    linkdelete = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = self.model.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkedit = True
+            self.linkdelete = True
+
+        return super(InvoiceDetails, self).dispatch(*args, **kwargs)
 
 
 class InvoiceCreateRectification(View):
@@ -2011,12 +2124,12 @@ class InvoicePrint(PrinterHelper, GenInvoiceUrl, GenDetail):
         lines = []
         total_invoice = 0
         for line in invoice.line_invoice_sales.all():
-            base = (line.price * line.quantity)
+            base = (line.price_base * line.quantity)
             subtotal = base + (base * line.tax / 100.0)
             total_invoice += subtotal
             lines.append({
                 'product': line.line_order.product,
-                'price': line.price,
+                'price_base': line.price_base,
                 'quantity': line.quantity,
                 'tax': line.tax,
                 'total': subtotal
@@ -2144,6 +2257,16 @@ class LineInvoiceSubList(GenLineInvoiceUrl, GenList):
     gentrans = {
         'CreateInvoiceRectification': _("Create Invoice Rectification"),
     }
+    linkadd = False
+    linkedit = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = SalesInvoice.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkadd = True
+            self.linkedit = True
+        return super(LineInvoiceSubList, self).dispatch(*args, **kwargs)
 
     def __limitQ__(self, info):
         limit = {}
@@ -2237,6 +2360,17 @@ class InvoiceRectificationDetails(GenInvoiceRectificationUrl, GenDetail):
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineinvoicerectificationsaless_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['lock', 'parent_pk']
+    linkedit = False
+    linkdelete = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = self.model.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkedit = True
+            self.linkdelete = True
+
+        return super(InvoiceRectificationDetails, self).dispatch(*args, **kwargs)
 
 
 class InvoiceRectificationPrint(PrinterHelper, GenInvoiceRectificationUrl, GenDetail):
@@ -2257,12 +2391,12 @@ class InvoiceRectificationPrint(PrinterHelper, GenInvoiceRectificationUrl, GenDe
         lines = []
         total_invoicerectification = 0
         for line in invoicerectification.line_invoicerectification_sales.all():
-            base = (line.line_invoice.price * line.line_invoice.quantity)
+            base = (line.line_invoice.price_base * line.line_invoice.quantity)
             subtotal = base + (base * line.line_invoice.tax / 100.0)
             total_invoicerectification += subtotal
             lines.append({
                 'product': line.line_invoice.line_order.product,
-                'price': line.line_invoice.price,
+                'price_base': line.line_invoice.price_base,
                 'quantity': line.line_invoice.quantity,
                 'tax': line.line_invoice.tax,
                 'total': subtotal
@@ -2390,6 +2524,16 @@ class LineInvoiceRectificationSubList(GenLineInvoiceRectificationUrl, GenList):
     gentrans = {
         'CreateInvoice': _("Create Invoice leches"),
     }
+    linkadd = False
+    linkedit = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = SalesInvoiceRectification.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkadd = True
+            self.linkedit = True
+        return super(LineInvoiceRectificationSubList, self).dispatch(*args, **kwargs)
 
     def __limitQ__(self, info):
         limit = {}

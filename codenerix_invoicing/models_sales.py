@@ -262,14 +262,14 @@ class Customer(GenRole, CodenerixModel):
         fields = get_external_method(Customer, '__fields_customer__', info, fields)
         return fields
 
-    def save(self, *args, **kwards):
+    def save(self, *args, **kwargs):
         with transaction.atomic():
             if self.default_customer:
                 Customer.objects.exclude(pk=self.pk).update(default_customer=False)
             else:
                 if not Customer.objects.exclude(pk=self.pk).filter(default_customer=True).exists():
                     self.default_customer = True
-        return super(Customer, self).save(*args, **kwards)
+        return super(Customer, self).save(*args, **kwargs)
 
     def buy_product(self, product_pk):
         """
@@ -339,7 +339,7 @@ class GenAddress(GenInterface, ABSTRACT_GenAddress):  # META: Abstract class
             'get_summary': ('get_summary', ),
         }
 
-    def save(self, *args, **kwards):
+    def save(self, *args, **kwargs):
         if hasattr(self, 'address_delivery') and self.address_delivery is None:
             address_delivery = Address()
             address_delivery.save()
@@ -356,7 +356,7 @@ class GenAddress(GenInterface, ABSTRACT_GenAddress):  # META: Abstract class
             self.address_delivery = address_delivery
         if hasattr(self, 'address_invoice'):
             self.address_invoice = address_invoice
-        return super(GenAddress, self).save(*args, **kwards)
+        return super(GenAddress, self).save(*args, **kwargs)
 
 
 # address delivery
@@ -416,6 +416,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
     subtotal = models.FloatField(_("Subtotal"), blank=False, null=False, default=0, editable=False)
     discounts = models.FloatField(_("Discounts"), blank=False, null=False, default=0, editable=False)
     taxes = models.FloatField(_("Taxes"), blank=False, null=False, default=0, editable=False)
+    equivalence_surcharges = models.FloatField(_("Equivalence surcharge"), blank=False, null=False, default=0, editable=False)
     total = models.FloatField(_("Total"), blank=False, null=False, default=0, editable=False)
     # logical deletion
     removed = models.BooleanField(_("Removed"), blank=False, default=False, editable=False)
@@ -425,14 +426,67 @@ class GenVersion(CodenerixModel):  # META: Abstract class
         if real is False:
             code = 0
         else:
+            if model == SalesBasket:
+                code_format = {}
+                code_format[ROLE_BASKET_BUDGET] = 'CDNX_INVOICING_CODE_FORMAT_BUDGET'
+                code_format[ROLE_BASKET_WISHLIST] = 'CDNX_INVOICING_CODE_FORMAT_WISHLIST'
+                code_format[ROLE_BASKET_SHOPPINGCART] = 'CDNX_INVOICING_CODE_FORMAT_SHOPPINGCART'
+            elif model == SalesOrder and hasattr(settings, 'CDNX_INVOICING_CODE_FORMAT_ORDER'):
+                code_format = settings.CDNX_INVOICING_CODE_FORMAT_ORDER
+            elif model == SalesAlbaran and hasattr(settings, 'CDNX_INVOICING_CODE_FORMAT_ALBARAN'):
+                code_format = settings.CDNX_INVOICING_CODE_FORMAT_ALBARAN
+            elif model == SalesTicketRectification and hasattr(settings, 'CDNX_INVOICING_CODE_FORMAT_TICKET'):
+                code_format = settings.CDNX_INVOICING_CODE_FORMAT_TICKET
+            elif model == SalesTicketRectification and hasattr(settings, 'CDNX_INVOICING_CODE_FORMAT_TICKETRECTIFICATION'):
+                code_format = settings.CDNX_INVOICING_CODE_FORMAT_TICKETRECTIFICATION
+            elif model == SalesInvoice and hasattr(settings, 'CDNX_INVOICING_CODE_FORMAT_INVOICE'):
+                code_format = settings.CDNX_INVOICING_CODE_FORMAT_INVOICE
+            elif model == SalesInvoiceRectification and hasattr(settings, 'CDNX_INVOICING_CODE_FORMAT_INVOICERECTIFCATION'):
+                code_format = settings.CDNX_INVOICING_CODE_FORMAT_INVOICERECTIFCATION
+            else:
+                code_format = None
+            
             last = model.objects.order_by('-pk').first()
             if last:
+                # como hace esto si no es un numero????????
+                # si cambia de año tenerlo, empezar de cero
                 code = int(last.code) + 1
             else:
                 code = 1
-        return code
+            return code
 
-    def save(self, *args, **kwards):
+
+            if code_format:
+                now = datetime.datetime.now()
+                values = {
+                    'year': now.year,
+                    'day': now.day,
+                    'month': now.month,
+                    'hour': now.hour,
+                    'minute': now.minute,
+                    'second': now.second,
+                    'microsecond': now.microsecond,
+                    'quarter': now.month // 4 + 1,
+                    'serial': 'xxxx',
+                    'pk': code,
+                }
+                if isinstance(code_format, dict):
+                    role = getattr(last, 'role', None)
+                    if role and role in code_format and hasattr(settings, code_format[role]):
+                        code_format = getattr(settings, code_format[role], None)
+                        if code_format:
+                            code_str = code_format.format(**values)
+                        else:
+                            raise Exception(_("{} undefined".format(code_format['role'])))
+                    else:
+                        raise Exception(_("Can not determine code, rol undefined"))
+                else:
+                    code_str = code_format.format(**values)
+            else:
+                code_str = code
+        return code_str
+
+    def save(self, *args, **kwargs):
         force_save = kwargs.get('force_save', False)
         if self.pk:
             obj = self._meta.model.objects.get(pk=self.pk)
@@ -473,7 +527,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
         else:
             self.code = GenVersion.getcode(self._meta.model, True)
 
-        return super(GenVersion, self).save(*args, **kwards)
+        return super(GenVersion, self).save(*args, **kwargs)
 
     def delete(self):
         if not hasattr(settings, 'CDNX_INVOICING_LOGICAL_DELETION') or settings.CDNX_INVOICING_LOGICAL_DELETION is False:
@@ -489,6 +543,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
         self.total = totales['total']
         self.discounts = sum(totales['discounts'].values())
         self.taxes = sum(totales['taxes'].values())
+        self.equivalence_surcharges = sum(totales['equivalence_surcharges'].values())
         if force_save:
             self.save()
 
@@ -498,23 +553,42 @@ class GenVersion(CodenerixModel):  # META: Abstract class
             subtotal = 0
             tax = {}
             discount = {}
+            equivalence_surcharges = {}
             total = 0
             for line in queryset:
                 subtotal += line.subtotal
                 
-                if line.tax not in tax:
-                    tax[line.tax] = 0
-                price_tax = line.taxes
-                tax[line.tax] += price_tax
+                if hasattr(line, 'tax'):
+                    if line.tax not in tax:
+                        tax[line.tax] = 0
+                    price_tax = line.taxes
+                    tax[line.tax] += price_tax
+                else:
+                    price_tax = 0
+
+                if hasattr(line, 'equivalence_surcharge'):
+                    if line.equivalence_surcharge:
+                        if line.equivalence_surcharge not in equivalence_surcharges:
+                            equivalence_surcharges[line.equivalence_surcharge] = 0
+
+                        equivalence_surcharge = line.subtotal * self.equivalence_surcharge / 100.0
+                        equivalence_surcharges[line.equivalence_surcharge] = equivalence_surcharge
+                    else:
+                        equivalence_surcharge = 0
+                else:
+                    equivalence_surcharge = 0
                 
-                if line.discount not in discount:
-                    discount[line.discount] = 0
-                price_discount = line.discounts
-                discount[line.discount] += price_discount
+                if hasattr(line, 'discount'):
+                    if line.discount not in discount:
+                        discount[line.discount] = 0
+                    price_discount = line.discounts
+                    discount[line.discount] += price_discount
+                else:
+                    price_discount = 0
                 
-                total += line.subtotal - price_discount + price_tax
+                total += line.subtotal - price_discount + price_tax + equivalence_surcharge
         
-            return {'subtotal': subtotal, 'taxes': tax, 'total': total, 'discounts': discount}
+            return {'subtotal': subtotal, 'taxes': tax, 'total': total, 'discounts': discount, 'equivalence_surcharges': equivalence_surcharges}
         else:
             raise Exception(_("Queryset undefined!!"))
 
@@ -528,9 +602,15 @@ class GenLineProductBasic(CodenerixModel):  # META: Abstract class
     subtotal = models.FloatField(_("Subtotal"), blank=False, null=False, default=0, editable=False)
     discounts = models.FloatField(_("Discounts"), blank=False, null=False, default=0, editable=False)
     taxes = models.FloatField(_("Taxes"), blank=False, null=False, default=0, editable=False)
+    equivalence_surcharges = models.FloatField(_("Equivalence surcharge"), blank=True, null=True, default=0)
     total = models.FloatField(_("Total"), blank=False, null=False, default=0, editable=False)
     # logical deletion
     removed = models.BooleanField(_("Removed"), blank=False, default=False, editable=False)
+
+    def save(self, *args, **kwargs):
+        if self.get_customer().apply_equivalence_surcharge:
+            self.equivalence_surcharge = self.get_product().tax.recargo_equivalencia
+        return super(GenLineProductBasic, self).save(*args, **kwargs)
 
     def __save__(self, args, kwargs, **conditional):
         other_line = self._meta.model.objects.filter(**conditional)
@@ -562,22 +642,29 @@ class GenLineProductBasic(CodenerixModel):  # META: Abstract class
             self.removed = True
             self.save(force_save=True)
 
+    def get_customer(self):
+        raise Exception(_("Method 'get_customer()' don't implemented"))
+
+    def get_product(self):
+        raise Exception(_("Method 'get_product()' don't implemented"))
+
 
 # lineas de productos
 class GenLineProduct(GenLineProductBasic):  # META: Abstract class
     class Meta(GenLineProductBasic.Meta):
         abstract = True
 
-    price_recommended = models.FloatField(_("Recomended price"), blank=False, null=False)
+    price_recommended = models.FloatField(_("Recomended price base"), blank=False, null=False)
     # valores aplicados
     """
     desde el formulario se podrá modificar el precio y la descripcion del producto
     se guarda el tax usado y la relacion para poder hacer un seguimiento
     """
     description = models.CharField(_("Description"), max_length=256, blank=True, null=True)
-    discount = models.FloatField(_("Discount"), blank=False, null=False, default=0)
-    price = models.FloatField(_("Price"), blank=False, null=False)
+    discount = models.FloatField(_("Discount (%)"), blank=False, null=False, default=0)
+    price_base = models.FloatField(_("Price base"), blank=False, null=False)
     tax = models.FloatField(_("Tax"), blank=True, null=True, default=0)
+    equivalence_surcharge = models.FloatField(_("Equivalence surcharge (%)"), blank=True, null=True, default=0)
 
     def __str__(self):
         description = ''
@@ -596,9 +683,12 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
         fields = []
         fields.append(('description', _("Description")))
         fields.append(('quantity', _("Quantity")))
-        fields.append(('price', _("Price")))
-        fields.append(('discount', _("Discount")))
-        fields.append(('tax', _("Tax")))
+        fields.append(('price_base', _("Price base")))
+        fields.append(('discount', _("Discount (%)")))
+        fields.append(('discounts', _("Total Discount")))
+        fields.append(('tax', _("Tax (%)")))
+        fields.append(('equivalence_surcharge', _("Equivalence surcharge (%)")))
+        fields.append(('taxes', _("Total Tax")))
         fields.append(('total', _("Total")))
         return fields
 
@@ -608,12 +698,44 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
 
     def update_total(self, force_save=True):
         # calculate totals
-        self.subtotal = self.price * self.quantity
+        self.subtotal = self.price_base * self.quantity
         self.taxes = (self.subtotal * self.tax / 100.0)
+        self.equivalence_surcharges = (self.subtotal * self.equivalence_surcharge / 100.0)
         self.discounts = (self.subtotal * self.discount / 100.0)
         self.total = self.subtotal - self.discounts + self.taxes
         if force_save:
             self.save()
+
+    def save(self, *args, **kwargs):
+        if self.pk is None:
+            if hasattr(self, 'product'):
+                if not self.description:
+                    self.description = self.product
+                self.price_recommended = self.product.price_base
+            elif hasattr(self, 'line_order'):
+                if not self.description:
+                    self.description = self.line_order.product
+                self.price_recommended = self.line_order.price_base
+
+        if hasattr(self, 'tax') and hasattr(self, 'type_tax'):
+            self.tax = self.type_tax.tax
+        """
+        si al guardar una linea asociada a un documento bloqueado (lock==True), duplicar el documento en una nueva versión
+        """
+        self.update_total(force_save=False)
+        if 'force_save' in kwargs:
+            kwargs.pop('force_save')
+        return super(GenLineProduct, self).save(*args, **kwargs)
+
+    def __save__(self, args, kwargs, **conditional):
+        if hasattr(self, 'product'):
+            conditional["product"] = self.product
+        if hasattr(self, 'line_order'):
+            conditional["line_order"] = self.line_order
+        if hasattr(self, 'basket'):
+            conditional["basket"] = self.basket
+
+        return super(GenLineProduct, self).__save__(args, kwargs, **conditional)
 
     @staticmethod
     def create_document_from_another(pk, list_lines,
@@ -673,7 +795,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
                             if 'line_order' in src_list_fields and 'line_order' in dst_list_fields:
                                 line_final.line_order = line_src.line_order
                             line_final.quantity = line_src.quantity
-                            line_final.price = line_src.price
+                            line_final.price_base = line_src.price_base
                             # if hasattr(line_src, 'price_recommended') and hasattr(line_final, 'price_recommended'):
                             if 'price_recommended' in src_list_fields and 'price_recommended' in dst_list_fields:
                                 line_final.price_recommended = line_src.price_recommended
@@ -707,37 +829,6 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
 
         return context
 
-    def save(self, *args, **kwards):
-        if self.pk is None:
-            if hasattr(self, 'product'):
-                if not self.description:
-                    self.description = self.product
-                self.price_recommended = self.product.price
-            elif hasattr(self, 'line_order'):
-                if not self.description:
-                    self.description = self.line_order.product
-                self.price_recommended = self.line_order.price
-
-        if hasattr(self, 'tax') and hasattr(self, 'type_tax'):
-            self.tax = self.type_tax.tax
-        """
-        si al guardar una linea asociada a un documento bloqueado (lock==True), duplicar el documento en una nueva versión
-        """
-        self.update_total(force_save=False)
-        if 'force_save' in kwards:
-            kwards.pop('force_save')
-        return super(GenLineProduct, self).save(*args, **kwards)
-
-    def __save__(self, args, kwargs, **conditional):
-        if hasattr(self, 'product'):
-            conditional["product"] = self.product
-        if hasattr(self, 'line_order'):
-            conditional["line_order"] = self.line_order
-        if hasattr(self, 'basket'):
-            conditional["basket"] = self.basket
-
-        return super(GenLineProduct, self).__save__(args, kwargs, **conditional)
-
     @staticmethod
     def create_order_from_budget_all(order):
         lines_budget = order.budget.line_basket_sales.all()
@@ -751,7 +842,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
             lo.price_recommended = lb.price_recommended
             lo.description = lb.description
             lo.discount = lb.discount
-            lo.price = lb.price
+            lo.price_base = lb.price_base
             lo.tax = lb.tax
             lo.save()
 
@@ -1020,6 +1111,7 @@ class SalesBasket(GenVersion):
         fields.append(('discounts', _('Discounts')))
         fields.append(('taxes', _('Taxes')))
         fields.append(('total', _('Total')))
+        fields.append(('lock', _('Locked')))
         return fields
 
     def pass_to_budget(self, lines=None):
@@ -1066,8 +1158,9 @@ class SalesBasket(GenVersion):
                     lorder.price_recommended = line.price_recommended
                     lorder.description = line.description
                     lorder.discount = line.discount
-                    lorder.price = line.price
+                    lorder.price_base = line.price_base
                     lorder.tax = line.tax
+                    lorder.equivalence_surcharge = line.equivalence_surcharge
                     lorder.quantity = line.quantity
                     lorder.save()
                 
@@ -1110,7 +1203,6 @@ class SalesLineBasket(GenLineProduct):
 
     def __fields__(self, info):
         fields = super(SalesLineBasket, self).__fields__(info)
-        fields.insert(0, ('basket', _("Basket")))
         fields.append(('line_basket_option_sales', _('Options')))
         return fields
 
@@ -1174,6 +1266,12 @@ class SalesLineBasket(GenLineProduct):
                     opt.product_final = option['product_final']
                     opt.quantity = option['quantity']
                     opt.save()
+
+    def get_customer(self):
+        return self.basket.customer
+
+    def get_product(self):
+        return self.product
 
 
 class SalesLineBasketOption(CodenerixModel):
@@ -1260,6 +1358,12 @@ class SalesLineOrder(GenLineProduct):
             else:
                 return self.__save__(args, kwargs, order=self.order, line_budget=self.line_budget)
 
+    def get_customer(self):
+        return self.order.customer
+
+    def get_product(self):
+        return self.product
+
 
 class SalesLineOrderOption(CodenerixModel):
     line_order = models.ForeignKey(SalesLineOrder, related_name='line_order_option_sales', verbose_name=_("Line Order"))
@@ -1329,12 +1433,18 @@ class SalesLineAlbaran(GenLineProductBasic):
         return fields
 
     def update_total(self, force_save=True):
-        self.subtotal = self.line_order.price * self.quantity
+        self.subtotal = self.line_order.price_base * self.quantity
         self.taxes = (self.subtotal * self.tax / 100.0)
         self.discounts = (self.subtotal * self.discount / 100.0)
         self.total = self.subtotal - self.discounts + self.taxes
         if force_save:
             self.save()
+
+    def get_customer(self):
+        return self.line_order.get_customer()
+
+    def get_product(self):
+        return self.line_order.product
 
     def save(self, *args, **kwargs):
         force = kwargs.get('force_save', False)
@@ -1390,6 +1500,12 @@ class SalesLineTicket(GenLineProduct):
         fields.append(('line_order', _("Line order")))
         return fields
 
+    def get_customer(self):
+        return self.line_order.get_customer()
+
+    def get_product(self):
+        return self.line_order.product
+
     def save(self, *args, **kwargs):
         force = kwargs.get('force_save', False)
         if self.ticket.lock and force is False:
@@ -1434,12 +1550,18 @@ class SalesLineTicketRectification(GenLineProductBasic):
         return fields
 
     def update_total(self, force_save=True):
-        self.subtotal = self.line_ticket.price * self.quantity
-        self.taxes = (self.subtotal * self.tax / 100.0)
+        self.subtotal = self.line_ticket.price_base * self.quantity
+        self.taxes = (self.subtotal * self.tax / 100.0) * (self.subtotal * self.equivalence_surcharge / 100.0)
         self.discounts = (self.subtotal * self.discount / 100.0)
         self.total = self.subtotal - self.discounts + self.taxes
         if force_save:
             self.save()
+
+    def get_customer(self):
+        return self.line_order.get_customer()
+
+    def get_product(self):
+        return self.line_order.product
 
     def save(self, *args, **kwargs):
         force = kwargs.get('force_save', False)
@@ -1541,8 +1663,8 @@ class SalesLineInvoiceRectification(GenLineProductBasic):
         return fields
 
     def update_total(self, force_save=True):
-        self.subtotal = self.line_invoice.price * self.quantity
-        self.taxes = (self.subtotal * self.tax / 100.0)
+        self.subtotal = self.line_invoice.price_base * self.quantity
+        self.taxes = (self.subtotal * self.tax / 100.0) * (self.subtotal * self.equivalence_surcharge / 100.0)
         self.discounts = (self.subtotal * self.discount / 100.0)
         self.total = self.subtotal - self.discounts + self.taxes
         if force_save:
