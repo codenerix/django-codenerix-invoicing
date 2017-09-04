@@ -35,6 +35,8 @@ from .models_sales import SalesTicketRectification, SalesLineTicketRectification
 from .models_sales import SalesInvoice, SalesLineInvoice
 from .models_sales import SalesInvoiceRectification, SalesLineInvoiceRectification
 from .models_sales import SalesReservedProduct
+from .models_sales import ReasonModification, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
+
 
 
 class CustomerForm(GenModelForm):
@@ -884,3 +886,117 @@ class ReservedProductForm(GenModelForm):
                 ['quantity', 4],)
         ]
         return g
+
+
+class ReasonModificationForm(GenModelForm):
+    class Meta:
+        model = ReasonModification
+        exclude = []
+
+    def __groups__(self):
+        return [
+            (
+                _('Details'), 12,
+                ['code', 6],
+                ['name', 6],
+                ['enable', 6],
+            )
+        ]
+
+    @staticmethod
+    def __groups_details__():
+        return [
+            (
+                _('Details'), 12,
+                ['code', 6],
+                ['name', 6],
+                ['enable', 6],
+            )
+        ]
+
+
+class ReasonModificationLineForm(GenModelForm):
+    doc = forms.FloatField(label=_('Document'), widget=forms.NumberInput(attrs={"disabled": 'disabled'}))
+    
+    class Meta:
+        exclude = ['user', ]
+
+    def __groups__(self):
+        return [
+            (
+                _('Details'), 12,
+                ['date', 6],
+                ['line', 6],
+                ['reason', 6],
+                ['quantity', 6],
+                ['doc', 6]
+            )
+        ]
+
+    @staticmethod
+    def __groups_details__():
+        return [
+            (
+                _('Details'), 12,
+                ['date', 6],
+                ['line', 6],
+                ['reason', 6],
+                ['quantity', 6],
+            )
+        ]
+
+
+class ReasonModificationLineBasketForm(ReasonModificationLineForm):
+    class Meta(ReasonModificationLineForm.Meta):
+        model = ReasonModificationLineBasket
+        autofill = {
+            'line': ['select', 3, 'CDNX_invoicing_linebasketsaless_foreign', 'doc']
+        }
+
+
+class ReasonModificationLineOrderForm(ReasonModificationLineForm):
+    class Meta(ReasonModificationLineForm.Meta):
+        model = ReasonModificationLineOrder
+        autofill = {
+            'line': ['select', 3, 'CDNX_invoicing_lineordersaless_foreign', 'doc']
+        }
+
+
+class ReasonModificationLineAlbaranForm(ReasonModificationLineForm):
+    class Meta(ReasonModificationLineForm.Meta):
+        model = ReasonModificationLineAlbaran
+        autofill = {
+            'line': ['select', 3, 'CDNX_invoicing_linealbaransaless_foreign', 'doc']
+        }
+
+
+class ReasonModificationLineTicketForm(ReasonModificationLineForm):
+    class Meta(ReasonModificationLineForm.Meta):
+        model = ReasonModificationLineTicket
+        autofill = {
+            'line': ['select', 3, 'CDNX_invoicing_lineticketsaless_foreign', 'doc']
+        }
+
+
+class ReasonModificationLineTicketRectificationForm(ReasonModificationLineForm):
+    class Meta(ReasonModificationLineForm.Meta):
+        model = ReasonModificationLineTicketRectification
+        autofill = {
+            'line': ['select', 3, 'CDNX_invoicing_lineticketrectificationsaless_sublist_foreign', 'doc']
+        }
+
+
+class ReasonModificationLineInvoiceForm(ReasonModificationLineForm):
+    class Meta(ReasonModificationLineForm.Meta):
+        model = ReasonModificationLineInvoice
+        autofill = {
+            'line': ['select', 3, 'CDNX_invoicing_lineinvoicessaless_foreign', 'doc']
+        }
+
+
+class ReasonModificationLineInvoiceRectificationForm(ReasonModificationLineForm):
+    class Meta(ReasonModificationLineForm.Meta):
+        model = ReasonModificationLineInvoiceRectification
+        autofill = {
+            'line': ['select', 3, 'CDNX_invoicing_lineinvoicerectificationsaless_sublist_foreign', 'doc']
+        }

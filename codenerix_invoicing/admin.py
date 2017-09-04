@@ -21,10 +21,11 @@
 from django.contrib import admin
 from django.conf import settings
 
-from codenerix_invoicing.models import BillingSeries, LegalNote, TypeDocument, ProductStock, StockMovement, StockMovementProduct, MODELS
-from codenerix_invoicing.models_purchases import Provider, PurchasesBudget, PurchasesLineBudget, PurchasesBudgetDocument, PurchasesOrder, PurchasesLineOrder, PurchasesOrderDocument, PurchasesAlbaran, PurchasesLineAlbaran, PurchasesAlbaranDocument, PurchasesTicket, PurchasesLineTicket, PurchasesTicketDocument, PurchasesTicketRectification, PurchasesLineTicketRectification, PurchasesTicketRectificationDocument, PurchasesInvoice, PurchasesLineInvoice, PurchasesInvoiceDocument, PurchasesInvoiceRectification, PurchasesLineInvoiceRectification, PurchasesInvoiceRectificationDocument
-from codenerix_invoicing.models_sales import Address, Customer, CustomerDocument, SalesReservedProduct, SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, SalesLineInvoiceRectification, SalesBasket, SalesLineBasket
-from codenerix_invoicing.models_sales import SalesLineBasketOption
+from .models import BillingSeries, LegalNote, TypeDocument, ProductStock, StockMovement, StockMovementProduct, MODELS
+from .models_purchases import Provider, PurchasesBudget, PurchasesLineBudget, PurchasesBudgetDocument, PurchasesOrder, PurchasesLineOrder, PurchasesOrderDocument, PurchasesAlbaran, PurchasesLineAlbaran, PurchasesAlbaranDocument, PurchasesTicket, PurchasesLineTicket, PurchasesTicketDocument, PurchasesTicketRectification, PurchasesLineTicketRectification, PurchasesTicketRectificationDocument, PurchasesInvoice, PurchasesLineInvoice, PurchasesInvoiceDocument, PurchasesInvoiceRectification, PurchasesLineInvoiceRectification, PurchasesInvoiceRectificationDocument
+from .models_sales import Address, Customer, CustomerDocument, SalesReservedProduct, SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, SalesLineInvoiceRectification, SalesBasket, SalesLineBasket
+from .models_sales import SalesLineBasketOption
+from .models_sales import ReasonModification, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
 
 admin.site.register(Provider)
 admin.site.register(PurchasesBudget)
@@ -76,6 +77,15 @@ admin.site.register(SalesInvoiceRectification)
 admin.site.register(SalesLineInvoiceRectification)
 
 admin.site.register(SalesLineBasketOption)
+admin.site.register(ReasonModification)
+admin.site.register(ReasonModificationLineBasket)
+admin.site.register(ReasonModificationLineOrder)
+admin.site.register(ReasonModificationLineAlbaran)
+admin.site.register(ReasonModificationLineTicket)
+admin.site.register(ReasonModificationLineTicketRectification)
+admin.site.register(ReasonModificationLineInvoice)
+admin.site.register(ReasonModificationLineInvoiceRectification)
+
 
 for info in MODELS:
     model = info[1]

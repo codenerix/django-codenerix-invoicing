@@ -1686,3 +1686,89 @@ class SalesLineInvoiceRectification(GenLineProductBasic):
 
     def calculate_total(self):
         return self.total
+
+
+# Reason of modification
+class ReasonModification(CodenerixModel):
+    code = models.CharField(_("Code"), max_length=15, blank=False, null=False, unique=True)
+    name = models.CharField(_("Name"), max_length=250, blank=False, null=False)
+    enable = models.BooleanField(_("Enable"), blank=True, default=True)
+
+    def __str__(self):
+        return u"{} ({})".format(smart_text(self.name), smart_text(self.code))
+
+    def __unicode__(self):
+        return self.__str__()
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('code', _("Code")))
+        fields.append(('name', _("Name")))
+        fields.append(('enable', _("Enable")))
+        return fields
+
+
+# Relation between reason of modification and documents lines
+class ReasonModificationLine(CodenerixModel):  # META: Abstract class
+    date = models.DateTimeField(_("Date"), blank=False, null=False, default=timezone.now)
+    quantity = models.FloatField(_("Quantity"), blank=False, null=False)
+
+    class Meta(object):
+        abstract = True
+
+    def __str__(self):
+        return u"{} - {}  ({})".format(smart_text(self.reason), smart_text(self.line), smart_text(self.quantity))
+
+    def __unicode__(self):
+        return self.__str__()
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('user', _("User")))
+        fields.append(('date', _("Date")))
+        fields.append(('reason', _("Reason")))
+        fields.append(('line', _("Line")))
+        fields.append(('quantity', _("Quantity")))
+        return fields
+
+
+class ReasonModificationLineBasket(ReasonModificationLine):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_basket', verbose_name=_("User"))
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_basket', verbose_name=_("Reason"))
+    line = models.ForeignKey(SalesLineBasket, related_name='reason_line_basket', verbose_name=_("Line"))
+
+
+class ReasonModificationLineOrder(ReasonModificationLine):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_order', verbose_name=_("User"))
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_order', verbose_name=_("Reason"))
+    line = models.ForeignKey(SalesLineOrder, related_name='reason_line_order', verbose_name=_("Line"))
+
+
+class ReasonModificationLineAlbaran(ReasonModificationLine):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_albaran', verbose_name=_("User"))
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_albaran', verbose_name=_("Reason"))
+    line = models.ForeignKey(SalesLineAlbaran, related_name='reason_line_albaran', verbose_name=_("Line"))
+
+
+class ReasonModificationLineTicket(ReasonModificationLine):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_ticket', verbose_name=_("User"))
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_ticket', verbose_name=_("Reason"))
+    line = models.ForeignKey(SalesLineTicket, related_name='reason_line_ticket', verbose_name=_("Line"))
+
+
+class ReasonModificationLineTicketRectification(ReasonModificationLine):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_ticket_rectification', verbose_name=_("User"))
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_ticket_rectification', verbose_name=_("Reason"))
+    line = models.ForeignKey(SalesLineTicketRectification, related_name='reason_line_ticket_rectification', verbose_name=_("Line"))
+
+
+class ReasonModificationLineInvoice(ReasonModificationLine):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_invoice', verbose_name=_("User"))
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_invoice', verbose_name=_("Reason"))
+    line = models.ForeignKey(SalesLineInvoice, related_name='reason_line_invoice', verbose_name=_("Line"))
+
+
+class ReasonModificationLineInvoiceRectification(ReasonModificationLine):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_invoice_rectification', verbose_name=_("User"))
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_invoice_rectification', verbose_name=_("Reason"))
+    line = models.ForeignKey(SalesLineInvoiceRectification, related_name='reason_line_invoice_rectification', verbose_name=_("Line"))

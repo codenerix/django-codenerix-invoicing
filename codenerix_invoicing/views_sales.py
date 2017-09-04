@@ -35,6 +35,7 @@ from django.views.generic import View
 from django.conf import settings
 
 from codenerix.views import GenList, GenCreate, GenCreateModal, GenUpdate, GenUpdateModal, GenDelete, GenDetail, GenDetailModal, GenForeignKey
+from codenerix.middleware import get_current_user
 
 from codenerix_extensions.views import GenCreateBridge, GenUpdateBridge
 from codenerix_extensions.corporate.models import CorporateImage
@@ -55,6 +56,10 @@ from codenerix_invoicing.forms_sales import CustomerForm, CustomerDocumentForm, 
     InvoiceRectificationForm, InvoiceRectificationUpdateForm, LineInvoiceRectificationForm, LineInvoiceRectificationLinkedForm, \
     ReservedProductForm, BasketForm, LineBasketForm, OrderFromBudgetForm, OrderFromShoppingCartForm, LineBasketFormPack
 from codenerix_invoicing.views import PrinterHelper
+
+from .models_sales import ReasonModification, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
+from .forms_sales import ReasonModificationForm, ReasonModificationLineBasketForm, ReasonModificationLineOrderForm, ReasonModificationLineAlbaranForm, ReasonModificationLineTicketForm, ReasonModificationLineTicketRectificationForm, ReasonModificationLineInvoiceForm, ReasonModificationLineInvoiceRectificationForm
+
 
 from .helpers import ShoppingCartProxy
 
@@ -257,7 +262,7 @@ class BasketDetails(GenBasketUrl, GenDetail):
     exclude_fields = ['parent_pk', 'payment']
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslinebaskets_sublist', 'rows': 'base'},
-        {'id': 'lines2', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslinebaskets_sublist', 'rows': 'base'},
+        {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlinebaskets_sublist', 'rows': 'base'},
     ]
     linkedit = False
     linkdelete = False
@@ -729,6 +734,20 @@ class LineBasketDetailModal(GenDetailModal, LineBasketDetails):
     pass
 
 
+class LineBasketForeign(GenLineBasketUrl, GenForeignKey):
+    model = SalesLineBasket
+    label = "{product}: {quantity}"
+
+    def get_foreign(self, queryset, search, filters):
+        qsobject = Q(description__icontains=search)
+        qs = queryset.filter(qsobject)
+        doc = filters.get('doc', None)
+        if doc:
+            qs = qs.filter(basket__pk=doc)
+
+        return qs
+
+
 # ###########################################
 class GenOrderUrl(object):
     ws_entry_point = '{}/orders'.format(settings.CDNX_INVOICING_URL_SALES)
@@ -809,6 +828,7 @@ class OrderDetails(GenOrderUrl, GenDetail):
     exclude_fields = ['parent_pk']
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineordersaless_sublist', 'rows': 'base'},
+        {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlineorders_sublist', 'rows': 'base'},
     ]
     linkedit = False
     linkdelete = False
@@ -1098,6 +1118,10 @@ class LineOrderForeign(GenLineOrderUrl, GenForeignKey):
         order_pk = filters.get('order', None)
         if order_pk:
             qs = qs.filter(order__pk=order_pk)
+
+        order_pk = filters.get('doc', None)
+        if order_pk:
+            qs = qs.filter(order__pk=order_pk)
         return qs[:settings.LIMIT_FOREIGNKEY]
 
 
@@ -1195,6 +1219,7 @@ class AlbaranDetails(GenAlbaranUrl, GenDetail):
     template_model = "sales/albaran_details.html"
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_linealbaransaless_sublist', 'rows': 'base'},
+        {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlinealbarans_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['parent_pk']
     linkedit = False
@@ -1425,6 +1450,21 @@ class LineAlbaranDetailsModal(GenDetailModal, LineAlbaranDetails):
     pass
 
 
+class LineAlbaranForeign(GenLineAlbaranUrl, GenForeignKey):
+    model = SalesLineAlbaran
+    label = "{product} - {quantity}"
+
+    def get_foreign(self, queryset, search, filters):
+        # Filter with search string
+        qsobject = Q(description__icontains=search)
+        qs = queryset.filter(qsobject)
+
+        order_pk = filters.get('doc', None)
+        if order_pk:
+            qs = qs.filter(albaran__pk=order_pk)
+        return qs
+
+
 # ###########################################
 class GenTicketUrl(object):
     ws_entry_point = '{}/tickets'.format(settings.CDNX_INVOICING_URL_SALES)
@@ -1468,6 +1508,7 @@ class TicketDetails(GenTicketUrl, GenDetail):
     template_model = "sales/ticket_details.html"
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineticketsaless_sublist', 'rows': 'base'},
+        {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlinetickets_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['parent_pk']
     linkedit = False
@@ -1760,6 +1801,11 @@ class LineTicketForeign(GenLineTicketUrl, GenForeignKey):
             ).exclude(
                 pk__in=[x[0] for x in SalesLineTicketRectification.objects.filter(ticket_rectification__pk=ticket_rectification_pk).values_list('line_ticket__pk')]
             )
+
+        doc = filters.get('doc', None)
+        if doc:
+            qs = qs.filter(ticket__pk=doc)
+
         return qs[:settings.LIMIT_FOREIGNKEY]
 
 
@@ -1807,6 +1853,7 @@ class TicketRectificationDetails(GenTicketRectificationUrl, GenDetail):
 
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineticketrectificationsaless_sublist', 'rows': 'base'},
+        {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlineticketrectifications_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['lock', 'parent_pk']
     linkedit = False
@@ -1996,6 +2043,22 @@ class LineTicketRectificationDetailModal(GenDetailModal, LineTicketRectification
     pass
 
 
+class LineTicketRectificationForeign(GenLineTicketRectificationUrl, GenForeignKey):
+    model = SalesLineTicket
+    label = "{description} - {quantity}"
+
+    def get_foreign(self, queryset, search, filters):
+        # Filter with search string
+        qsobject = Q(description__icontains=search)
+        qs = queryset.filter(qsobject)
+
+        doc = filters.get('doc', None)
+        if doc:
+            qs = qs.filter(ticket_rectification__pk=doc)
+
+        return qs[:settings.LIMIT_FOREIGNKEY]
+
+
 # ###########################################
 class GenInvoiceUrl(object):
     ws_entry_point = '{}/invoices'.format(settings.CDNX_INVOICING_URL_SALES)
@@ -2039,6 +2102,7 @@ class InvoiceDetails(GenInvoiceUrl, GenDetail):
     template_model = "sales/invoice_details.html"
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineinvoicesaless_sublist', 'rows': 'base'},
+        {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlineinvoices_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['lock', 'parent_pk']
     linkedit = False
@@ -2311,6 +2375,10 @@ class LineInvoiceForeign(GenLineInvoiceUrl, GenForeignKey):
             ).exclude(
                 pk__in=[x[0] for x in SalesLineInvoiceRectification.objects.filter(invoice_rectification__pk=invoice_rectification_pk).values_list('line_invoice__pk')]
             )
+        
+        doc = filters.get('doc', None)
+        if doc:
+            qs = qs.filter(invoice__pk=doc)
         return qs[:settings.LIMIT_FOREIGNKEY]
 
 
@@ -2358,6 +2426,7 @@ class InvoiceRectificationDetails(GenInvoiceRectificationUrl, GenDetail):
 
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineinvoicerectificationsaless_sublist', 'rows': 'base'},
+        {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlineinvoicerectifications_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['lock', 'parent_pk']
     linkedit = False
@@ -2552,6 +2621,21 @@ class LineInvoiceRectificationDetailModal(GenDetailModal, LineInvoiceRectificati
     pass
 
 
+class LineInvoiceRectificationForeign(GenLineInvoiceRectificationUrl, GenForeignKey):
+    model = SalesLineInvoiceRectification
+    label = "{description} - {quantity}"
+
+    def get_foreign(self, queryset, search, filters):
+        # Filter with search string
+        qsobject = Q(description__icontains=search)
+        qs = queryset.filter(qsobject)
+        
+        doc = filters.get('doc', None)
+        if doc:
+            qs = qs.filter(invoice_rectification__pk=doc)
+        return qs[:settings.LIMIT_FOREIGNKEY]
+
+
 # ###########################################
 class GenReservedProduct(object):
     ws_entry_point = '{}/reservedproducts'.format(settings.CDNX_INVOICING_URL_SALES)
@@ -2631,3 +2715,627 @@ class ShoppingCartManagement(View):
             return JsonResponse(cart.totals)
 
         return HttpResponseBadRequest()
+
+
+# ###########################################
+# ReasonModification
+class ReasonModificationList(GenList):
+    model = ReasonModification
+    extra_context = {'menu': ['sales', 'ReasonModification'], 'bread': [_('Sales'), _('ReasonModification')]}
+
+
+class ReasonModificationCreate(GenCreate):
+    model = ReasonModification
+    form_class = ReasonModificationForm
+
+
+class ReasonModificationCreateModal(GenCreateModal, ReasonModificationCreate):
+    pass
+
+
+class ReasonModificationUpdate(GenUpdate):
+    model = ReasonModification
+    form_class = ReasonModificationForm
+
+
+class ReasonModificationUpdateModal(GenUpdateModal, ReasonModificationUpdate):
+    pass
+
+
+class ReasonModificationDelete(GenDelete):
+    model = ReasonModification
+
+
+class ReasonModificationSubList(GenList):
+    model = ReasonModification
+    extra_context = {'menu': ['ReasonModification', 'sales'], 'bread': [_('ReasonModification'), _('Sales')]}
+
+
+class ReasonModificationDetails(GenDetail):
+    model = ReasonModification
+    groups = ReasonModificationForm.__groups_details__()
+
+
+class ReasonModificationDetailModal(GenDetailModal, ReasonModificationDetails):
+    pass
+
+
+# ###########################################
+# ReasonModificationLineBasket
+class ReasonModificationLineBasketList(GenList):
+    model = ReasonModificationLineBasket
+    extra_context = {'menu': ['sales', 'ReasonModificationLineBasket'], 'bread': [_('Sales'), _('ReasonModificationLineBasket')]}
+
+
+class ReasonModificationLineBasketCreate(GenCreate):
+    model = ReasonModificationLineBasket
+    form_class = ReasonModificationLineBasketForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(ReasonModificationLineBasketCreate, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super(ReasonModificationLineBasketCreate, self).get_form(form_class)
+        obj = SalesBasket.objects.filter(pk=self.__pk).first()
+        if obj:
+            form.fields['doc'].initial = obj.pk
+        return form
+
+    def form_valid(self, form):
+        user = get_current_user()
+        form.instance.user = user
+        self.request.user = user
+        return super(ReasonModificationLineBasketCreate, self).form_valid(form)
+
+
+class ReasonModificationLineBasketCreateModal(GenCreateModal, ReasonModificationLineBasketCreate):
+    pass
+
+
+class ReasonModificationLineBasketUpdate(GenUpdate):
+    model = ReasonModificationLineBasket
+    form_class = ReasonModificationLineBasketForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(ReasonModificationLineBasketUpdate, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super(ReasonModificationLineBasketUpdate, self).get_form(form_class)
+        obj = SalesBasket.objects.filter(pk=self.__pk).first()
+        if obj:
+            form.fields['doc'].initial = obj.pk
+        return form
+
+    def form_valid(self, form):
+        user = get_current_user()
+        form.instance.user = user
+        self.request.user = user
+        return super(ReasonModificationLineBasketUpdate, self).form_valid(form)
+
+
+class ReasonModificationLineBasketUpdateModal(GenUpdateModal, ReasonModificationLineBasketUpdate):
+    pass
+
+
+class ReasonModificationLineBasketDelete(GenDelete):
+    model = ReasonModificationLineBasket
+
+
+class ReasonModificationLineBasketSubList(GenList):
+    model = ReasonModificationLineBasket
+    extra_context = {'menu': ['ReasonModificationLineBasket', 'sales'], 'bread': [_('ReasonModificationLineBasket'), _('Sales')]}
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(line__basket__pk=pk)
+        return limit
+
+
+class ReasonModificationLineBasketDetails(GenDetail):
+    model = ReasonModificationLineBasket
+    groups = ReasonModificationLineBasketForm.__groups_details__()
+
+
+class ReasonModificationLineBasketDetailModal(GenDetailModal, ReasonModificationLineBasketDetails):
+    pass
+
+
+# ###########################################
+# ReasonModificationLineOrder
+class ReasonModificationLineOrderList(GenList):
+    model = ReasonModificationLineOrder
+    extra_context = {'menu': ['sales', 'ReasonModificationLineOrder'], 'bread': [_('Sales'), _('ReasonModificationLineOrder')]}
+
+
+class ReasonModificationLineOrderCreate(GenCreate):
+    model = ReasonModificationLineOrder
+    form_class = ReasonModificationLineOrderForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(ReasonModificationLineOrderCreate, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super(ReasonModificationLineOrderCreate, self).get_form(form_class)
+        obj = SalesOrder.objects.filter(pk=self.__pk).first()
+        if obj:
+            form.fields['doc'].initial = obj.pk
+        return form
+
+    def form_valid(self, form):
+        user = get_current_user()
+        form.instance.user = user
+        self.request.user = user
+        return super(ReasonModificationLineOrderCreate, self).form_valid(form)
+
+
+class ReasonModificationLineOrderCreateModal(GenCreateModal, ReasonModificationLineOrderCreate):
+    pass
+
+
+class ReasonModificationLineOrderUpdate(GenUpdate):
+    model = ReasonModificationLineOrder
+    form_class = ReasonModificationLineOrderForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(ReasonModificationLineOrderUpdate, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super(ReasonModificationLineOrderUpdate, self).get_form(form_class)
+        obj = SalesOrder.objects.filter(pk=self.__pk).first()
+        if obj:
+            form.fields['doc'].initial = obj.pk
+        return form
+
+    def form_valid(self, form):
+        user = get_current_user()
+        form.instance.user = user
+        self.request.user = user
+        return super(ReasonModificationLineOrderUpdate, self).form_valid(form)
+
+
+class ReasonModificationLineOrderUpdateModal(GenUpdateModal, ReasonModificationLineOrderUpdate):
+    pass
+
+
+class ReasonModificationLineOrderDelete(GenDelete):
+    model = ReasonModificationLineOrder
+
+
+class ReasonModificationLineOrderSubList(GenList):
+    model = ReasonModificationLineOrder
+    extra_context = {'menu': ['ReasonModificationLineOrder', 'sales'], 'bread': [_('ReasonModificationLineOrder'), _('Sales')]}
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(line__order__pk=pk)
+        return limit
+
+
+class ReasonModificationLineOrderDetails(GenDetail):
+    model = ReasonModificationLineOrder
+    groups = ReasonModificationLineOrderForm.__groups_details__()
+
+
+class ReasonModificationLineOrderDetailModal(GenDetailModal, ReasonModificationLineOrderDetails):
+    pass
+
+
+# ###########################################
+# ReasonModificationLineAlbaran
+class ReasonModificationLineAlbaranList(GenList):
+    model = ReasonModificationLineAlbaran
+    extra_context = {'menu': ['sales', 'ReasonModificationLineAlbaran'], 'bread': [_('Sales'), _('ReasonModificationLineAlbaran')]}
+
+
+class ReasonModificationLineAlbaranCreate(GenCreate):
+    model = ReasonModificationLineAlbaran
+    form_class = ReasonModificationLineAlbaranForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(ReasonModificationLineAlbaranCreate, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super(ReasonModificationLineAlbaranCreate, self).get_form(form_class)
+        obj = SalesAlbaran.objects.filter(pk=self.__pk).first()
+        if obj:
+            form.fields['doc'].initial = obj.pk
+        return form
+
+    def form_valid(self, form):
+        user = get_current_user()
+        form.instance.user = user
+        self.request.user = user
+        return super(ReasonModificationLineAlbaranCreate, self).form_valid(form)
+
+
+class ReasonModificationLineAlbaranCreateModal(GenCreateModal, ReasonModificationLineAlbaranCreate):
+    pass
+
+
+class ReasonModificationLineAlbaranUpdate(GenUpdate):
+    model = ReasonModificationLineAlbaran
+    form_class = ReasonModificationLineAlbaranForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(ReasonModificationLineAlbaranUpdate, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super(ReasonModificationLineAlbaranUpdate, self).get_form(form_class)
+        obj = SalesAlbaran.objects.filter(pk=self.__pk).first()
+        if obj:
+            form.fields['doc'].initial = obj.pk
+        return form
+
+    def form_valid(self, form):
+        user = get_current_user()
+        form.instance.user = user
+        self.request.user = user
+        return super(ReasonModificationLineAlbaranUpdate, self).form_valid(form)
+
+
+class ReasonModificationLineAlbaranUpdateModal(GenUpdateModal, ReasonModificationLineAlbaranUpdate):
+    pass
+
+
+class ReasonModificationLineAlbaranDelete(GenDelete):
+    model = ReasonModificationLineAlbaran
+
+
+class ReasonModificationLineAlbaranSubList(GenList):
+    model = ReasonModificationLineAlbaran
+    extra_context = {'menu': ['ReasonModificationLineAlbaran', 'sales'], 'bread': [_('ReasonModificationLineAlbaran'), _('Sales')]}
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(line__albaran__pk=pk)
+        return limit
+
+
+class ReasonModificationLineAlbaranDetails(GenDetail):
+    model = ReasonModificationLineAlbaran
+    groups = ReasonModificationLineAlbaranForm.__groups_details__()
+
+
+class ReasonModificationLineAlbaranDetailModal(GenDetailModal, ReasonModificationLineAlbaranDetails):
+    pass
+
+
+# ###########################################
+# ReasonModificationLineTicket
+class ReasonModificationLineTicketList(GenList):
+    model = ReasonModificationLineTicket
+    extra_context = {'menu': ['sales', 'ReasonModificationLineTicket'], 'bread': [_('Sales'), _('ReasonModificationLineTicket')]}
+
+
+class ReasonModificationLineTicketCreate(GenCreate):
+    model = ReasonModificationLineTicket
+    form_class = ReasonModificationLineTicketForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(ReasonModificationLineTicketCreate, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super(ReasonModificationLineTicketCreate, self).get_form(form_class)
+        obj = SalesTicket.objects.filter(pk=self.__pk).first()
+        if obj:
+            form.fields['doc'].initial = obj.pk
+        return form
+
+    def form_valid(self, form):
+        user = get_current_user()
+        form.instance.user = user
+        self.request.user = user
+        return super(ReasonModificationLineTicketCreate, self).form_valid(form)
+
+
+class ReasonModificationLineTicketCreateModal(GenCreateModal, ReasonModificationLineTicketCreate):
+    pass
+
+
+class ReasonModificationLineTicketUpdate(GenUpdate):
+    model = ReasonModificationLineTicket
+    form_class = ReasonModificationLineTicketForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(ReasonModificationLineTicketUpdate, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super(ReasonModificationLineTicketUpdate, self).get_form(form_class)
+        obj = SalesTicket.objects.filter(pk=self.__pk).first()
+        if obj:
+            form.fields['doc'].initial = obj.pk
+        return form
+
+    def form_valid(self, form):
+        user = get_current_user()
+        form.instance.user = user
+        self.request.user = user
+        return super(ReasonModificationLineTicketUpdate, self).form_valid(form)
+
+
+class ReasonModificationLineTicketUpdateModal(GenUpdateModal, ReasonModificationLineTicketUpdate):
+    pass
+
+
+class ReasonModificationLineTicketDelete(GenDelete):
+    model = ReasonModificationLineTicket
+
+
+class ReasonModificationLineTicketSubList(GenList):
+    model = ReasonModificationLineTicket
+    extra_context = {'menu': ['ReasonModificationLineTicket', 'sales'], 'bread': [_('ReasonModificationLineTicket'), _('Sales')]}
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(line__ticket__pk=pk)
+        return limit
+
+
+class ReasonModificationLineTicketDetails(GenDetail):
+    model = ReasonModificationLineTicket
+    groups = ReasonModificationLineTicketForm.__groups_details__()
+
+
+class ReasonModificationLineTicketDetailModal(GenDetailModal, ReasonModificationLineTicketDetails):
+    pass
+
+
+# ###########################################
+# ReasonModificationLineTicketRectification
+class ReasonModificationLineTicketRectificationList(GenList):
+    model = ReasonModificationLineTicketRectification
+    extra_context = {'menu': ['sales', 'ReasonModificationLineTicketRectification'], 'bread': [_('Sales'), _('ReasonModificationLineTicketRectification')]}
+
+
+class ReasonModificationLineTicketRectificationCreate(GenCreate):
+    model = ReasonModificationLineTicketRectification
+    form_class = ReasonModificationLineTicketRectificationForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(ReasonModificationLineTicketRectificationCreate, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super(ReasonModificationLineTicketRectificationCreate, self).get_form(form_class)
+        obj = SalesTicketRectification.objects.filter(pk=self.__pk).first()
+        if obj:
+            form.fields['doc'].initial = obj.pk
+        return form
+
+    def form_valid(self, form):
+        user = get_current_user()
+        form.instance.user = user
+        self.request.user = user
+        return super(ReasonModificationLineTicketRectificationCreate, self).form_valid(form)
+
+
+class ReasonModificationLineTicketRectificationCreateModal(GenCreateModal, ReasonModificationLineTicketRectificationCreate):
+    pass
+
+
+class ReasonModificationLineTicketRectificationUpdate(GenUpdate):
+    model = ReasonModificationLineTicketRectification
+    form_class = ReasonModificationLineTicketRectificationForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(ReasonModificationLineTicketRectificationUpdate, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super(ReasonModificationLineTicketRectificationUpdate, self).get_form(form_class)
+        obj = SalesTicketRectification.objects.filter(pk=self.__pk).first()
+        if obj:
+            form.fields['doc'].initial = obj.pk
+        return form
+
+    def form_valid(self, form):
+        user = get_current_user()
+        form.instance.user = user
+        self.request.user = user
+        return super(ReasonModificationLineTicketRectificationUpdate, self).form_valid(form)
+
+
+class ReasonModificationLineTicketRectificationUpdateModal(GenUpdateModal, ReasonModificationLineTicketRectificationUpdate):
+    pass
+
+
+class ReasonModificationLineTicketRectificationDelete(GenDelete):
+    model = ReasonModificationLineTicketRectification
+
+
+class ReasonModificationLineTicketRectificationSubList(GenList):
+    model = ReasonModificationLineTicketRectification
+    extra_context = {'menu': ['ReasonModificationLineTicketRectification', 'sales'], 'bread': [_('ReasonModificationLineTicketRectification'), _('Sales')]}
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(line__ticket_rectification__pk=pk)
+        return limit
+
+
+class ReasonModificationLineTicketRectificationDetails(GenDetail):
+    model = ReasonModificationLineTicketRectification
+    groups = ReasonModificationLineTicketRectificationForm.__groups_details__()
+
+
+class ReasonModificationLineTicketRectificationDetailModal(GenDetailModal, ReasonModificationLineTicketRectificationDetails):
+    pass
+
+
+# ###########################################
+# ReasonModificationLineInvoice
+class ReasonModificationLineInvoiceList(GenList):
+    model = ReasonModificationLineInvoice
+    extra_context = {'menu': ['sales', 'ReasonModificationLineInvoice'], 'bread': [_('Sales'), _('ReasonModificationLineInvoice')]}
+
+
+class ReasonModificationLineInvoiceCreate(GenCreate):
+    model = ReasonModificationLineInvoice
+    form_class = ReasonModificationLineInvoiceForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(ReasonModificationLineInvoiceCreate, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super(ReasonModificationLineInvoiceCreate, self).get_form(form_class)
+        obj = SalesInvoice.objects.filter(pk=self.__pk).first()
+        if obj:
+            form.fields['doc'].initial = obj.pk
+        return form
+
+    def form_valid(self, form):
+        user = get_current_user()
+        form.instance.user = user
+        self.request.user = user
+        return super(ReasonModificationLineInvoiceCreate, self).form_valid(form)
+
+
+class ReasonModificationLineInvoiceCreateModal(GenCreateModal, ReasonModificationLineInvoiceCreate):
+    pass
+
+
+class ReasonModificationLineInvoiceUpdate(GenUpdate):
+    model = ReasonModificationLineInvoice
+    form_class = ReasonModificationLineInvoiceForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(ReasonModificationLineInvoiceUpdate, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super(ReasonModificationLineInvoiceUpdate, self).get_form(form_class)
+        obj = SalesInvoice.objects.filter(pk=self.__pk).first()
+        if obj:
+            form.fields['doc'].initial = obj.pk
+        return form
+
+    def form_valid(self, form):
+        user = get_current_user()
+        form.instance.user = user
+        self.request.user = user
+        return super(ReasonModificationLineInvoiceUpdate, self).form_valid(form)
+
+
+class ReasonModificationLineInvoiceUpdateModal(GenUpdateModal, ReasonModificationLineInvoiceUpdate):
+    pass
+
+
+class ReasonModificationLineInvoiceDelete(GenDelete):
+    model = ReasonModificationLineInvoice
+
+
+class ReasonModificationLineInvoiceSubList(GenList):
+    model = ReasonModificationLineInvoice
+    extra_context = {'menu': ['ReasonModificationLineInvoice', 'sales'], 'bread': [_('ReasonModificationLineInvoice'), _('Sales')]}
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(invoice__pk=pk)
+        return limit
+
+
+class ReasonModificationLineInvoiceDetails(GenDetail):
+    model = ReasonModificationLineInvoice
+    groups = ReasonModificationLineInvoiceForm.__groups_details__()
+
+
+class ReasonModificationLineInvoiceDetailModal(GenDetailModal, ReasonModificationLineInvoiceDetails):
+    pass
+
+
+# ###########################################
+# ReasonModificationLineInvoiceRectification
+class ReasonModificationLineInvoiceRectificationList(GenList):
+    model = ReasonModificationLineInvoiceRectification
+    extra_context = {'menu': ['sales', 'ReasonModificationLineInvoiceRectification'], 'bread': [_('Sales'), _('ReasonModificationLineInvoiceRectification')]}
+
+
+class ReasonModificationLineInvoiceRectificationCreate(GenCreate):
+    model = ReasonModificationLineInvoiceRectification
+    form_class = ReasonModificationLineInvoiceRectificationForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(ReasonModificationLineInvoiceRectificationCreate, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super(ReasonModificationLineInvoiceRectificationCreate, self).get_form(form_class)
+        obj = SalesInvoiceRectification.objects.filter(pk=self.__pk).first()
+        if obj:
+            form.fields['doc'].initial = obj.pk
+        return form
+
+    def form_valid(self, form):
+        user = get_current_user()
+        form.instance.user = user
+        self.request.user = user
+        return super(ReasonModificationLineInvoiceRectificationCreate, self).form_valid(form)
+
+
+class ReasonModificationLineInvoiceRectificationCreateModal(GenCreateModal, ReasonModificationLineInvoiceRectificationCreate):
+    pass
+
+
+class ReasonModificationLineInvoiceRectificationUpdate(GenUpdate):
+    model = ReasonModificationLineInvoiceRectification
+    form_class = ReasonModificationLineInvoiceRectificationForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(ReasonModificationLineInvoiceRectificationUpdate, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        form = super(ReasonModificationLineInvoiceRectificationUpdate, self).get_form(form_class)
+        obj = SalesInvoiceRectification.objects.filter(pk=self.__pk).first()
+        if obj:
+            form.fields['doc'].initial = obj.pk
+        return form
+
+    def form_valid(self, form):
+        user = get_current_user()
+        form.instance.user = user
+        self.request.user = user
+        return super(ReasonModificationLineInvoiceRectificationUpdate, self).form_valid(form)
+
+
+class ReasonModificationLineInvoiceRectificationUpdateModal(GenUpdateModal, ReasonModificationLineInvoiceRectificationUpdate):
+    pass
+
+
+class ReasonModificationLineInvoiceRectificationDelete(GenDelete):
+    model = ReasonModificationLineInvoiceRectification
+
+
+class ReasonModificationLineInvoiceRectificationSubList(GenList):
+    model = ReasonModificationLineInvoiceRectification
+    extra_context = {'menu': ['ReasonModificationLineInvoiceRectification', 'sales'], 'bread': [_('ReasonModificationLineInvoiceRectification'), _('Sales')]}
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(invoice_rectification__pk=pk)
+        return limit
+
+
+class ReasonModificationLineInvoiceRectificationDetails(GenDetail):
+    model = ReasonModificationLineInvoiceRectification
+    groups = ReasonModificationLineInvoiceRectificationForm.__groups_details__()
+
+
+class ReasonModificationLineInvoiceRectificationDetailModal(GenDetailModal, ReasonModificationLineInvoiceRectificationDetails):
+    pass

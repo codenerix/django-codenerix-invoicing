@@ -19,41 +19,51 @@
 # limitations under the License.
 
 from django.conf.urls import url
-from codenerix_invoicing.views_sales import AlbaranCreate, AlbaranCreateModal, AlbaranDelete, AlbaranList, AlbaranUpdate, AlbaranUpdateModal
-from codenerix_invoicing.views_sales import CustomerCreate, CustomerCreateModal, CustomerDelete, CustomerList, CustomerUpdate, CustomerUpdateModal, CustomerDetails
-from codenerix_invoicing.views_sales import InvoiceRectificationCreate, InvoiceRectificationCreateModal, InvoiceRectificationDelete, InvoiceRectificationList, InvoiceRectificationUpdate, InvoiceRectificationUpdateModal, InvoiceRectificationDetails, InvoiceRectificationPrint
-from codenerix_invoicing.views_sales import InvoiceCreate, InvoiceCreateModal, InvoiceDelete, InvoiceList, InvoiceUpdate, InvoiceUpdateModal, InvoicePrint
-from codenerix_invoicing.views_sales import LineAlbaranCreate, LineAlbaranCreateModal, LineAlbaranDelete, LineAlbaranList, LineAlbaranUpdate, LineAlbaranUpdateModal
-from codenerix_invoicing.views_sales import LineInvoiceRectificationCreate, LineInvoiceRectificationCreateModal, LineInvoiceRectificationDelete, LineInvoiceRectificationList, LineInvoiceRectificationUpdate, LineInvoiceRectificationUpdateModal, LineInvoiceRectificationSubList, LineInvoiceRectificationDetailModal
-from codenerix_invoicing.views_sales import LineInvoiceCreate, LineInvoiceCreateModal, LineInvoiceDelete, LineInvoiceList, LineInvoiceUpdate, LineInvoiceUpdateModal
-from codenerix_invoicing.views_sales import LineOrderCreateModal, LineOrderDelete, LineOrderDetailsModal, LineOrderList, LineOrderSubList, LineOrderUpdateModal
-from codenerix_invoicing.views_sales import LineTicketRectificationCreate, LineTicketRectificationCreateModal, LineTicketRectificationDelete, LineTicketRectificationList, LineTicketRectificationUpdate, LineTicketRectificationUpdateModal, LineTicketRectificationSubList, LineTicketRectificationDetailModal
-from codenerix_invoicing.views_sales import LineTicketCreate, LineTicketCreateModal, LineTicketDelete, LineTicketList, LineTicketUpdate, LineTicketUpdateModal
-from codenerix_invoicing.views_sales import OrderCreate, OrderCreateModal, OrderDelete, OrderDetails, OrderList, OrderUpdate, OrderUpdateModal, OrderPrint
-from codenerix_invoicing.views_sales import TicketRectificationCreate, TicketRectificationCreateModal, TicketRectificationDelete, TicketRectificationList, TicketRectificationUpdate, TicketRectificationUpdateModal, TicketRectificationDetails
-from codenerix_invoicing.views_sales import TicketCreate, TicketCreateModal, TicketDelete, TicketList, TicketUpdate, TicketUpdateModal
-from codenerix_invoicing.views_sales import AlbaranDetails, LineAlbaranSubList, AlbaranPrint, LineAlbaranDetailsModal
-from codenerix_invoicing.views_sales import TicketDetails, LineTicketSubList, TicketPrint, LineTicketDetailsModal
-from codenerix_invoicing.views_sales import InvoiceDetails, InvoicePrint, LineInvoiceSubList, LineInvoiceDetailsModal
-from codenerix_invoicing.views_sales import OrderCreateAlbaran, OrderCreateTicket, OrderCreateInvoice
-from codenerix_invoicing.views_sales import AlbaranCreateTicket, AlbaranCreateInvoice
-from codenerix_invoicing.views_sales import TicketCreateInvoice
-from codenerix_invoicing.views_sales import OrderForeign, LineOrderForeign, LineOrderForeignCustom
-from codenerix_invoicing.views_sales import InvoiceCreateRectification, LineInvoiceForeign, TicketCreateRectification, LineTicketForeign, TicketRectificationPrint
-from codenerix_invoicing.views_sales import CustomerDocumentSubList, CustomerDocumentCreateModal, CustomerDocumentDetailsModal, CustomerDocumentUpdateModal, CustomerDocumentDelete
-from codenerix_invoicing.views_sales import ReservedProductList, ReservedProductCreate, ReservedProductUpdate, ReservedProductDelete
-from codenerix_invoicing.views_sales import BasketCreate, BasketCreateModal, BasketUpdate, BasketUpdateModal, BasketDetails, BasketDelete
-from codenerix_invoicing.views_sales import BasketListSHOPPINGCART, BasketDetailsSHOPPINGCART, BasketCreateSHOPPINGCART, BasketCreateSHOPPINGCARTModal, BasketUpdateSHOPPINGCART, BasketDeleteSHOPPINGCART
-from codenerix_invoicing.views_sales import BasketListBUDGET, BasketDetailsBUDGET, BasketCreateBUDGET, BasketCreateBUDGETModal, BasketUpdateBUDGET, BasketDeleteBUDGET
-from codenerix_invoicing.views_sales import BasketListWISHLIST, BasketDetailsWISHLIST, BasketCreateWISHLIST, BasketCreateWISHLISTModal, BasketUpdateWISHLIST, BasketDeleteWISHLIST
-from codenerix_invoicing.views_sales import BasketPassToBudget
-from codenerix_invoicing.views_sales import BasketPassToOrder
-from codenerix_invoicing.views_sales import LineBasketList, LineBasketCreate, LineBasketCreateModal, LineBasketUpdate, LineBasketUpdateModal, LineBasketDelete, LineBasketSubList, LineBasketDetails, LineBasketDetailModal, LineBasketCreateModalPack
-from codenerix_invoicing.views_sales import ShoppingCartManagement
-from codenerix_invoicing.views_sales import CustomerForeignBudget, CustomerForeignShoppingCart
-from codenerix_invoicing.views_sales import BasketForeignShoppingCart, BasketForeignBudget
-from codenerix_invoicing.views_sales import OrderCreateModalFromBudget, OrderCreateModalFromShoppingCart
+from .views_sales import AlbaranCreate, AlbaranCreateModal, AlbaranDelete, AlbaranList, AlbaranUpdate, AlbaranUpdateModal
+from .views_sales import CustomerCreate, CustomerCreateModal, CustomerDelete, CustomerList, CustomerUpdate, CustomerUpdateModal, CustomerDetails
+from .views_sales import InvoiceRectificationCreate, InvoiceRectificationCreateModal, InvoiceRectificationDelete, InvoiceRectificationList, InvoiceRectificationUpdate, InvoiceRectificationUpdateModal, InvoiceRectificationDetails, InvoiceRectificationPrint
+from .views_sales import InvoiceCreate, InvoiceCreateModal, InvoiceDelete, InvoiceList, InvoiceUpdate, InvoiceUpdateModal, InvoicePrint
+from .views_sales import LineAlbaranCreate, LineAlbaranCreateModal, LineAlbaranDelete, LineAlbaranList, LineAlbaranUpdate, LineAlbaranUpdateModal
+from .views_sales import LineInvoiceRectificationCreate, LineInvoiceRectificationCreateModal, LineInvoiceRectificationDelete, LineInvoiceRectificationList, LineInvoiceRectificationUpdate, LineInvoiceRectificationUpdateModal, LineInvoiceRectificationSubList, LineInvoiceRectificationDetailModal
+from .views_sales import LineInvoiceCreate, LineInvoiceCreateModal, LineInvoiceDelete, LineInvoiceList, LineInvoiceUpdate, LineInvoiceUpdateModal
+from .views_sales import LineOrderCreateModal, LineOrderDelete, LineOrderDetailsModal, LineOrderList, LineOrderSubList, LineOrderUpdateModal
+from .views_sales import LineTicketRectificationCreate, LineTicketRectificationCreateModal, LineTicketRectificationDelete, LineTicketRectificationList, LineTicketRectificationUpdate, LineTicketRectificationUpdateModal, LineTicketRectificationSubList, LineTicketRectificationDetailModal
+from .views_sales import LineTicketCreate, LineTicketCreateModal, LineTicketDelete, LineTicketList, LineTicketUpdate, LineTicketUpdateModal
+from .views_sales import OrderCreate, OrderCreateModal, OrderDelete, OrderDetails, OrderList, OrderUpdate, OrderUpdateModal, OrderPrint
+from .views_sales import TicketRectificationCreate, TicketRectificationCreateModal, TicketRectificationDelete, TicketRectificationList, TicketRectificationUpdate, TicketRectificationUpdateModal, TicketRectificationDetails
+from .views_sales import TicketCreate, TicketCreateModal, TicketDelete, TicketList, TicketUpdate, TicketUpdateModal
+from .views_sales import AlbaranDetails, LineAlbaranSubList, AlbaranPrint, LineAlbaranDetailsModal
+from .views_sales import TicketDetails, LineTicketSubList, TicketPrint, LineTicketDetailsModal
+from .views_sales import InvoiceDetails, LineInvoiceSubList, LineInvoiceDetailsModal
+from .views_sales import OrderCreateAlbaran, OrderCreateTicket, OrderCreateInvoice
+from .views_sales import AlbaranCreateTicket, AlbaranCreateInvoice
+from .views_sales import TicketCreateInvoice
+from .views_sales import OrderForeign, LineOrderForeign, LineOrderForeignCustom
+from .views_sales import InvoiceCreateRectification, LineInvoiceForeign, TicketCreateRectification, LineTicketForeign, TicketRectificationPrint
+from .views_sales import CustomerDocumentSubList, CustomerDocumentCreateModal, CustomerDocumentDetailsModal, CustomerDocumentUpdateModal, CustomerDocumentDelete
+from .views_sales import ReservedProductList, ReservedProductCreate, ReservedProductUpdate, ReservedProductDelete
+from .views_sales import BasketCreate, BasketCreateModal, BasketUpdate, BasketUpdateModal, BasketDetails, BasketDelete
+from .views_sales import BasketListSHOPPINGCART, BasketDetailsSHOPPINGCART, BasketCreateSHOPPINGCART, BasketCreateSHOPPINGCARTModal, BasketUpdateSHOPPINGCART, BasketDeleteSHOPPINGCART
+from .views_sales import BasketListBUDGET, BasketDetailsBUDGET, BasketCreateBUDGET, BasketCreateBUDGETModal, BasketUpdateBUDGET, BasketDeleteBUDGET
+from .views_sales import BasketListWISHLIST, BasketDetailsWISHLIST, BasketCreateWISHLIST, BasketCreateWISHLISTModal, BasketUpdateWISHLIST, BasketDeleteWISHLIST
+from .views_sales import BasketPassToBudget
+from .views_sales import BasketPassToOrder
+from .views_sales import LineBasketList, LineBasketCreate, LineBasketCreateModal, LineBasketUpdate, LineBasketUpdateModal, LineBasketDelete, LineBasketSubList, LineBasketDetails, LineBasketDetailModal, LineBasketCreateModalPack, LineBasketForeign
+from .views_sales import ShoppingCartManagement
+from .views_sales import CustomerForeignBudget, CustomerForeignShoppingCart
+from .views_sales import BasketForeignShoppingCart, BasketForeignBudget
+from .views_sales import OrderCreateModalFromBudget, OrderCreateModalFromShoppingCart
 
+from .views_sales import ReasonModificationList, ReasonModificationCreate, ReasonModificationCreateModal, ReasonModificationUpdate, ReasonModificationUpdateModal, ReasonModificationDelete, ReasonModificationSubList, ReasonModificationDetails, ReasonModificationDetailModal
+from .views_sales import ReasonModificationLineBasketList, ReasonModificationLineBasketCreate, ReasonModificationLineBasketCreateModal, ReasonModificationLineBasketUpdate, ReasonModificationLineBasketUpdateModal, ReasonModificationLineBasketDelete, ReasonModificationLineBasketSubList, ReasonModificationLineBasketDetails, ReasonModificationLineBasketDetailModal
+from .views_sales import ReasonModificationLineOrderList, ReasonModificationLineOrderCreate, ReasonModificationLineOrderCreateModal, ReasonModificationLineOrderUpdate, ReasonModificationLineOrderUpdateModal, ReasonModificationLineOrderDelete, ReasonModificationLineOrderSubList, ReasonModificationLineOrderDetails, ReasonModificationLineOrderDetailModal
+from .views_sales import ReasonModificationLineAlbaranList, ReasonModificationLineAlbaranCreate, ReasonModificationLineAlbaranCreateModal, ReasonModificationLineAlbaranUpdate, ReasonModificationLineAlbaranUpdateModal, ReasonModificationLineAlbaranDelete, ReasonModificationLineAlbaranSubList, ReasonModificationLineAlbaranDetails, ReasonModificationLineAlbaranDetailModal
+from .views_sales import ReasonModificationLineTicketList, ReasonModificationLineTicketCreate, ReasonModificationLineTicketCreateModal, ReasonModificationLineTicketUpdate, ReasonModificationLineTicketUpdateModal, ReasonModificationLineTicketDelete, ReasonModificationLineTicketSubList, ReasonModificationLineTicketDetails, ReasonModificationLineTicketDetailModal
+from .views_sales import ReasonModificationLineTicketRectificationList, ReasonModificationLineTicketRectificationCreate, ReasonModificationLineTicketRectificationCreateModal, ReasonModificationLineTicketRectificationUpdate, ReasonModificationLineTicketRectificationUpdateModal, ReasonModificationLineTicketRectificationDelete, ReasonModificationLineTicketRectificationSubList, ReasonModificationLineTicketRectificationDetails, ReasonModificationLineTicketRectificationDetailModal
+from .views_sales import ReasonModificationLineInvoiceList, ReasonModificationLineInvoiceCreate, ReasonModificationLineInvoiceCreateModal, ReasonModificationLineInvoiceUpdate, ReasonModificationLineInvoiceUpdateModal, ReasonModificationLineInvoiceDelete, ReasonModificationLineInvoiceSubList, ReasonModificationLineInvoiceDetails, ReasonModificationLineInvoiceDetailModal
+from .views_sales import ReasonModificationLineInvoiceRectificationList, ReasonModificationLineInvoiceRectificationCreate, ReasonModificationLineInvoiceRectificationCreateModal, ReasonModificationLineInvoiceRectificationUpdate, ReasonModificationLineInvoiceRectificationUpdateModal, ReasonModificationLineInvoiceRectificationDelete, ReasonModificationLineInvoiceRectificationSubList, ReasonModificationLineInvoiceRectificationDetails, ReasonModificationLineInvoiceRectificationDetailModal
+
+from .views_sales import LineAlbaranForeign, LineTicketRectificationForeign, LineInvoiceRectificationForeign
 
 urlpatterns = [
     url(r'^customers$', CustomerList.as_view(), name='CDNX_invoicing_customers_list'),
@@ -120,6 +130,7 @@ urlpatterns = [
     url(r'^linealbarans/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', LineAlbaranDetailsModal.as_view(), name='CDNX_invoicing_linealbaransaless_sublist_details'),
     url(r'^linealbarans/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', LineAlbaranUpdateModal.as_view(), name='CDNX_invoicing_linealbaransaless_sublist_details'),
     url(r'^linealbarans/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', LineAlbaranDelete.as_view(), name='CDNX_invoicing_linealbaransaless_sublist_delete'),
+    url(r'^linealbarans/foreign/(?P<search>[\w\W]+|\*)$', LineAlbaranForeign.as_view(), name='CDNX_invoicing_linealbaransaless_foreign'),
 
 
     url(r'^tickets$', TicketList.as_view(), name='CDNX_invoicing_ticketsaless_list'),
@@ -156,6 +167,7 @@ urlpatterns = [
     url(r'^lineticketrectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', LineTicketRectificationDetailModal.as_view(), name='CDNX_invoicing_lineticketrectificationsaless_sublist_details'),
     url(r'^lineticketrectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', LineTicketRectificationUpdateModal.as_view(), name='CDNX_invoicing_lineticketrectificationsaless_sublist_details'),
     url(r'^lineticketrectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', LineTicketRectificationDelete.as_view(), name='CDNX_invoicing_lineticketrectificationsaless_sublist_delete'),
+    url(r'^lineticketrectifications/foreign/(?P<search>[\w\W]+|\*)$', LineTicketRectificationForeign.as_view(), name='CDNX_invoicing_lineticketrectificationsaless_sublist_foreign'),
 
     url(r'^invoices$', InvoiceList.as_view(), name='CDNX_invoicing_invoicesaless_list'),
     url(r'^invoices/add$', InvoiceCreate.as_view(), name='CDNX_invoicing_invoicesaless_add'),
@@ -190,6 +202,7 @@ urlpatterns = [
     url(r'^lineinvoicerectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', LineInvoiceRectificationDetailModal.as_view(), name='CDNX_invoicing_lineinvoicerectificationsaless_sublist_details'),
     url(r'^lineinvoicerectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', LineInvoiceRectificationUpdateModal.as_view(), name='CDNX_invoicing_lineinvoicerectificationsaless_sublist_details'),
     url(r'^lineinvoicerectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', LineInvoiceRectificationDelete.as_view(), name='CDNX_invoicing_lineinvoicerectificationsaless_sublist_delete'),
+    url(r'^lineinvoicerectifications/foreign/(?P<search>[\w\W]+|\*)$', LineInvoiceRectificationForeign.as_view(), name='CDNX_invoicing_lineinvoicerectificationsaless_sublist_foreign'),
    
     url(r'^reservedproducts$', ReservedProductList.as_view(), name='CDNX_invoicing_reservedproducts_list'),
     url(r'^reservedproducts/add$', ReservedProductCreate.as_view(), name='CDNX_invoicing_reservedproducts_add'),
@@ -241,5 +254,135 @@ urlpatterns = [
     url(r'^linebaskets/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', LineBasketDetailModal.as_view(), name='CDNX_invoicing_saleslinebaskets_sublist_details'),
     url(r'^linebaskets/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', LineBasketUpdateModal.as_view(), name='CDNX_invoicing_saleslinebaskets_sublist_details'),
     url(r'^linebaskets/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', LineBasketDelete.as_view(), name='CDNX_invoicing_saleslinebaskets_sublist_delete'),
+    url(r'^linebaskets/foreign/(?P<search>[\w\W]+|\*)$', LineBasketForeign.as_view(), name='CDNX_invoicing_linebasketsaless_foreign'),
+
+
+
+    url(r'^reasonmodifications$', ReasonModificationList.as_view(), name='CDNX_invoicing_reasonmodifications_list'),
+    url(r'^reasonmodifications/add$', ReasonModificationCreate.as_view(), name='CDNX_invoicing_reasonmodifications_add'),
+    url(r'^reasonmodifications/addmodal$', ReasonModificationCreateModal.as_view(), name='CDNX_invoicing_reasonmodifications_addmodal'),
+    url(r'^reasonmodifications/(?P<pk>\w+)$', ReasonModificationDetails.as_view(), name='CDNX_invoicing_reasonmodifications_details'),
+    url(r'^reasonmodifications/(?P<pk>\w+)/edit$', ReasonModificationUpdate.as_view(), name='CDNX_invoicing_reasonmodifications_edit'),
+    url(r'^reasonmodifications/(?P<pk>\w+)/editmodal$', ReasonModificationUpdateModal.as_view(), name='CDNX_invoicing_reasonmodifications_editmodal'),
+    url(r'^reasonmodifications/(?P<pk>\w+)/delete$', ReasonModificationDelete.as_view(), name='CDNX_invoicing_reasonmodifications_delete'),
+    url(r'^reasonmodifications/(?P<pk>\w+)/sublist$', ReasonModificationSubList.as_view(), name='CDNX_invoicing_reasonmodifications_sublist'),
+    url(r'^reasonmodifications/(?P<pk>\w+)/sublist/add$', ReasonModificationCreateModal.as_view(), name='CDNX_invoicing_reasonmodifications_sublist_add'),
+    url(r'^reasonmodifications/(?P<pk>\w+)/sublist/addmodal$', ReasonModificationCreateModal.as_view(), name='CDNX_invoicing_reasonmodifications_sublist_addmodal'),
+    url(r'^reasonmodifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', ReasonModificationDetailModal.as_view(), name='CDNX_invoicing_reasonmodifications_sublist_details'),
+    url(r'^reasonmodifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/edit$', ReasonModificationUpdateModal.as_view(), name='CDNX_invoicing_reasonmodifications_sublist_edit'),
+    url(r'^reasonmodifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', ReasonModificationUpdateModal.as_view(), name='CDNX_invoicing_reasonmodifications_sublist_editmodal'),
+    url(r'^reasonmodifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', ReasonModificationDelete.as_view(), name='CDNX_invoicing_reasonmodifications_sublist_delete'),
+
+
+    url(r'^reasonmodificationlinebaskets$', ReasonModificationLineBasketList.as_view(), name='CDNX_invoicing_reasonmodificationlinebaskets_list'),
+    url(r'^reasonmodificationlinebaskets/add$', ReasonModificationLineBasketCreate.as_view(), name='CDNX_invoicing_reasonmodificationlinebaskets_add'),
+    url(r'^reasonmodificationlinebaskets/addmodal$', ReasonModificationLineBasketCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinebaskets_addmodal'),
+    url(r'^reasonmodificationlinebaskets/(?P<pk>\w+)$', ReasonModificationLineBasketDetails.as_view(), name='CDNX_invoicing_reasonmodificationlinebaskets_details'),
+    url(r'^reasonmodificationlinebaskets/(?P<pk>\w+)/edit$', ReasonModificationLineBasketUpdate.as_view(), name='CDNX_invoicing_reasonmodificationlinebaskets_edit'),
+    url(r'^reasonmodificationlinebaskets/(?P<pk>\w+)/editmodal$', ReasonModificationLineBasketUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinebaskets_editmodal'),
+    url(r'^reasonmodificationlinebaskets/(?P<pk>\w+)/delete$', ReasonModificationLineBasketDelete.as_view(), name='CDNX_invoicing_reasonmodificationlinebaskets_delete'),
+    url(r'^reasonmodificationlinebaskets/(?P<pk>\w+)/sublist$', ReasonModificationLineBasketSubList.as_view(), name='CDNX_invoicing_reasonmodificationlinebaskets_sublist'),
+    url(r'^reasonmodificationlinebaskets/(?P<pk>\w+)/sublist/add$', ReasonModificationLineBasketCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinebaskets_sublist_add'),
+    url(r'^reasonmodificationlinebaskets/(?P<pk>\w+)/sublist/addmodal$', ReasonModificationLineBasketCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinebaskets_sublist_addmodal'),
+    url(r'^reasonmodificationlinebaskets/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', ReasonModificationLineBasketDetailModal.as_view(), name='CDNX_invoicing_reasonmodificationlinebaskets_sublist_details'),
+    url(r'^reasonmodificationlinebaskets/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/edit$', ReasonModificationLineBasketUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinebaskets_sublist_edit'),
+    url(r'^reasonmodificationlinebaskets/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', ReasonModificationLineBasketUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinebaskets_sublist_editmodal'),
+    url(r'^reasonmodificationlinebaskets/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', ReasonModificationLineBasketDelete.as_view(), name='CDNX_invoicing_reasonmodificationlinebaskets_sublist_delete'),
+
+
+    url(r'^reasonmodificationlineorders$', ReasonModificationLineOrderList.as_view(), name='CDNX_invoicing_reasonmodificationlineorders_list'),
+    url(r'^reasonmodificationlineorders/add$', ReasonModificationLineOrderCreate.as_view(), name='CDNX_invoicing_reasonmodificationlineorders_add'),
+    url(r'^reasonmodificationlineorders/addmodal$', ReasonModificationLineOrderCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineorders_addmodal'),
+    url(r'^reasonmodificationlineorders/(?P<pk>\w+)$', ReasonModificationLineOrderDetails.as_view(), name='CDNX_invoicing_reasonmodificationlineorders_details'),
+    url(r'^reasonmodificationlineorders/(?P<pk>\w+)/edit$', ReasonModificationLineOrderUpdate.as_view(), name='CDNX_invoicing_reasonmodificationlineorders_edit'),
+    url(r'^reasonmodificationlineorders/(?P<pk>\w+)/editmodal$', ReasonModificationLineOrderUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineorders_editmodal'),
+    url(r'^reasonmodificationlineorders/(?P<pk>\w+)/delete$', ReasonModificationLineOrderDelete.as_view(), name='CDNX_invoicing_reasonmodificationlineorders_delete'),
+    url(r'^reasonmodificationlineorders/(?P<pk>\w+)/sublist$', ReasonModificationLineOrderSubList.as_view(), name='CDNX_invoicing_reasonmodificationlineorders_sublist'),
+    url(r'^reasonmodificationlineorders/(?P<pk>\w+)/sublist/add$', ReasonModificationLineOrderCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineorders_sublist_add'),
+    url(r'^reasonmodificationlineorders/(?P<pk>\w+)/sublist/addmodal$', ReasonModificationLineOrderCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineorders_sublist_addmodal'),
+    url(r'^reasonmodificationlineorders/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', ReasonModificationLineOrderDetailModal.as_view(), name='CDNX_invoicing_reasonmodificationlineorders_sublist_details'),
+    url(r'^reasonmodificationlineorders/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/edit$', ReasonModificationLineOrderUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineorders_sublist_edit'),
+    url(r'^reasonmodificationlineorders/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', ReasonModificationLineOrderUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineorders_sublist_editmodal'),
+    url(r'^reasonmodificationlineorders/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', ReasonModificationLineOrderDelete.as_view(), name='CDNX_invoicing_reasonmodificationlineorders_sublist_delete'),
+
+
+    url(r'^reasonmodificationlinealbarans$', ReasonModificationLineAlbaranList.as_view(), name='CDNX_invoicing_reasonmodificationlinealbarans_list'),
+    url(r'^reasonmodificationlinealbarans/add$', ReasonModificationLineAlbaranCreate.as_view(), name='CDNX_invoicing_reasonmodificationlinealbarans_add'),
+    url(r'^reasonmodificationlinealbarans/addmodal$', ReasonModificationLineAlbaranCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinealbarans_addmodal'),
+    url(r'^reasonmodificationlinealbarans/(?P<pk>\w+)$', ReasonModificationLineAlbaranDetails.as_view(), name='CDNX_invoicing_reasonmodificationlinealbarans_details'),
+    url(r'^reasonmodificationlinealbarans/(?P<pk>\w+)/edit$', ReasonModificationLineAlbaranUpdate.as_view(), name='CDNX_invoicing_reasonmodificationlinealbarans_edit'),
+    url(r'^reasonmodificationlinealbarans/(?P<pk>\w+)/editmodal$', ReasonModificationLineAlbaranUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinealbarans_editmodal'),
+    url(r'^reasonmodificationlinealbarans/(?P<pk>\w+)/delete$', ReasonModificationLineAlbaranDelete.as_view(), name='CDNX_invoicing_reasonmodificationlinealbarans_delete'),
+    url(r'^reasonmodificationlinealbarans/(?P<pk>\w+)/sublist$', ReasonModificationLineAlbaranSubList.as_view(), name='CDNX_invoicing_reasonmodificationlinealbarans_sublist'),
+    url(r'^reasonmodificationlinealbarans/(?P<pk>\w+)/sublist/add$', ReasonModificationLineAlbaranCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinealbarans_sublist_add'),
+    url(r'^reasonmodificationlinealbarans/(?P<pk>\w+)/sublist/addmodal$', ReasonModificationLineAlbaranCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinealbarans_sublist_addmodal'),
+    url(r'^reasonmodificationlinealbarans/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', ReasonModificationLineAlbaranDetailModal.as_view(), name='CDNX_invoicing_reasonmodificationlinealbarans_sublist_details'),
+    url(r'^reasonmodificationlinealbarans/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/edit$', ReasonModificationLineAlbaranUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinealbarans_sublist_edit'),
+    url(r'^reasonmodificationlinealbarans/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', ReasonModificationLineAlbaranUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinealbarans_sublist_editmodal'),
+    url(r'^reasonmodificationlinealbarans/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', ReasonModificationLineAlbaranDelete.as_view(), name='CDNX_invoicing_reasonmodificationlinealbarans_sublist_delete'),
+
+
+    url(r'^reasonmodificationlinetickets$', ReasonModificationLineTicketList.as_view(), name='CDNX_invoicing_reasonmodificationlinetickets_list'),
+    url(r'^reasonmodificationlinetickets/add$', ReasonModificationLineTicketCreate.as_view(), name='CDNX_invoicing_reasonmodificationlinetickets_add'),
+    url(r'^reasonmodificationlinetickets/addmodal$', ReasonModificationLineTicketCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinetickets_addmodal'),
+    url(r'^reasonmodificationlinetickets/(?P<pk>\w+)$', ReasonModificationLineTicketDetails.as_view(), name='CDNX_invoicing_reasonmodificationlinetickets_details'),
+    url(r'^reasonmodificationlinetickets/(?P<pk>\w+)/edit$', ReasonModificationLineTicketUpdate.as_view(), name='CDNX_invoicing_reasonmodificationlinetickets_edit'),
+    url(r'^reasonmodificationlinetickets/(?P<pk>\w+)/editmodal$', ReasonModificationLineTicketUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinetickets_editmodal'),
+    url(r'^reasonmodificationlinetickets/(?P<pk>\w+)/delete$', ReasonModificationLineTicketDelete.as_view(), name='CDNX_invoicing_reasonmodificationlinetickets_delete'),
+    url(r'^reasonmodificationlinetickets/(?P<pk>\w+)/sublist$', ReasonModificationLineTicketSubList.as_view(), name='CDNX_invoicing_reasonmodificationlinetickets_sublist'),
+    url(r'^reasonmodificationlinetickets/(?P<pk>\w+)/sublist/add$', ReasonModificationLineTicketCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinetickets_sublist_add'),
+    url(r'^reasonmodificationlinetickets/(?P<pk>\w+)/sublist/addmodal$', ReasonModificationLineTicketCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinetickets_sublist_addmodal'),
+    url(r'^reasonmodificationlinetickets/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', ReasonModificationLineTicketDetailModal.as_view(), name='CDNX_invoicing_reasonmodificationlinetickets_sublist_details'),
+    url(r'^reasonmodificationlinetickets/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/edit$', ReasonModificationLineTicketUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinetickets_sublist_edit'),
+    url(r'^reasonmodificationlinetickets/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', ReasonModificationLineTicketUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlinetickets_sublist_editmodal'),
+    url(r'^reasonmodificationlinetickets/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', ReasonModificationLineTicketDelete.as_view(), name='CDNX_invoicing_reasonmodificationlinetickets_sublist_delete'),
+
+
+    url(r'^reasonmodificationlineticketrectifications$', ReasonModificationLineTicketRectificationList.as_view(), name='CDNX_invoicing_reasonmodificationlineticketrectifications_list'),
+    url(r'^reasonmodificationlineticketrectifications/add$', ReasonModificationLineTicketRectificationCreate.as_view(), name='CDNX_invoicing_reasonmodificationlineticketrectifications_add'),
+    url(r'^reasonmodificationlineticketrectifications/addmodal$', ReasonModificationLineTicketRectificationCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineticketrectifications_addmodal'),
+    url(r'^reasonmodificationlineticketrectifications/(?P<pk>\w+)$', ReasonModificationLineTicketRectificationDetails.as_view(), name='CDNX_invoicing_reasonmodificationlineticketrectifications_details'),
+    url(r'^reasonmodificationlineticketrectifications/(?P<pk>\w+)/edit$', ReasonModificationLineTicketRectificationUpdate.as_view(), name='CDNX_invoicing_reasonmodificationlineticketrectifications_edit'),
+    url(r'^reasonmodificationlineticketrectifications/(?P<pk>\w+)/editmodal$', ReasonModificationLineTicketRectificationUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineticketrectifications_editmodal'),
+    url(r'^reasonmodificationlineticketrectifications/(?P<pk>\w+)/delete$', ReasonModificationLineTicketRectificationDelete.as_view(), name='CDNX_invoicing_reasonmodificationlineticketrectifications_delete'),
+    url(r'^reasonmodificationlineticketrectifications/(?P<pk>\w+)/sublist$', ReasonModificationLineTicketRectificationSubList.as_view(), name='CDNX_invoicing_reasonmodificationlineticketrectifications_sublist'),
+    url(r'^reasonmodificationlineticketrectifications/(?P<pk>\w+)/sublist/add$', ReasonModificationLineTicketRectificationCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineticketrectifications_sublist_add'),
+    url(r'^reasonmodificationlineticketrectifications/(?P<pk>\w+)/sublist/addmodal$', ReasonModificationLineTicketRectificationCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineticketrectifications_sublist_addmodal'),
+    url(r'^reasonmodificationlineticketrectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', ReasonModificationLineTicketRectificationDetailModal.as_view(), name='CDNX_invoicing_reasonmodificationlineticketrectifications_sublist_details'),
+    url(r'^reasonmodificationlineticketrectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/edit$', ReasonModificationLineTicketRectificationUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineticketrectifications_sublist_edit'),
+    url(r'^reasonmodificationlineticketrectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', ReasonModificationLineTicketRectificationUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineticketrectifications_sublist_editmodal'),
+    url(r'^reasonmodificationlineticketrectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', ReasonModificationLineTicketRectificationDelete.as_view(), name='CDNX_invoicing_reasonmodificationlineticketrectifications_sublist_delete'),
+
+
+    url(r'^reasonmodificationlineinvoices$', ReasonModificationLineInvoiceList.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoices_list'),
+    url(r'^reasonmodificationlineinvoices/add$', ReasonModificationLineInvoiceCreate.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoices_add'),
+    url(r'^reasonmodificationlineinvoices/addmodal$', ReasonModificationLineInvoiceCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoices_addmodal'),
+    url(r'^reasonmodificationlineinvoices/(?P<pk>\w+)$', ReasonModificationLineInvoiceDetails.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoices_details'),
+    url(r'^reasonmodificationlineinvoices/(?P<pk>\w+)/edit$', ReasonModificationLineInvoiceUpdate.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoices_edit'),
+    url(r'^reasonmodificationlineinvoices/(?P<pk>\w+)/editmodal$', ReasonModificationLineInvoiceUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoices_editmodal'),
+    url(r'^reasonmodificationlineinvoices/(?P<pk>\w+)/delete$', ReasonModificationLineInvoiceDelete.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoices_delete'),
+    url(r'^reasonmodificationlineinvoices/(?P<pk>\w+)/sublist$', ReasonModificationLineInvoiceSubList.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoices_sublist'),
+    url(r'^reasonmodificationlineinvoices/(?P<pk>\w+)/sublist/add$', ReasonModificationLineInvoiceCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoices_sublist_add'),
+    url(r'^reasonmodificationlineinvoices/(?P<pk>\w+)/sublist/addmodal$', ReasonModificationLineInvoiceCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoices_sublist_addmodal'),
+    url(r'^reasonmodificationlineinvoices/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', ReasonModificationLineInvoiceDetailModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoices_sublist_details'),
+    url(r'^reasonmodificationlineinvoices/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/edit$', ReasonModificationLineInvoiceUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoices_sublist_edit'),
+    url(r'^reasonmodificationlineinvoices/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', ReasonModificationLineInvoiceUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoices_sublist_editmodal'),
+    url(r'^reasonmodificationlineinvoices/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', ReasonModificationLineInvoiceDelete.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoices_sublist_delete'),
+
+
+    url(r'^reasonmodificationlineinvoicerectifications$', ReasonModificationLineInvoiceRectificationList.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_list'),
+    url(r'^reasonmodificationlineinvoicerectifications/add$', ReasonModificationLineInvoiceRectificationCreate.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_add'),
+    url(r'^reasonmodificationlineinvoicerectifications/addmodal$', ReasonModificationLineInvoiceRectificationCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_addmodal'),
+    url(r'^reasonmodificationlineinvoicerectifications/(?P<pk>\w+)$', ReasonModificationLineInvoiceRectificationDetails.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_details'),
+    url(r'^reasonmodificationlineinvoicerectifications/(?P<pk>\w+)/edit$', ReasonModificationLineInvoiceRectificationUpdate.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_edit'),
+    url(r'^reasonmodificationlineinvoicerectifications/(?P<pk>\w+)/editmodal$', ReasonModificationLineInvoiceRectificationUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_editmodal'),
+    url(r'^reasonmodificationlineinvoicerectifications/(?P<pk>\w+)/delete$', ReasonModificationLineInvoiceRectificationDelete.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_delete'),
+    url(r'^reasonmodificationlineinvoicerectifications/(?P<pk>\w+)/sublist$', ReasonModificationLineInvoiceRectificationSubList.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_sublist'),
+    url(r'^reasonmodificationlineinvoicerectifications/(?P<pk>\w+)/sublist/add$', ReasonModificationLineInvoiceRectificationCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_sublist_add'),
+    url(r'^reasonmodificationlineinvoicerectifications/(?P<pk>\w+)/sublist/addmodal$', ReasonModificationLineInvoiceRectificationCreateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_sublist_addmodal'),
+    url(r'^reasonmodificationlineinvoicerectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', ReasonModificationLineInvoiceRectificationDetailModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_sublist_details'),
+    url(r'^reasonmodificationlineinvoicerectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/edit$', ReasonModificationLineInvoiceRectificationUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_sublist_edit'),
+    url(r'^reasonmodificationlineinvoicerectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', ReasonModificationLineInvoiceRectificationUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_sublist_editmodal'),
+    url(r'^reasonmodificationlineinvoicerectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', ReasonModificationLineInvoiceRectificationDelete.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_sublist_delete'),
 
 ]
