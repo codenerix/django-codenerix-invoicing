@@ -64,6 +64,7 @@ from .views_sales import ReasonModificationLineInvoiceList, ReasonModificationLi
 from .views_sales import ReasonModificationLineInvoiceRectificationList, ReasonModificationLineInvoiceRectificationCreate, ReasonModificationLineInvoiceRectificationCreateModal, ReasonModificationLineInvoiceRectificationUpdate, ReasonModificationLineInvoiceRectificationUpdateModal, ReasonModificationLineInvoiceRectificationDelete, ReasonModificationLineInvoiceRectificationSubList, ReasonModificationLineInvoiceRectificationDetails, ReasonModificationLineInvoiceRectificationDetailModal
 
 from .views_sales import LineAlbaranForeign, LineTicketRectificationForeign, LineInvoiceRectificationForeign
+from .views_sales import PrintCounterDocumentBasketSublist, PrintCounterDocumentOrderSublist, PrintCounterDocumentAlbaranSublist, PrintCounterDocumentTicketSublist, PrintCounterDocumentTicketRectificationSublist, PrintCounterDocumentInvoiceSublist, PrintCounterDocumentInvoiceRectificationSublist
 
 urlpatterns = [
     url(r'^customers$', CustomerList.as_view(), name='CDNX_invoicing_customers_list'),
@@ -384,5 +385,14 @@ urlpatterns = [
     url(r'^reasonmodificationlineinvoicerectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/edit$', ReasonModificationLineInvoiceRectificationUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_sublist_edit'),
     url(r'^reasonmodificationlineinvoicerectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', ReasonModificationLineInvoiceRectificationUpdateModal.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_sublist_editmodal'),
     url(r'^reasonmodificationlineinvoicerectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', ReasonModificationLineInvoiceRectificationDelete.as_view(), name='CDNX_invoicing_reasonmodificationlineinvoicerectifications_sublist_delete'),
+
+    url(r'^printcounterdocumentbaskets/(?P<pk>\w+)/sublist$', PrintCounterDocumentBasketSublist.as_view(), name='CDNX_invoicing_printcounterdocumentbaskets_sublist'),
+    url(r'^printcounterdocumentorders/(?P<pk>\w+)/sublist$', PrintCounterDocumentOrderSublist.as_view(), name='CDNX_invoicing_printcounterdocumentorders_sublist'),
+    url(r'^printcounterdocumentalbarans/(?P<pk>\w+)/sublist$', PrintCounterDocumentAlbaranSublist.as_view(), name='CDNX_invoicing_printcounterdocumentalbarans_sublist'),
+    url(r'^printcounterdocumenttickets/(?P<pk>\w+)/sublist$', PrintCounterDocumentTicketSublist.as_view(), name='CDNX_invoicing_printcounterdocumenttickets_sublist'),
+    url(r'^printcounterdocumentticketrectifications/(?P<pk>\w+)/sublist$', PrintCounterDocumentTicketRectificationSublist.as_view(), name='CDNX_invoicing_printcounterdocumentticketrectifications_sublist'),
+    url(r'^printcounterdocumentinvoices/(?P<pk>\w+)/sublist$', PrintCounterDocumentInvoiceSublist.as_view(), name='CDNX_invoicing_printcounterdocumentinvoices_sublist'),
+    url(r'^printcounterdocumentinvoicerectifications/(?P<pk>\w+)/sublist$', PrintCounterDocumentInvoiceRectificationSublist.as_view(), name='CDNX_invoicing_printcounterdocumentinvoicerectifications_sublist'),
+
 
 ]

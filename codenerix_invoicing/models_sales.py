@@ -86,6 +86,13 @@ TYPE_PRIORITIES = (
     ('XXL', _('Urgente')),
 )
 
+STATUS_PRINTER_DOCUMENT_TEMPORARY = 'TM'
+STATUS_PRINTER_DOCUMENT_DEFINITVE = 'DF'
+STATUS_PRINTER_DOCUMENT = (
+    (STATUS_PRINTER_DOCUMENT_TEMPORARY, _('Temporary')),
+    (STATUS_PRINTER_DOCUMENT_DEFINITVE, _('Definitive')),
+)
+
 
 class ABSTRACT_GenCustomer(models.Model):  # META: Abstract class
 
@@ -592,6 +599,10 @@ class GenVersion(CodenerixModel):  # META: Abstract class
         else:
             raise Exception(_("Queryset undefined!!"))
 
+    def print_counter(self, user):
+        # Add new register in the print counter and return the number of impressions definitives
+        raise Exception("Method 'print_counter()' don't implemented")
+
 
 class GenLineProductBasic(CodenerixModel):  # META: Abstract class
     class Meta(CodenerixModel.Meta):
@@ -643,9 +654,11 @@ class GenLineProductBasic(CodenerixModel):  # META: Abstract class
             self.save(force_save=True)
 
     def get_customer(self):
+        # returns the client associated with the document
         raise Exception(_("Method 'get_customer()' don't implemented"))
 
     def get_product(self):
+        # returns the product associated with the line
         raise Exception(_("Method 'get_product()' don't implemented"))
 
 
@@ -1195,6 +1208,18 @@ class SalesBasket(GenVersion):
         # retorna todos los tickets en los que hay lineas de la cesta
         return SalesTicket.objects.filter(line_ticket_sales__line_order__order__budget=self).distinct()
 
+    def print_counter(self, user):
+        obj = PrintCounterDocumentBasket()
+        obj.basket = self
+        obj.user = user
+        obj.date = datetime.datetime.now()
+        if self.lock:
+            obj.status_document = STATUS_PRINTER_DOCUMENT_DEFINITVE
+        else:
+            obj.status_document = STATUS_PRINTER_DOCUMENT_TEMPORARY
+        obj.save()
+        return PrintCounterDocumentBasket.objects.filter(status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE).count()
+
 
 # nueva linea de la cesta de la compra
 class SalesLineBasket(GenLineProduct):
@@ -1332,6 +1357,18 @@ class SalesOrder(GenVersion):
     def calculate_price_doc_complete(self):
         return super(SalesOrder, self).calculate_price_doc_complete(self.line_order_sales.filter(removed=False))
 
+    def print_counter(self, user):
+        obj = PrintCounterDocumentOrder()
+        obj.order = self
+        obj.user = user
+        obj.date = datetime.datetime.now()
+        if self.lock:
+            obj.status_document = STATUS_PRINTER_DOCUMENT_DEFINITVE
+        else:
+            obj.status_document = STATUS_PRINTER_DOCUMENT_TEMPORARY
+        obj.save()
+        return PrintCounterDocumentOrder.objects.filter(status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE).count()
+
 
 # lineas de pedidos
 class SalesLineOrder(GenLineProduct):
@@ -1411,6 +1448,18 @@ class SalesAlbaran(GenVersion):
     def calculate_price_doc_complete(self):
         return super(SalesAlbaran, self).calculate_price_doc_complete(self.line_albaran_sales.filter(removed=False))
 
+    def print_counter(self, user):
+        obj = PrintCounterDocumentAlbaran()
+        obj.albaran = self
+        obj.user = user
+        obj.date = datetime.datetime.now()
+        if self.lock:
+            obj.status_document = STATUS_PRINTER_DOCUMENT_DEFINITVE
+        else:
+            obj.status_document = STATUS_PRINTER_DOCUMENT_TEMPORARY
+        obj.save()
+        return PrintCounterDocumentAlbaran.objects.filter(status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE).count()
+
 
 # lineas de albaranes
 class SalesLineAlbaran(GenLineProductBasic):
@@ -1489,6 +1538,18 @@ class SalesTicket(GenVersion):
     def calculate_price_doc_complete(self):
         return super(SalesTicket, self).calculate_price_doc_complete(self.line_ticket_sales.filter(removed=False))
 
+    def print_counter(self, user):
+        obj = PrintCounterDocumentTicket()
+        obj.ticket = self
+        obj.user = user
+        obj.date = datetime.datetime.now()
+        if self.lock:
+            obj.status_document = STATUS_PRINTER_DOCUMENT_DEFINITVE
+        else:
+            obj.status_document = STATUS_PRINTER_DOCUMENT_TEMPORARY
+        obj.save()
+        return PrintCounterDocumentTicket.objects.filter(status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE).count()
+
 
 class SalesLineTicket(GenLineProduct):
     ticket = models.ForeignKey(SalesTicket, related_name='line_ticket_sales', verbose_name=_("Ticket"))
@@ -1536,6 +1597,18 @@ class SalesTicketRectification(GenInvoiceRectification):
 
     def calculate_price_doc_complete(self):
         return super(SalesTicketRectification, self).calculate_price_doc_complete(self.line_ticketrectification_sales.filter(removed=False))
+
+    def print_counter(self, user):
+        obj = PrintCounterDocumentTicketRectification()
+        obj.ticket_rectification = self
+        obj.user = user
+        obj.date = datetime.datetime.now()
+        if self.lock:
+            obj.status_document = STATUS_PRINTER_DOCUMENT_DEFINITVE
+        else:
+            obj.status_document = STATUS_PRINTER_DOCUMENT_TEMPORARY
+        obj.save()
+        return PrintCounterDocumentTicketRectification.objects.filter(status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE).count()
 
 
 class SalesLineTicketRectification(GenLineProductBasic):
@@ -1609,6 +1682,18 @@ class SalesInvoice(GenVersion):
     def calculate_price_doc_complete(self):
         return super(SalesInvoice, self).calculate_price_doc_complete(self.line_invoice_sales.filter(removed=False))
 
+    def print_counter(self, user):
+        obj = PrintCounterDocumentInvoice()
+        obj.invoice = self
+        obj.user = user
+        obj.date = datetime.datetime.now()
+        if self.lock:
+            obj.status_document = STATUS_PRINTER_DOCUMENT_DEFINITVE
+        else:
+            obj.status_document = STATUS_PRINTER_DOCUMENT_TEMPORARY
+        obj.save()
+        return PrintCounterDocumentInvoice.objects.filter(status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE).count()
+
 
 class SalesLineInvoice(GenLineProduct):
     invoice = models.ForeignKey(SalesInvoice, related_name='line_invoice_sales', verbose_name=_("Invoice"))
@@ -1649,6 +1734,18 @@ class SalesInvoiceRectification(GenInvoiceRectification):
 
     def calculate_price_doc_complete(self):
         return super(SalesInvoiceRectification, self).calculate_price_doc_complete(self.line_invoicerectification_sales.filter(removed=False))
+
+    def print_counter(self, user):
+        obj = PrintCounterDocumentInvoiceRectification()
+        obj.invoice_rectification = self
+        obj.user = user
+        obj.date = datetime.datetime.now()
+        if self.lock:
+            obj.status_document = STATUS_PRINTER_DOCUMENT_DEFINITVE
+        else:
+            obj.status_document = STATUS_PRINTER_DOCUMENT_TEMPORARY
+        obj.save()
+        return PrintCounterDocumentInvoiceRectification.objects.filter(status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE).count()
 
 
 class SalesLineInvoiceRectification(GenLineProductBasic):
@@ -1772,3 +1869,59 @@ class ReasonModificationLineInvoiceRectification(ReasonModificationLine):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_invoice_rectification', verbose_name=_("User"))
     reason = models.ForeignKey(ReasonModification, related_name='reason_line_invoice_rectification', verbose_name=_("Reason"))
     line = models.ForeignKey(SalesLineInvoiceRectification, related_name='reason_line_invoice_rectification', verbose_name=_("Line"))
+
+
+# Print counter per document
+class PrintCounterDocument(CodenerixModel):  # META: Abstract class
+    date = models.DateTimeField(_("Date"), blank=False, null=False, default=timezone.now, editable=False)
+    status_document = models.CharField(_("Status document"), max_length=2, choices=STATUS_PRINTER_DOCUMENT, blank=False, null=False, default=STATUS_PRINTER_DOCUMENT_TEMPORARY)
+
+    class Meta(object):
+        abstract = True
+
+    def __str__(self):
+        return u"{} - {}  ({})".format(smart_text(self.date), smart_text(self.doc), smart_text(self.user))
+
+    def __unicode__(self):
+        return self.__str__()
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('user', _("User")))
+        fields.append(('date', _("Date")))
+        return fields
+
+
+class PrintCounterDocumentBasket(PrintCounterDocument):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_basket', verbose_name=_("User"))
+    basket = models.ForeignKey(SalesBasket, related_name='print_counter_document_basket', verbose_name=_("Document"))
+
+
+class PrintCounterDocumentOrder(PrintCounterDocument):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_order', verbose_name=_("User"))
+    order = models.ForeignKey(SalesOrder, related_name='print_counter_document_order', verbose_name=_("Document"))
+
+
+class PrintCounterDocumentAlbaran(PrintCounterDocument):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_albaran', verbose_name=_("User"))
+    albaran = models.ForeignKey(SalesAlbaran, related_name='print_counter_document_albaran', verbose_name=_("Document"))
+
+
+class PrintCounterDocumentTicket(PrintCounterDocument):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_ticket', verbose_name=_("User"))
+    ticket = models.ForeignKey(SalesTicket, related_name='print_counter_document_ticket', verbose_name=_("Document"))
+
+
+class PrintCounterDocumentTicketRectification(PrintCounterDocument):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_ticket_rectification', verbose_name=_("User"))
+    ticket_rectification = models.ForeignKey(SalesTicketRectification, related_name='print_counter_document_ticket_rectification', verbose_name=_("Document"))
+
+
+class PrintCounterDocumentInvoice(PrintCounterDocument):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_invoice', verbose_name=_("User"))
+    invoice = models.ForeignKey(SalesInvoice, related_name='print_counter_document_invoice', verbose_name=_("Document"))
+
+
+class PrintCounterDocumentInvoiceRectification(PrintCounterDocument):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_invoice_rectification', verbose_name=_("User"))
+    invoice_rectification = models.ForeignKey(SalesInvoiceRectification, related_name='print_counter_document_invoice_rectification', verbose_name=_("Document"))

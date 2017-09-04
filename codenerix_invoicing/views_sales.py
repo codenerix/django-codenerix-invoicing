@@ -60,6 +60,7 @@ from codenerix_invoicing.views import PrinterHelper
 from .models_sales import ReasonModification, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
 from .forms_sales import ReasonModificationForm, ReasonModificationLineBasketForm, ReasonModificationLineOrderForm, ReasonModificationLineAlbaranForm, ReasonModificationLineTicketForm, ReasonModificationLineTicketRectificationForm, ReasonModificationLineInvoiceForm, ReasonModificationLineInvoiceRectificationForm
 
+from .models_sales import PrintCounterDocumentBasket, PrintCounterDocumentOrder, PrintCounterDocumentAlbaran, PrintCounterDocumentTicket, PrintCounterDocumentTicketRectification, PrintCounterDocumentInvoice, PrintCounterDocumentInvoiceRectification
 
 from .helpers import ShoppingCartProxy
 
@@ -263,6 +264,7 @@ class BasketDetails(GenBasketUrl, GenDetail):
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslinebaskets_sublist', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlinebaskets_sublist', 'rows': 'base'},
+        {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumentbaskets_sublist', 'rows': 'base'},
     ]
     linkedit = False
     linkdelete = False
@@ -829,6 +831,7 @@ class OrderDetails(GenOrderUrl, GenDetail):
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineordersaless_sublist', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlineorders_sublist', 'rows': 'base'},
+        {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumentorders_sublist', 'rows': 'base'},
     ]
     linkedit = False
     linkdelete = False
@@ -1220,6 +1223,7 @@ class AlbaranDetails(GenAlbaranUrl, GenDetail):
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_linealbaransaless_sublist', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlinealbarans_sublist', 'rows': 'base'},
+        {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumentalbarans_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['parent_pk']
     linkedit = False
@@ -1509,6 +1513,7 @@ class TicketDetails(GenTicketUrl, GenDetail):
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineticketsaless_sublist', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlinetickets_sublist', 'rows': 'base'},
+        {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumenttickets_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['parent_pk']
     linkedit = False
@@ -1854,6 +1859,7 @@ class TicketRectificationDetails(GenTicketRectificationUrl, GenDetail):
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineticketrectificationsaless_sublist', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlineticketrectifications_sublist', 'rows': 'base'},
+        {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumentticketrectifications_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['lock', 'parent_pk']
     linkedit = False
@@ -2103,6 +2109,7 @@ class InvoiceDetails(GenInvoiceUrl, GenDetail):
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineinvoicesaless_sublist', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlineinvoices_sublist', 'rows': 'base'},
+        {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumentinvoices_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['lock', 'parent_pk']
     linkedit = False
@@ -2427,6 +2434,7 @@ class InvoiceRectificationDetails(GenInvoiceRectificationUrl, GenDetail):
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineinvoicerectificationsaless_sublist', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlineinvoicerectifications_sublist', 'rows': 'base'},
+        {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumentinvoicerectifications_sublist', 'rows': 'base'},
     ]
     exclude_fields = ['lock', 'parent_pk']
     linkedit = False
@@ -3339,3 +3347,115 @@ class ReasonModificationLineInvoiceRectificationDetails(GenDetail):
 
 class ReasonModificationLineInvoiceRectificationDetailModal(GenDetailModal, ReasonModificationLineInvoiceRectificationDetails):
     pass
+
+
+# ###########################################
+# PrintCounterDocumentBasket
+class PrintCounterDocumentBasketSublist(GenList):
+    model = PrintCounterDocumentBasket
+    extra_context = {'menu': ['ReasonModificationLineInvoiceRectification', 'sales'], 'bread': [_('ReasonModificationLineInvoiceRectification'), _('Sales')]}
+    linkadd = False
+    linkedit = False
+    default_ordering = "-date"
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(basket__pk=pk)
+        return limit
+
+
+# ###########################################
+# PrintCounterDocumentOrder
+class PrintCounterDocumentOrderSublist(GenList):
+    model = PrintCounterDocumentOrder
+    extra_context = {'menu': ['PrintCounterDocumentOrder', 'sales'], 'bread': [_('PrintCounterDocumentOrder'), _('Sales')]}
+    linkadd = False
+    linkedit = False
+    default_ordering = "-date"
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(order__pk=pk)
+        return limit
+
+
+# ###########################################
+# PrintCounterDocumentAlbaran
+class PrintCounterDocumentAlbaranSublist(GenList):
+    model = PrintCounterDocumentAlbaran
+    extra_context = {'menu': ['PrintCounterDocumentAlbaran', 'sales'], 'bread': [_('PrintCounterDocumentAlbaran'), _('Sales')]}
+    linkadd = False
+    linkedit = False
+    default_ordering = "-date"
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(albaran__pk=pk)
+        return limit
+
+
+# ###########################################
+# PrintCounterDocumentTicket
+class PrintCounterDocumentTicketSublist(GenList):
+    model = PrintCounterDocumentTicket
+    extra_context = {'menu': ['PrintCounterDocumentTicket', 'sales'], 'bread': [_('PrintCounterDocumentTicket'), _('Sales')]}
+    linkadd = False
+    linkedit = False
+    default_ordering = "-date"
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(ticket__pk=pk)
+        return limit
+
+
+# ###########################################
+# PrintCounterDocumentTicketRectification
+class PrintCounterDocumentTicketRectificationSublist(GenList):
+    model = PrintCounterDocumentTicketRectification
+    extra_context = {'menu': ['PrintCounterDocumentTicketRectification', 'sales'], 'bread': [_('PrintCounterDocumentTicketRectification'), _('Sales')]}
+    linkadd = False
+    linkedit = False
+    default_ordering = "-date"
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(ticket_rectification__pk=pk)
+        return limit
+
+
+# ###########################################
+# PrintCounterDocumentInvoice
+class PrintCounterDocumentInvoiceSublist(GenList):
+    model = PrintCounterDocumentInvoice
+    extra_context = {'menu': ['PrintCounterDocumentInvoice', 'sales'], 'bread': [_('PrintCounterDocumentInvoice'), _('Sales')]}
+    linkadd = False
+    linkedit = False
+    default_ordering = "-date"
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(invoice__pk=pk)
+        return limit
+
+
+# ###########################################
+# PrintCounterDocumentInvoiceRectification
+class PrintCounterDocumentInvoiceRectificationSublist(GenList):
+    model = PrintCounterDocumentInvoiceRectification
+    extra_context = {'menu': ['PrintCounterDocumentInvoiceRectification', 'sales'], 'bread': [_('PrintCounterDocumentInvoiceRectification'), _('Sales')]}
+    linkadd = False
+    linkedit = False
+    default_ordering = "-date"
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(invoice_rectification__pk=pk)
+        return limit
