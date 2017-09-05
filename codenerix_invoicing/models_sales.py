@@ -1889,6 +1889,7 @@ class PrintCounterDocument(CodenerixModel):  # META: Abstract class
         fields = []
         fields.append(('user', _("User")))
         fields.append(('date', _("Date")))
+        fields.append(('get_status_document_display', _("Status document")))
         return fields
 
 

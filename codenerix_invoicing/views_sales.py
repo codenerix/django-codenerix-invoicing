@@ -857,6 +857,7 @@ class OrderPrint(PrinterHelper, GenOrderUrl, GenDetail):
         context = super(OrderPrint, self).get_context_data(**kwargs)
 
         order = self.object
+        order.print_counter(get_current_user())
 
         # I take address for send.
         if hasattr(order.customer.external, 'person_address'):
@@ -1250,6 +1251,7 @@ class AlbaranPrint(PrinterHelper, GenAlbaranUrl, GenDetail):
         context = super(AlbaranPrint, self).get_context_data(**kwargs)
 
         albaran = self.object
+        albaran.print_counter(get_current_user())
 
         # I take address for send.
         context["albaran"] = albaran
@@ -1540,6 +1542,7 @@ class TicketPrint(PrinterHelper, GenTicketUrl, GenDetail):
         context = super(TicketPrint, self).get_context_data(**kwargs)
 
         ticket = self.object
+        ticket.print_counter(get_current_user())
 
         # I take address for send.
         if hasattr(ticket.customer.external, 'person_address'):
@@ -1886,6 +1889,7 @@ class TicketRectificationPrint(PrinterHelper, GenTicketRectificationUrl, GenDeta
         context = super(TicketRectificationPrint, self).get_context_data(**kwargs)
 
         ticketrectification = self.object
+        ticketrectification.print_counter(get_current_user())
 
         customer = None
 
@@ -2184,6 +2188,7 @@ class InvoicePrint(PrinterHelper, GenInvoiceUrl, GenDetail):
         context = super(InvoicePrint, self).get_context_data(**kwargs)
 
         invoice = self.object
+        invoice.print_counter(get_current_user())
 
         # I take address for send.
         if hasattr(ticket.customer.external, 'person_address'):
@@ -2461,6 +2466,7 @@ class InvoiceRectificationPrint(PrinterHelper, GenInvoiceRectificationUrl, GenDe
         context = super(InvoiceRectificationPrint, self).get_context_data(**kwargs)
 
         invoicerectification = self.object
+        invoicerectification.print_counter(get_current_user())
 
         customer = None
 
