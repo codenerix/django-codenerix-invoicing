@@ -184,7 +184,7 @@ class LineBasketForm(GenModelForm):
 
     class Meta:
         model = SalesLineBasket
-        exclude = ['basket', 'price_recommended', ]
+        exclude = ['basket', 'price_recommended', 'equivalence_surcharges', 'equivalence_surcharge']
         autofill = {
             'product': ['select', 3, 'CDNX_products_productfinals_foreign_sales', ],
             'type_tax': ['select', 3, 'CDNX_products_typetaxs_foreing', ],

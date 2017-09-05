@@ -615,10 +615,12 @@ class LineBasketUpdateModal(GenUpdateModal, LineBasketUpdate):
     def get_form(self, form_class=None):
         # form_kwargs = super(LineBasketUpdateModal, self).get_form_kwargs(*args, **kwargs)
         form = super(LineBasketUpdateModal, self).get_form(form_class)
+        initial = form.initial
+        initial['type_tax'] = self.object.product.product.tax.pk
+        initial['price'] = self.object.total
         if self.__is_pack:
             options = []
             lang = get_language_database()
-            initial = form.initial
 
             for option in SalesLineBasketOption.objects.filter(line_budget__pk=self.__line_pk):
                 initial['packs[{}]'.format(option.product_option.pk)] = option.product_final.pk

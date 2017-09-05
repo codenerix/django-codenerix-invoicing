@@ -284,8 +284,10 @@ angular.module('codenerixSalesControllers', [])
                 tax = tax * price_base / 100;
             }
             var price = parseFloat(price_base) + parseFloat(tax);
-            $scope[$scope.form_name]['price'].$setViewValue(price.toFixed(2));
-            $scope[$scope.form_name]['price'].$render();
+            if ($scope[$scope.form_name]['price'] != undefined){
+                $scope[$scope.form_name]['price'].$setViewValue(price.toFixed(2));
+                $scope[$scope.form_name]['price'].$render();
+            }
         }
     }
 ]);
