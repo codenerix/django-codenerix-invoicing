@@ -29,6 +29,7 @@ from django.conf import settings
 
 from codenerix.models import GenInterface, CodenerixModel
 from codenerix.models_people import GenRole
+from codenerix.helpers import model_inspect
 from codenerix_extensions.helpers import get_external_method
 from codenerix_extensions.files.models import GenDocumentFile
 
@@ -417,6 +418,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
     # pk de la versión original
     parent_pk = models.IntegerField(_("Parent pk"), blank=True, null=True)
     code = models.CharField(_("Code"), max_length=64, blank=False, null=False)
+    code_counter = models.IntegerField(_("Code counter"), blank=False, null=False, editable=False)
     date = models.DateTimeField(_("Date"), blank=False, null=False, default=timezone.now)
     observations = models.TextField(_("Observations"), max_length=256, blank=True, null=True)
     """
@@ -431,72 +433,69 @@ class GenVersion(CodenerixModel):  # META: Abstract class
     # logical deletion
     removed = models.BooleanField(_("Removed"), blank=False, default=False, editable=False)
 
-    @staticmethod
-    def getcode(model, real=False):
-        if real is False:
-            code = 0
+    def setcode(self):
+        model = self._meta.model
+        if model == SalesBasket:
+            code_format = {}
+            code_format[ROLE_BASKET_BUDGET] = 'CDNX_INVOICING_CODE_FORMAT_BUDGET'
+            code_format[ROLE_BASKET_WISHLIST] = 'CDNX_INVOICING_CODE_FORMAT_WISHLIST'
+            code_format[ROLE_BASKET_SHOPPINGCART] = 'CDNX_INVOICING_CODE_FORMAT_SHOPPINGCART'
+        elif model == SalesOrder:
+            code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_ORDER', None)
+        elif model == SalesAlbaran:
+            code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_ALBARAN', None)
+        elif model == SalesTicketRectification:
+            code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_TICKET', None)
+        elif model == SalesTicketRectification:
+            code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_TICKETRECTIFICATION', None)
+        elif model == SalesInvoice:
+            code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_INVOICE', None)
+        elif model == SalesInvoiceRectification:
+            code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_INVOICERECTIFCATION', None)
         else:
-            if model == SalesBasket:
-                code_format = {}
-                code_format[ROLE_BASKET_BUDGET] = 'CDNX_INVOICING_CODE_FORMAT_BUDGET'
-                code_format[ROLE_BASKET_WISHLIST] = 'CDNX_INVOICING_CODE_FORMAT_WISHLIST'
-                code_format[ROLE_BASKET_SHOPPINGCART] = 'CDNX_INVOICING_CODE_FORMAT_SHOPPINGCART'
-            elif model == SalesOrder:
-                code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_ORDER', None)
-            elif model == SalesAlbaran:
-                code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_ALBARAN', None)
-            elif model == SalesTicketRectification:
-                code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_TICKET', None)
-            elif model == SalesTicketRectification:
-                code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_TICKETRECTIFICATION', None)
-            elif model == SalesInvoice:
-                code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_INVOICE', None)
-            elif model == SalesInvoiceRectification:
-                code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_INVOICERECTIFCATION', None)
-            else:
-                code_format = None
+            code_format = None
 
-            last = model.objects.order_by('-pk').first()
-            if last:
-                # como hace esto si no es un numero????????
-                # si cambia de año tenerlo, empezar de cero
-                code = int(last.code) + 1
-            else:
-                code = 1
-            return code
-
-            if code_format:
-                now = datetime.datetime.now()
-                values = {
-                    'year': now.year,
-                    'day': now.day,
-                    'month': now.month,
-                    'hour': now.hour,
-                    'minute': now.minute,
-                    'second': now.second,
-                    'microsecond': now.microsecond,
-                    'quarter': now.month // 4 + 1,
-                    'serial': 'xxxx',
-                    'pk': code,
-                }
-                if isinstance(code_format, dict):
-                    role = getattr(last, 'role', None)
-                    if role and role in code_format and hasattr(settings, code_format[role]):
-                        code_format = getattr(settings, code_format[role], None)
-                        if code_format:
-                            code_str = code_format.format(**values)
-                        else:
-                            raise Exception(_("{} undefined".format(code_format['role'])))
+        if code_format:
+            now = datetime.datetime.now()
+            values = {
+                'year': now.year,
+                'day': now.day,
+                'month': now.month,
+                'hour': now.hour,
+                'minute': now.minute,
+                'second': now.second,
+                'microsecond': now.microsecond,
+                'quarter': now.month // 4 + 1,
+                'serial': self.billing_series,
+                'number': self.code_counter,
+            }
+            if isinstance(code_format, dict):
+                role = getattr(last, 'role', None)
+                if role and role in code_format and hasattr(settings, code_format[role]):
+                    code_format = getattr(settings, code_format[role], None)
+                    if code_format:
+                        code_str = code_format.format(**values)
                     else:
-                        raise Exception(_("Can not determine code, rol undefined"))
+                        raise Exception(_("{} undefined".format(code_format['role'])))
                 else:
-                    code_str = code_format.format(**values)
+                    raise Exception(_("Can not determine code, rol undefined"))
             else:
-                code_str = code
-        return code_str
+                code_str = code_format.format(**values)
+        else:
+            code_str = code
+
+        # Set new code to this object
+        self.code = code_str
 
     def save(self, *args, **kwargs):
-        force_save = kwargs.get('force_save', False)
+        # Check force save
+        if 'force_save' in kwargs:
+            force_save = kwargs.pop('force_save')
+            if force_save:
+                # Brake here and go as usually
+                return super(GenVersion, self).save(*args, **kwargs)
+
+        make_code = False
         if self.pk:
             obj = self._meta.model.objects.get(pk=self.pk)
 
@@ -524,19 +523,33 @@ class GenVersion(CodenerixModel):  # META: Abstract class
             #####################
 
             # Si está bloqueado y además se ha cambiado algo más, además del lock, se duplica
-            if force_save is False and obj.lock is True and need_duplicate is True:
+            if obj.lock is True and need_duplicate is True:
                 # parent pk
                 if self.parent_pk is None:
                     self.parent_pk = self.pk
 
-                # reset object
+                # Reset object so it will create a new copy
                 self.pk = None
                 self.lock = False
-                self.code = GenVersion.getcode(self._meta.model, True)
+                make_code = True
         else:
-            self.code = GenVersion.getcode(self._meta.model, True)
+            # New register
+            make_code = True
 
-        return super(GenVersion, self).save(*args, **kwargs)
+        # If we should make a new code
+        if make_code:
+            with transaction.atomic():
+                # Find new code_counter
+                self.code_counter = 0 # ............... <<<<<<<
+                # Create new code
+                self.setcode()
+                # Save
+                result= super(GenVersion, self).save(*args, **kwargs)
+        else:
+            result = super(GenVersion, self).save(*args, **kwargs)
+
+        # Return result
+        return result
 
     def delete(self):
         if not hasattr(settings, 'CDNX_INVOICING_LOGICAL_DELETION') or settings.CDNX_INVOICING_LOGICAL_DELETION is False:
@@ -1103,6 +1116,7 @@ class SalesBasket(GenVersion):
     address_invoice = models.ForeignKey(Address, related_name='order_sales_invoice', verbose_name=_("Address invoice"), blank=True, null=True)
     expiration_date = models.DateTimeField(_("Expiration date"), blank=True, null=True, editable=False)
     haulier = models.ForeignKey(Haulier, related_name='basket_sales', verbose_name=_("Haulier"), blank=True, null=True)
+    billing_series = models.ForeignKey(BillingSeries, related_name='basket_sales', verbose_name='Billing series', blank=False, null=False)
 
     def __unicode__(self):
         return u"Order-{}".format(smart_text(self.code))
@@ -1332,6 +1346,7 @@ class SalesOrder(GenVersion):
     status_order = models.CharField(_("Status"), max_length=2, choices=STATUS_ORDER, blank=False, null=False, default='PE')
     payment_detail = models.CharField(_("Payment detail"), max_length=3, choices=PAYMENT_DETAILS, blank=True, null=True)
     source = models.CharField(_("Source of purchase"), max_length=250, blank=True, null=True)
+    billing_series = models.ForeignKey(BillingSeries, related_name='order_sales', verbose_name='Billing series', blank=False, null=False)
 
     def __unicode__(self):
         return u"Order-{}".format(smart_text(self.code))
@@ -1430,6 +1445,7 @@ class SalesLineOrderOption(CodenerixModel):
 class SalesAlbaran(GenVersion):
     tax = models.FloatField(_("Tax"), blank=False, null=False, default=0)
     summary_delivery = models.TextField(_("Address delivery"), max_length=256, blank=True, null=True)
+    billing_series = models.ForeignKey(BillingSeries, related_name='albaran_sales', verbose_name='Billing series', blank=False, null=False)
 
     def __unicode__(self):
         return u"Albaran-{}".format(smart_text(self.code))
@@ -1520,6 +1536,7 @@ class SalesLineAlbaran(GenLineProductBasic):
 # ticket y facturas son lo mismo con un check de "tengo datos del customere"
 class SalesTicket(GenVersion):
     customer = models.ForeignKey(Customer, related_name='ticket_sales', verbose_name=_("Customer"))
+    billing_series = models.ForeignKey(BillingSeries, related_name='ticket_sales', verbose_name='Billing series', blank=False, null=False)
 
     def __unicode__(self):
         return u"Ticket-{}".format(smart_text(self.code))
@@ -1589,6 +1606,7 @@ class SalesLineTicket(GenLineProduct):
 # factura rectificativa
 class SalesTicketRectification(GenInvoiceRectification):
     ticket = models.ForeignKey(SalesTicket, related_name='ticketrectification_sales', verbose_name=_("Ticket"), null=True)
+    billing_series = models.ForeignKey(BillingSeries, related_name='ticketrectification_sales', verbose_name='Billing series', blank=False, null=False)
 
     def __fields__(self, info):
         fields = super(SalesTicketRectification, self).__fields__(info)
@@ -1727,6 +1745,7 @@ class SalesLineInvoice(GenLineProduct):
 # factura rectificativa
 class SalesInvoiceRectification(GenInvoiceRectification):
     invoice = models.ForeignKey(SalesInvoice, related_name='invoicerectification_sales', verbose_name=_("Invoice"), null=True)
+    billing_series = models.ForeignKey(BillingSeries, related_name='invoicerectification_sales', verbose_name='Billing series', blank=False, null=False)
 
     def __fields__(self, info):
         fields = super(SalesInvoiceRectification, self).__fields__(info)
