@@ -40,6 +40,8 @@ from codenerix_invoicing.models_purchases import Provider, \
     PurchasesLineInvoice, PurchasesInvoiceRectification, PurchasesLineInvoiceRectification, PurchasesBudgetDocument, \
     PurchasesOrderDocument, PurchasesAlbaranDocument, PurchasesTicketDocument, PurchasesTicketRectificationDocument, \
     PurchasesInvoiceDocument, PurchasesInvoiceRectificationDocument
+from .models_purchases import PURCHASE_ALBARAN_LINE_STATUS_REJECTED
+
 from codenerix_invoicing.models import ProductStock
 from codenerix_storages.models import StorageBatch
 
@@ -652,95 +654,97 @@ class LineAlbaranCreate(GenLineAlbaranUrl, GenCreate):
             errors.append(_("Batch invalid"))
             return super(LineAlbaranCreate, self).form_invalid(form)
         
+        # comprueba si el producto comprado requiere un valor de atributo especial
+        product_final = ProductFinal.objects.filter(pk=form.data['product']).first()
+        feature_special_value = None
+        if not product_final:
+            errors = form._errors.setdefault("feature_special_value", ErrorList())
+            errors.append(_("Product not selected"))
+            return super(LineAlbaranCreate, self).form_invalid(form)
+        elif product_final.product.feature_special:
+            # es obligatorio la informacion de caracteristicas especiales
+            if 'feature_special_value' not in form.data or not form.data['feature_special_value']:
+                errors = form._errors.setdefault("feature_special_value", ErrorList())
+                errors.append(_("Product needs information of feature special"))
+                return super(LineAlbaranCreate, self).form_invalid(form)
+            else:
+                feature_special_value = list(set(filter(None, form.data['feature_special_value'].split('\n'))))
+                try:
+                    quantity = int(float(form.data['quantity']))
+                except ValueError:
+                    errors = form._errors.setdefault("quantity", ErrorList())
+                    errors.append(_("Quantity is not valid"))
+                    return super(LineAlbaranCreate, self).form_invalid(form)
+
+                if product_final.product.feature_special.unique:
+                    # mismo numero de caracteristicas que de cantidades
+                    # si el feature special esta marcado como 'unico'
+                    if len(feature_special_value) != quantity:
+                        errors = form._errors.setdefault("feature_special_value", ErrorList())
+                        errors.append(_("Quantity and values of feature special not equals"))
+                        return super(LineAlbaranCreate, self).form_invalid(form)
+                    # no existen las caracteristicas especiales dadas de alta en el sistema
+                    elif ProductUnique.objects.filter(product_final=product_final, value__in=feature_special_value).exists():
+                        errors = form._errors.setdefault("feature_special_value", ErrorList())
+                        errors.append(_("Some value of feature special exists"))
+                        return super(LineAlbaranCreate, self).form_invalid(form)
+                elif len(feature_special_value) != 1:
+                    errors = form._errors.setdefault("feature_special_value", ErrorList())
+                    errors.append(_("The special feature must be unique for all products"))
+                    return super(LineAlbaranCreate, self).form_invalid(form)
         try:
             with transaction.atomic():
-                # comprueba si el producto comprado requiere un valor de atributo especial
-                product_final = ProductFinal.objects.filter(pk=form.data['product']).first()
-                feature_special_value = None
-                if not product_final:
-                    errors = form._errors.setdefault("feature_special_value", ErrorList())
-                    errors.append(_("Product not selected"))
-                    return super(LineAlbaranCreate, self).form_invalid(form)
-                elif product_final.product.feature_special:
-                    # es obligatorio la informacion de caracteristicas especiales
-                    if 'feature_special_value' not in form.data or not form.data['feature_special_value']:
-                        errors = form._errors.setdefault("feature_special_value", ErrorList())
-                        errors.append(_("Product needs information of feature special"))
-                        return super(LineAlbaranCreate, self).form_invalid(form)
-                    else:
-                        feature_special_value = list(set(filter(None, form.data['feature_special_value'].split('\n'))))
-                        try:
-                            quantity = int(float(form.data['quantity']))
-                        except ValueError:
-                            errors = form._errors.setdefault("quantity", ErrorList())
-                            errors.append(_("Quantity is not valid"))
-                            return super(LineAlbaranCreate, self).form_invalid(form)
-
-                        if product_final.product.feature_special.unique:
-                            # mismo numero de caracteristicas que de cantidades
-                            # si el feature special esta marcado como 'unico'
-                            if len(feature_special_value) != quantity:
-                                errors = form._errors.setdefault("feature_special_value", ErrorList())
-                                errors.append(_("Quantity and values of feature special not equals"))
-                                return super(LineAlbaranCreate, self).form_invalid(form)
-                            # no existen las caracteristicas especiales dadas de alta en el sistema
-                            elif ProductUnique.objects.filter(product_final=product_final, value__in=feature_special_value).exists():
-                                errors = form._errors.setdefault("feature_special_value", ErrorList())
-                                errors.append(_("Some value of feature special exists"))
-                                return super(LineAlbaranCreate, self).form_invalid(form)
-                        elif len(feature_special_value) != 1:
-                            errors = form._errors.setdefault("feature_special_value", ErrorList())
-                            errors.append(_("The special feature must be unique for all products"))
-                            return super(LineAlbaranCreate, self).form_invalid(form)
-
                 # save line albaran
                 result = super(LineAlbaranCreate, self).form_valid(form)
+                
+                if self.object.status != PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
+                    # prepare stock
+                    ps = ProductStock()
+                    ps.product_final = product_final
+                    ps.line_albaran = self.object
+                    ps.batch = batch
+                    # save stock
+                    ps.quantity = self.object.quantity
+                    ps.save()
 
-                # prepare stock
-                ps = ProductStock()
-                ps.product_final = product_final
-                ps.line_albaran = self.object
-                ps.batch = batch
-                # save stock
-                ps.quantity = self.object.quantity
-                ps.save()
-
-                if feature_special_value:
-                    # prepare product feature special
-                    if product_final.product.feature_special.unique:
-                        pfs = ProductUnique()
-                        pfs.product_final = product_final
-                        # save product featureSpecial and stock
-                        for fs in feature_special_value:
-                            pfs.pk = None
-                            pfs.value = fs
-                            pfs.save()
-
-                    else:
-                        pfs = ProductUnique.objects.filter(
-                            value=feature_special_value[0],
-                            product_final=product_final
-                        ).first()
-                        if pfs:
-                            pfs.stock_real += self.object.quantity
-                        else:
+                    if feature_special_value:
+                        # prepare product feature special
+                        if product_final.product.feature_special.unique:
                             pfs = ProductUnique()
                             pfs.product_final = product_final
-                            pfs.value = feature_special_value[0]
-                            pfs.stock_real = self.object.quantity
-                        pfs.save()
-                else:
-                    # product unique by default
-                    pfs = ProductUnique()
-                    pfs.product_final = product_final
-                    pfs.stock_real = self.object.quantity
-                    pfs.save()
+                            # save product featureSpecial and stock
+                            for fs in feature_special_value:
+                                pfs.pk = None
+                                pfs.value = fs
+                                pfs.save()
 
+                        else:
+                            pfs = ProductUnique.objects.filter(
+                                value=feature_special_value[0],
+                                product_final=product_final
+                            ).first()
+                            if pfs:
+                                pfs.stock_real += self.object.quantity
+                            else:
+                                pfs = ProductUnique()
+                                pfs.product_final = product_final
+                                pfs.value = feature_special_value[0]
+                                pfs.stock_real = self.object.quantity
+                            pfs.save()
+                    else:
+                        # product unique by default
+                        pfs = ProductUnique.objects.filter(product_final=product_final).first()
+                        if not pfs:
+                            pfs = ProductUnique()
+                            pfs.product_final = product_final
+                            pfs.stock_real = self.object.quantity
+                        else:
+                            pfs.stock_real += self.object.quantity
+                        pfs.save()
                 return result
         except IntegrityError as e:
-            raise Exception(e)
             errors = form._errors.setdefault("product", ErrorList())
-            errors.append(_("Integrity Error"))
+            errors.append(_("Integrity Error: {}".format(e)))
             return super(LineAlbaranCreate, self).form_invalid(form)
 
 
@@ -777,6 +781,8 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                 errors = form._errors.setdefault("batch", ErrorList())
                 errors.append(_("Batch not selected"))
                 return super(LineAlbaranUpdate, self).form_invalid(form)
+
+            status = form.data['status']
 
             try:
                 quantity = float(form.data['quantity'])
@@ -863,13 +869,14 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                             product_final__product__feature_special=old.product.product.feature_special,
                         ).delete()
 
-                        # prepare stock
-                        ps = ProductStock()
-                        ps.line_albaran = self.object
-                        ps.product_final = product_final
-                        ps.batch = batch
-                        ps.quantity = self.object.quantity
-                        ps.save()
+                        if self.object.status != PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
+                            # prepare stock
+                            ps = ProductStock()
+                            ps.line_albaran = self.object
+                            ps.product_final = product_final
+                            ps.batch = batch
+                            ps.quantity = self.object.quantity
+                            ps.save()
                         # prepare product feature special
                         pu = ProductUnique()
                         pu.product_final = product_final
@@ -881,23 +888,26 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                                 product_final__product__feature_special=old.product.product.feature_special,
                                 value__in=fs_value_old
                             ).delete()
-                            # save product featureSpecial and stock
-                            for fs in feature_special_value:
-                                pu.pk = None
-                                pu.value = fs
-                                pu.stock_real = 1
-                                pu.save()
+                            
+                            if self.object.status != PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
+                                # save product featureSpecial and stock
+                                for fs in feature_special_value:
+                                    pu.pk = None
+                                    pu.value = fs
+                                    pu.stock_real = 1
+                                    pu.save()
                         else:
-                            # creamos o actualizamos el producto unico
-                            product_unique = ProductUnique.objects.filter(
-                                product_final=product_final,
-                                value=feature_special_value[0]
-                            ).first()
-                            if product_unique is None:
-                                product_unique = pu
-                                product_unique.stock_real = 0
-                            product_unique.stock_real += self.object.quantity
-                            product_unique.save()
+                            if self.object.status != PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
+                                # creamos o actualizamos el producto unico
+                                product_unique = ProductUnique.objects.filter(
+                                    product_final=product_final,
+                                    value=feature_special_value[0]
+                                ).first()
+                                if product_unique is None:
+                                    product_unique = pu
+                                    product_unique.stock_real = 0
+                                product_unique.stock_real += self.object.quantity
+                                product_unique.save()
                             # actualizo el producto unico del registro anterior
                             product_unique_old = old.products_unique.filter(
                                 value=fs_value_old[0]
@@ -913,7 +923,7 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                             product_final=product_final,
                             value=None
                         ).first()
-                        if old.quantity > product_unique.stock_real:
+                        if product_unique and old.quantity > product_unique.stock_real:
                             # error porque la cantidad a descontar es menor que la cantidad en stock
                             errors = form._errors.setdefault("product", ErrorList())
                             errors.append(_("Product were bought, you can not change product"))
@@ -924,36 +934,42 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                             ProductStock.objects.filter(
                                 Q(line_albaran=self.object, product_final=old.product)
                             ).delete()
-                            # prepare stock
-                            ps = ProductStock()
-                            ps.line_albaran = self.object
-                            ps.product_final = product_final
-                            ps.batch = batch
-                            ps.quantity = self.object.quantity
-                            ps.save()
-                            # actualizamos el stock quitandole al producto unico
-                            # la cantidad del anterior registro
-                            product_unique.stock_real -= old.quantity
-                            product_unique.save()
+                            if self.object.status != PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
+                                # prepare stock
+                                ps = ProductStock()
+                                ps.line_albaran = self.object
+                                ps.product_final = product_final
+                                ps.batch = batch
+                                ps.quantity = self.object.quantity
+                                ps.save()
+                            if product_unique:
+                                # actualizamos el stock quitandole al producto unico
+                                # la cantidad del anterior registro
+                                product_unique.stock_real -= old.quantity
+                                product_unique.save()
                             # prepare product unique
                             pu = ProductUnique.objects.filter(
                                 product_final=product_final,
                                 value__in=feature_special_value
                             ).first()
-                            if pu is None:
-                                pu = ProductUnique()
-                                pu.product_final = product_final
-                            if product_final.product.feature_special.unique:
-                                # save product unique
-                                for fs in feature_special_value:
-                                    pu.pk = None
-                                    pu.value = fs
-                                    pu.stock_real = 1
-                                    pu.save()
-                            else:
-                                pu.value = feature_special_value[0]
-                                pu.stock_real += self.object.quantity
+                            if self.object.status != PURCHASE_ALBARAN_LINE_STATUS_REJECTED and pu:
+                                pu.stock_real -= self.object.quantity
                                 pu.save()
+                            else:
+                                if pu is None:
+                                    pu = ProductUnique()
+                                    pu.product_final = product_final
+                                if product_final.product.feature_special.unique:
+                                    # save product unique
+                                    for fs in feature_special_value:
+                                        pu.pk = None
+                                        pu.value = fs
+                                        pu.stock_real = 1
+                                        pu.save()
+                                else:
+                                    pu.value = feature_special_value[0]
+                                    pu.stock_real += self.object.quantity
+                                    pu.save()
                 # FIN if product_final.product.feature_special
 
                 if old.product.product.feature_special:
@@ -982,13 +998,14 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                             feature_special=old.product.product.feature_special,
                             value__in=list(set(filter(None, old.feature_special_value.split('\n'))))
                         ).delete()
-                        # guarda nuevo stock
-                        ps = ProductStock()
-                        ps.product_final = product_final
-                        ps.line_albaran = self.object
-                        ps.batch = batch
-                        ps.quantity = quantity
-                        ps.save()
+                        if self.object.status != PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
+                            # guarda nuevo stock
+                            ps = ProductStock()
+                            ps.product_final = product_final
+                            ps.line_albaran = self.object
+                            ps.batch = batch
+                            ps.quantity = quantity
+                            ps.save()
                         # borra las caracteristicas especiales
                         ProductUnique.objects.filter(
                             product_final=self.object.product,
@@ -1010,13 +1027,33 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                     
                     # guardar y actualizar
                     result = super(LineAlbaranUpdate, self).form_valid(form)
-                    ProductStock.objects.filter(
-                        Q(line_albaran=self.objects, product_final=old.product)
-                    ).update(
-                        batch=batch,
-                        product=product_final,
-                        quantity=quantity
-                    )
+
+                    if status != old.status and status == PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
+                        # quitar los productos de stock
+                        ProductStock.objects.filter(
+                            Q(line_albaran=self.object, product_final=old.product)
+                        ).update(
+                            batch=batch,
+                            product=product_final,
+                            quantity=0
+                        )
+                    elif status != old.status and old.status == PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
+                        # crear los productos en stock
+                        ps = ProductStock()
+                        ps.product_final = product_final
+                        ps.line_albaran = self.object
+                        ps.batch = batch
+                        ps.quantity = quantity
+                        ps.save()
+                    else:
+                        # actualizar stock
+                        ProductStock.objects.filter(
+                            Q(line_albaran=self.object, product_final=old.product)
+                        ).update(
+                            batch=batch,
+                            product=product_final,
+                            quantity=quantity
+                        )
                     # actualizamos/creamos el nuevo registro
                     product_unique = ProductUnique.objects.filter(
                         product_final=product_final, value=None
@@ -1177,10 +1214,27 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                         return super(LineAlbaranUpdate, self).form_invalid(form)
 
                 result = super(LineAlbaranUpdate, self).form_valid(form)
-                ProductStock.objects.filter(
-                    batch=batch,
-                    line_albaran=self.object,
-                    product_final=self.object.product).update(quantity=quantity)
+
+                if status != old.status and status == PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
+                    # quitar los productos de stock
+                    ProductStock.objects.filter(
+                        batch=batch,
+                        line_albaran=self.object,
+                        product_final=self.object.product).update(quantity=0)
+                elif status != old.status and old.status == PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
+                    # crear los productos en stock
+                    ps = ProductStock()
+                    ps.product_final = self.object.product
+                    ps.line_albaran = self.object
+                    ps.batch = batch
+                    ps.quantity = quantity
+                    ps.save()
+                else:
+                    # actualizar stock
+                    ProductStock.objects.filter(
+                        batch=batch,
+                        line_albaran=self.object,
+                        product_final=self.object.product).update(quantity=quantity)
 
             return result
 
