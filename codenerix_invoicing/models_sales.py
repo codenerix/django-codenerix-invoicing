@@ -35,14 +35,14 @@ from codenerix_extensions.files.models import GenDocumentFile
 from codenerix_invoicing.models import Haulier, BillingSeries
 from codenerix_invoicing.models_purchases import PAYMENT_DETAILS
 from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
- 
+
 from codenerix_pos.models import POSSlot
 
 from codenerix_products.models import ProductFinal, TypeTax, ProductFinalOption
 from codenerix_storages.models import Storage
 from codenerix_payments.models import PaymentRequest
 
-    
+
 ROLE_BASKET_SHOPPINGCART = 'SC'
 ROLE_BASKET_BUDGET = 'BU'
 ROLE_BASKET_WISHLIST = 'WL'
@@ -286,7 +286,7 @@ class Customer(GenRole, CodenerixModel):
         determina si el customer ha comprado un producto
         """
         if self.invoice_sales.filter(line_invoice_sales__line_order__product__pk=product_pk).exists() \
-            or self.ticket_sales.filter(line_ticket_sales__line_order__product__pk=product_pk).exists():
+                or self.ticket_sales.filter(line_ticket_sales__line_order__product__pk=product_pk).exists():
             return True
         else:
             return False
@@ -301,9 +301,9 @@ class GenCustomer(GenInterface, ABSTRACT_GenCustomer):  # META: Abstract class
 
     @classmethod
     def permissions(cls):
-        group = 'Customer'
-        perms = []
-        print(cls.customer.field.related_model)
+        # group = 'Customer'
+        # perms = []
+        # print(cls.customer.field.related_model)
 
         return None
 
@@ -355,13 +355,13 @@ class GenAddress(GenInterface, ABSTRACT_GenAddress):  # META: Abstract class
             address_delivery.save()
         elif hasattr(self, 'address_delivery'):
             address_delivery = self.address_delivery
-        
+
         if hasattr(self, 'address_invoice') and self.address_invoice is None:
             address_invoice = Address()
             address_invoice.save()
         elif hasattr(self, 'address_invoice'):
             address_invoice = self.address_invoice
-            
+
         if hasattr(self, 'address_delivery'):
             self.address_delivery = address_delivery
         if hasattr(self, 'address_invoice'):
@@ -374,14 +374,14 @@ class GenAddressDelivery(GenAddress):  # META: Abstract class
     class Meta(object):
         abstract = True
     address_delivery = models.OneToOneField(Address, related_name='external_delivery', verbose_name=_("Address delivery"), null=True, on_delete=models.SET_NULL, blank=True, editable=False)
-    
+
 
 # address invoice
 class GenAddressInvoice(GenAddress):  # META: Abstract class
     class Meta(object):
         abstract = True
     address_invoice = models.OneToOneField(Address, related_name='external_invoice', verbose_name=_("Address invoice"), null=True, on_delete=models.SET_NULL, blank=True, editable=False)
-    
+
 
 # documentos de clientes
 class CustomerDocument(CodenerixModel, GenDocumentFile):
@@ -441,21 +441,21 @@ class GenVersion(CodenerixModel):  # META: Abstract class
                 code_format[ROLE_BASKET_BUDGET] = 'CDNX_INVOICING_CODE_FORMAT_BUDGET'
                 code_format[ROLE_BASKET_WISHLIST] = 'CDNX_INVOICING_CODE_FORMAT_WISHLIST'
                 code_format[ROLE_BASKET_SHOPPINGCART] = 'CDNX_INVOICING_CODE_FORMAT_SHOPPINGCART'
-            elif model == SalesOrder and hasattr(settings, 'CDNX_INVOICING_CODE_FORMAT_ORDER'):
-                code_format = settings.CDNX_INVOICING_CODE_FORMAT_ORDER
-            elif model == SalesAlbaran and hasattr(settings, 'CDNX_INVOICING_CODE_FORMAT_ALBARAN'):
-                code_format = settings.CDNX_INVOICING_CODE_FORMAT_ALBARAN
-            elif model == SalesTicketRectification and hasattr(settings, 'CDNX_INVOICING_CODE_FORMAT_TICKET'):
-                code_format = settings.CDNX_INVOICING_CODE_FORMAT_TICKET
-            elif model == SalesTicketRectification and hasattr(settings, 'CDNX_INVOICING_CODE_FORMAT_TICKETRECTIFICATION'):
-                code_format = settings.CDNX_INVOICING_CODE_FORMAT_TICKETRECTIFICATION
-            elif model == SalesInvoice and hasattr(settings, 'CDNX_INVOICING_CODE_FORMAT_INVOICE'):
-                code_format = settings.CDNX_INVOICING_CODE_FORMAT_INVOICE
-            elif model == SalesInvoiceRectification and hasattr(settings, 'CDNX_INVOICING_CODE_FORMAT_INVOICERECTIFCATION'):
-                code_format = settings.CDNX_INVOICING_CODE_FORMAT_INVOICERECTIFCATION
+            elif model == SalesOrder:
+                code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_ORDER', None)
+            elif model == SalesAlbaran:
+                code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_ALBARAN', None)
+            elif model == SalesTicketRectification:
+                code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_TICKET', None)
+            elif model == SalesTicketRectification:
+                code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_TICKETRECTIFICATION', None)
+            elif model == SalesInvoice:
+                code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_INVOICE', None)
+            elif model == SalesInvoiceRectification:
+                code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_INVOICERECTIFCATION', None)
             else:
                 code_format = None
-            
+
             last = model.objects.order_by('-pk').first()
             if last:
                 # como hace esto si no es un numero????????
@@ -464,7 +464,6 @@ class GenVersion(CodenerixModel):  # META: Abstract class
             else:
                 code = 1
             return code
-
 
             if code_format:
                 now = datetime.datetime.now()
@@ -567,7 +566,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
             total = 0
             for line in queryset:
                 subtotal += line.subtotal
-                
+
                 if hasattr(line, 'tax'):
                     if line.tax not in tax:
                         tax[line.tax] = 0
@@ -587,7 +586,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
                         equivalence_surcharge = 0
                 else:
                     equivalence_surcharge = 0
-                
+
                 if hasattr(line, 'discount'):
                     if line.discount not in discount:
                         discount[line.discount] = 0
@@ -595,9 +594,9 @@ class GenVersion(CodenerixModel):  # META: Abstract class
                     discount[line.discount] += price_discount
                 else:
                     price_discount = 0
-                
+
                 total += line.subtotal - price_discount + price_tax + equivalence_surcharge
-        
+
             return {'subtotal': subtotal, 'taxes': tax, 'total': total, 'discounts': discount, 'equivalence_surcharges': equivalence_surcharges}
         else:
             raise Exception(_("Queryset undefined!!"))
@@ -755,9 +754,9 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
 
     @staticmethod
     def create_document_from_another(pk, list_lines,
-        MODEL_SOURCE, MODEL_FINAL, MODEL_LINE_SOURCE, MODEL_LINE_FINAL,
-        url_reverse, related_line, related_object,
-        msg_error_relation, msg_error_not_found, unique):
+                                     MODEL_SOURCE, MODEL_FINAL, MODEL_LINE_SOURCE, MODEL_LINE_FINAL,
+                                     url_reverse, related_line, related_object,
+                                     msg_error_relation, msg_error_not_found, unique):
         """
         pk: pk del documento origen
         list_lines: listado de pk de lineas de origen
@@ -895,9 +894,9 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
                 list_lines = [x[0] for x in MODEL_LINE_SOURCE.objects.filter(basket=pk).values_list('pk')]
 
         return GenLineProduct.create_document_from_another(pk, list_lines,
-            MODEL_SOURCE, MODEL_FINAL, MODEL_LINE_SOURCE, MODEL_LINE_FINAL,
-            url_reverse, related_line, related_object,
-            msg_error_relation, msg_error_not_found, True)
+                                                           MODEL_SOURCE, MODEL_FINAL, MODEL_LINE_SOURCE, MODEL_LINE_FINAL,
+                                                           url_reverse, related_line, related_object,
+                                                           msg_error_relation, msg_error_not_found, True)
 
     @staticmethod
     def create_albaran_automatic(pk, list_lines):
@@ -927,9 +926,9 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
         msg_error_not_found = _('Order not found')
 
         return GenLineProduct.create_document_from_another(pk, list_lines,
-            MODEL_SOURCE, MODEL_FINAL, MODEL_LINE_SOURCE, MODEL_LINE_FINAL,
-            url_reverse, related_line, related_object,
-            msg_error_relation, msg_error_not_found, False)
+                                                           MODEL_SOURCE, MODEL_FINAL, MODEL_LINE_SOURCE, MODEL_LINE_FINAL,
+                                                           url_reverse, related_line, related_object,
+                                                           msg_error_relation, msg_error_not_found, False)
 
     @staticmethod
     def create_ticket_from_order(pk, list_lines):
@@ -947,9 +946,9 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
         with transaction.atomic():
             GenLineProduct.create_albaran_automatic(pk, list_lines)
             return GenLineProduct.create_document_from_another(pk, list_lines,
-                MODEL_SOURCE, MODEL_FINAL, MODEL_LINE_SOURCE, MODEL_LINE_FINAL,
-                url_reverse, related_line, related_object,
-                msg_error_relation, msg_error_not_found, False)
+                                                               MODEL_SOURCE, MODEL_FINAL, MODEL_LINE_SOURCE, MODEL_LINE_FINAL,
+                                                               url_reverse, related_line, related_object,
+                                                               msg_error_relation, msg_error_not_found, False)
 
     @staticmethod
     def create_invoice_from_order(pk, list_lines):
@@ -967,9 +966,9 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
         with transaction.atomic():
             GenLineProduct.create_albaran_automatic(pk, list_lines)
             return GenLineProduct.create_document_from_another(pk, list_lines,
-                MODEL_SOURCE, MODEL_FINAL, MODEL_LINE_SOURCE, MODEL_LINE_FINAL,
-                url_reverse, related_line, related_object,
-                msg_error_relation, msg_error_not_found, False)
+                                                               MODEL_SOURCE, MODEL_FINAL, MODEL_LINE_SOURCE, MODEL_LINE_FINAL,
+                                                               url_reverse, related_line, related_object,
+                                                               msg_error_relation, msg_error_not_found, False)
 
     @staticmethod
     def create_ticket_from_albaran(pk, list_lines):
@@ -1104,7 +1103,7 @@ class SalesBasket(GenVersion):
     address_invoice = models.ForeignKey(Address, related_name='order_sales_invoice', verbose_name=_("Address invoice"), blank=True, null=True)
     expiration_date = models.DateTimeField(_("Expiration date"), blank=True, null=True, editable=False)
     haulier = models.ForeignKey(Haulier, related_name='basket_sales', verbose_name=_("Haulier"), blank=True, null=True)
-    
+
     def __unicode__(self):
         return u"Order-{}".format(smart_text(self.code))
 
@@ -1179,7 +1178,7 @@ class SalesBasket(GenVersion):
                     lorder.equivalence_surcharge = line.equivalence_surcharge
                     lorder.quantity = line.quantity
                     lorder.save()
-                
+
             self.lock = True
             self.role = ROLE_BASKET_BUDGET
             self.expiration_date = None
@@ -1206,7 +1205,7 @@ class SalesBasket(GenVersion):
 
     def calculate_price_doc_complete(self):
         return super(SalesBasket, self).calculate_price_doc_complete(self.line_basket_sales.filter(removed=False))
-        
+
     def list_tickets(self):
         # retorna todos los tickets en los que hay lineas de la cesta
         return SalesTicket.objects.filter(line_ticket_sales__line_order__order__budget=self).distinct()
@@ -1357,7 +1356,7 @@ class SalesOrder(GenVersion):
 
     def calculate_price_doc(self):
         return self.total
-    
+
     def calculate_price_doc_complete(self):
         return super(SalesOrder, self).calculate_price_doc_complete(self.line_order_sales.filter(removed=False))
 
@@ -1449,7 +1448,7 @@ class SalesAlbaran(GenVersion):
 
     def calculate_price_doc(self):
         return self.total
-    
+
     def calculate_price_doc_complete(self):
         return super(SalesAlbaran, self).calculate_price_doc_complete(self.line_albaran_sales.filter(removed=False))
 
