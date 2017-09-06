@@ -251,11 +251,14 @@ class Customer(GenRole, CodenerixModel):
     def foreignkey_external():
         return get_external_method(Customer, Customer.CodenerixMeta.force_methods['foreignkey_customer'][0])
 
+    def __str__(self):
+        if hasattr(self, 'external'):
+            return u"{}".format(smart_text(self.external))
+        else:
+            return "{}".format(self.pk)
+
     def __unicode__(self):
         return self.__str__()
-
-    def __str__(self):
-        return u"{}".format(smart_text(self.external))
 
     def __fields__(self, info):
         fields = []
