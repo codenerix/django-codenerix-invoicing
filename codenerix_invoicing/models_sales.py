@@ -1343,12 +1343,13 @@ class SalesOrder(GenVersion):
         fields.append(('code', _('Code')))
         fields.append(('date', _('Date')))
         fields.append(('storage', _('Storage')))
-        fields.append(('status_order', _('Status')))
-        fields.append(('payment_detail', _('Payment detail')))
+        fields.append(('get_status_order_display', _('Status')))
+        fields.append(('get_payment_detail_display', _('Payment detail')))
         fields.append(('source', _('Source of purchase')))
         fields.append(('number_tracking', _('Number of tracking')))
         fields.append(('budget__address_delivery', _('Address delivery')))
         fields.append(('budget__address_invoice', _('Address invoice')))
+        fields.append(('total', _('Total')))
         return fields
 
     def calculate_price_doc(self):
@@ -1440,6 +1441,7 @@ class SalesAlbaran(GenVersion):
         fields.append(('date', _('Date')))
         fields.append(('tax', _('Tax')))
         fields.append(('summary_delivery', _('Address delivery')))
+        fields.append(('total', _('Total')))
         return fields
 
     def calculate_price_doc(self):
@@ -1674,6 +1676,7 @@ class SalesInvoice(GenVersion):
         fields.append(('date', _('Date')))
         fields.append(('billing_series', _('Billing series')))
         fields.append(('summary_invoice', _('Address invoice')))
+        fields.append(('total', _('Total')))
         return fields
 
     def calculate_price_doc(self):
