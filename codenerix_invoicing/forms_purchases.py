@@ -100,10 +100,9 @@ class BudgetForm(GenModelForm):
     def __groups__(self):
         g = [
             (_('Details'), 12,
-                ['provider', 6],
+                ['provider', 8],
                 ['date', 2],
                 ['code', 2],
-                ['tax', 2],
                 ['observations', 12],)
         ]
         return g
@@ -115,7 +114,6 @@ class BudgetForm(GenModelForm):
                 ['provider', 6],
                 ['date', 6],
                 ['code', 6],
-                ['tax', 6],
                 ['observations', 6],)
         ]
         return g
@@ -165,7 +163,6 @@ class OrderForm(GenModelForm):
                 ['provider', 6],
                 ['budget', 6],
                 ['code', 4],
-                ['tax', 4],
                 ['date', 4],
                 ['observations', 12],)
         ]
@@ -179,7 +176,6 @@ class OrderForm(GenModelForm):
                 ['provider', 6],
                 ['date', 6],
                 ['budget', 6],
-                ['tax', 6],
                 ['observations', 6],)
         ]
         return g
@@ -188,7 +184,7 @@ class OrderForm(GenModelForm):
 class OrderFromBudgetForm(GenModelForm):
     class Meta:
         model = PurchasesOrder
-        exclude = ['lock', 'parent_pk', 'budget', 'tax', 'provider']
+        exclude = ['lock', 'parent_pk', 'budget', 'provider']
         widgets = {
             'observations': WysiwygAngularInput()
         }
@@ -247,9 +243,8 @@ class AlbaranForm(GenModelForm):
         g = [
             (_('Details'), 12,
                 ['code', 4],
-                ['provider', 4],
+                ['provider', 6],
                 ['date', 2],
-                ['tax', 2],
                 ['observations', 12],)
         ]
         return g
@@ -261,7 +256,6 @@ class AlbaranForm(GenModelForm):
                 ['date', 6],
                 ['provider', 6],
                 ['code', 6],
-                ['tax', 6],
                 ['observations', 6],)
         ]
         return g
@@ -329,7 +323,6 @@ class TicketForm(GenModelForm):
                 ['code', 4],
                 ['provider', 4],
                 ['date', 2],
-                ['tax', 2],
                 ['observations', 12],)
         ]
         return g
@@ -341,7 +334,6 @@ class TicketForm(GenModelForm):
                 ['provider', 6],
                 ['date', 6],
                 ['code', 6],
-                ['tax', 6],
                 ['observations', 6],)
         ]
         return g
@@ -392,7 +384,6 @@ class TicketRectificationForm(GenModelForm):
             (_('Details'), 12,
                 ['date', 4],
                 ['code', 4],
-                ['tax', 4],
                 ['observations', 12],)
         ]
         return g
@@ -455,7 +446,6 @@ class InvoiceForm(GenModelForm):
                 ['code', 4],
                 ['provider', 4],
                 ['date', 2],
-                ['tax', 2],
                 ['observations', 12],)
         ]
         return g
@@ -467,7 +457,6 @@ class InvoiceForm(GenModelForm):
                 ['provider', 6],
                 ['date', 6],
                 ['code', 6],
-                ['tax', 6],
                 ['observations', 6],)
         ]
         return g
@@ -520,7 +509,6 @@ class InvoiceRectificationForm(GenModelForm):
             (_('Details'), 12,
                 ['code', 4],
                 ['date', 4],
-                ['tax', 4],
                 ['observations', 12],)
         ]
         return g
@@ -531,7 +519,6 @@ class InvoiceRectificationForm(GenModelForm):
             (_('Details'), 12,
                 ['date', 6],
                 ['code', 6],
-                ['tax', 6],
                 ['observations', 6],)
         ]
         return g

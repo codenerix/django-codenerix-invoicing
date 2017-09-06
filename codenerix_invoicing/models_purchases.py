@@ -24,11 +24,12 @@ from django.utils.encoding import smart_text
 
 from codenerix.models import GenInterface, CodenerixModel
 from codenerix.models_people import GenRole
-from codenerix_extensions.helpers import get_external_method
-from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
 
+from codenerix_extensions.helpers import get_external_method
 from codenerix_extensions.files.models import GenDocumentFile
 from codenerix_products.models import ProductFinal, TypeTax, Category
+
+from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
 
 KIND_CARD_VISA = 'VIS'
 KIND_CARD_MASTER = 'MAS'
@@ -69,10 +70,14 @@ FINANCE_SURCHARGE_STATUS_CHOICE = (
     ('F', _('Total bill')),
 )
 
+PURCHASE_ALBARAN_LINE_STATUS_PENDING = 'PR'
+PURCHASE_ALBARAN_LINE_STATUS_REVIEWED = 'RV'
+PURCHASE_ALBARAN_LINE_STATUS_REJECTED = 'RC'
+
 PURCHASE_ALBARAN_LINE_STATUS = (
-    ('PR', _('Pending review')),
-    ('RV', _('Reviewed')),
-    ('RC', _('Rejected')),
+    (PURCHASE_ALBARAN_LINE_STATUS_PENDING, _('Pending review')),
+    (PURCHASE_ALBARAN_LINE_STATUS_REVIEWED, _('Reviewed')),
+    (PURCHASE_ALBARAN_LINE_STATUS_REJECTED, _('Rejected')),
 )
 
 
@@ -130,7 +135,6 @@ class GenPurchase(CodenerixModel):  # META: Abstract class
     class Meta(CodenerixModel.Meta):
         abstract = True
 
-    tax = models.FloatField(_("Tax"), blank=False, null=False)
     code = models.CharField(_("Code"), max_length=64, blank=False, null=False)
     date = models.DateTimeField(_("Date"), blank=False, null=False)
     observations = models.TextField(_("Observations"), max_length=256, blank=True, null=True)
@@ -146,7 +150,6 @@ class GenPurchase(CodenerixModel):  # META: Abstract class
         fields.append(('provider', _('Provider')))
         fields.append(('code', _('Code')))
         fields.append(('date', _('Date')))
-        fields.append(('tax', _('Tax')))
         return fields
 
 
@@ -186,10 +189,10 @@ class Provider(GenRole, CodenerixModel):
         return get_external_method(Provider, Provider.CodenerixMeta.force_methods['foreignkey_provider'][0])
 
     def __unicode__(self):
-        return u"{}".format(smart_text(self.pk))
+        return self.__str__()
 
     def __str__(self):
-        return self.__unicode__()
+        return u"{}".format(smart_text(self.external))
 
     def __fields__(self, info):
         fields = []
