@@ -826,8 +826,11 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
                     obj_final = MODEL_FINAL()
                     obj_final.customer = obj_src.customer
                     obj_final.date = datetime.datetime.now()
+                    obj_final.billing_series = obj_src.billing_series
+
                     if isinstance(obj_final, SalesOrder):
                         obj_final.budget = obj_src
+                    
                     obj_final.save()
 
                     for lb_pk in list_lines:
