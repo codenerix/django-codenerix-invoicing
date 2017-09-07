@@ -26,6 +26,7 @@ from django.utils import timezone
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
+# from django.contrib.auth.models import User
 
 from codenerix.models import GenInterface, CodenerixModel
 from codenerix.models_people import GenRole
