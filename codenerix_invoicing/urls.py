@@ -30,6 +30,7 @@ from codenerix_invoicing.views import HaulierList, HaulierCreate, HaulierCreateM
 
 from codenerix_invoicing.urls_sales import urlpatterns as url_sales
 from codenerix_invoicing.urls_purchases import urlpatterns as url_purchases
+from codenerix_invoicing.urls_cash import urlpatterns as url_cash
 
 
 urlpatterns = [
@@ -95,4 +96,4 @@ urlpatterns = [
     url(r'^hauliers/(?P<pk>\w+)/delete$', HaulierDelete.as_view(), name='CDNX_invoicing_hauliers_delete'),
 
 
-] + url_sales + url_purchases
+] + url_sales + url_purchases + url_cash
