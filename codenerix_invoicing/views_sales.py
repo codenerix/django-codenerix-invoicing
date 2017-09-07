@@ -138,7 +138,7 @@ class CustomerDetails(GenCustomerUrl, GenDetail):
 
 class CustomerForeignBudget(GenCustomerUrl, GenForeignKey):
     model = Customer
-    label = "{pk}"
+    label = "{external}"
 
     def get_foreign(self, queryset, search, filters):
         qs = queryset.exclude(basket_sales__order_sales__isnull=False)
@@ -149,7 +149,7 @@ class CustomerForeignBudget(GenCustomerUrl, GenForeignKey):
 
 class CustomerForeignShoppingCart(GenCustomerUrl, GenForeignKey):
     model = Customer
-    label = "{pk}"
+    label = "{external}"
 
     def get_foreign(self, queryset, search, filters):
         qs = queryset.exclude(basket_sales__order_sales__isnull=False)
@@ -1615,6 +1615,7 @@ class TicketCreateRectification(View):
             tr = SalesTicketRectification()
             tr.date = datetime.datetime.now()
             tr.ticket = ticket
+            tr.billing_series = ticket.billing_series
             with transaction.atomic():
                 tr.save()
 
@@ -2149,6 +2150,7 @@ class InvoiceCreateRectification(View):
             ir = SalesInvoiceRectification()
             ir.date = datetime.datetime.now()
             ir.invoice = invoice
+            ir.billing_series = invoice.billing_series
             with transaction.atomic():
                 ir.save()
 

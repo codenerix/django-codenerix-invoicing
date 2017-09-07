@@ -311,17 +311,16 @@ class GenCustomer(GenInterface, ABSTRACT_GenCustomer):  # META: Abstract class
 
 
 class Address(CodenerixModel):
-    def __unicode__(self):
+    def __str__(self):
         if hasattr(self, 'external_delivery'):
             return u"{}".format(smart_text(self.external_delivery.get_summary()))
         elif hasattr(self, 'external_invoice'):
             return u"{}".format(smart_text(self.external_invoice.get_summary()))
         else:
             return 'No data!'
-            # raise Exception(_('Address unkown'), self.__dict__)
 
-    def __str__(self):
-        return self.__unicode__()
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
@@ -388,11 +387,11 @@ class CustomerDocument(CodenerixModel, GenDocumentFile):
     customer = models.ForeignKey(Customer, related_name='customer_documents', verbose_name=_("Customer"))
     type_document = models.ForeignKey('TypeDocument', related_name='customer_documents', verbose_name=_("Type document"), null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return u"{}".format(smart_text(self.customer))
 
-    def __str__(self):
-        return self.__unicode__()
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
@@ -693,11 +692,11 @@ class GenLineProductBasic(CodenerixModel):  # META: Abstract class
 
     def get_customer(self):
         # returns the client associated with the document
-        raise Exception(_("Method 'get_customer()' don't implemented"))
+        raise Exception(_("Method 'get_customer()' don't implemented. ({})".format(self._meta.model_name)))
 
     def get_product(self):
         # returns the product associated with the line
-        raise Exception(_("Method 'get_product()' don't implemented"))
+        raise Exception(_("Method 'get_product()' don't implemented. ({})".format(self._meta.model_name)))
 
 
 # lineas de productos
@@ -753,7 +752,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
         self.taxes = (self.subtotal * self.tax / 100.0)
         self.equivalence_surcharges = (self.subtotal * self.equivalence_surcharge / 100.0)
         self.discounts = (self.subtotal * self.discount / 100.0)
-        self.total = self.subtotal - self.discounts + self.taxes
+        self.total = self.subtotal - self.discounts + self.taxes + self.equivalence_surcharges
         if force_save:
             self.save()
 
@@ -1095,16 +1094,17 @@ class GenInvoiceRectification(GenVersion):  # META: Abstract class
     class Meta(GenVersion.Meta):
         abstract = True
 
-    def __unicode__(self):
-        return u"Rct-{}".format(smart_text(self.code))
-
     def __str__(self):
-        return self.__unicode__()
+        return u"{}".format(smart_text(self.code))
+
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
         fields.append(('code', _('Code')))
         fields.append(('date', _('Date')))
+        fields.append(('total', _('Total')))
         return fields
 
 
@@ -1114,11 +1114,11 @@ class SalesReservedProduct(CodenerixModel):
     product = models.ForeignKey(ProductFinal, related_name='reservedproduct_sales', verbose_name=_("Product"))
     quantity = models.FloatField(_("Quantity"), blank=False, null=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return u"{}".format(smart_text(self.customer))
 
-    def __str__(self):
-        return self.__unicode__()
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
@@ -1144,11 +1144,11 @@ class SalesBasket(GenVersion):
     haulier = models.ForeignKey(Haulier, related_name='basket_sales', verbose_name=_("Haulier"), blank=True, null=True)
     billing_series = models.ForeignKey(BillingSeries, related_name='basket_sales', verbose_name='Billing series', blank=False, null=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return u"Order-{}".format(smart_text(self.code))
 
-    def __str__(self):
-        return self.__unicode__()
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
@@ -1350,11 +1350,11 @@ class SalesLineBasketOption(CodenerixModel):
     product_final = models.ForeignKey(ProductFinal, related_name='line_basket_option_sales', verbose_name=_("Product"))
     quantity = models.FloatField(_("Quantity"), blank=False, null=False)
 
-    def __unicode__(self):
-        return self.__str__()
-
     def __str__(self):
         return u"{} - {}".format(self.product_option, self.product_final)
+
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
@@ -1377,11 +1377,11 @@ class SalesOrder(GenVersion):
     source = models.CharField(_("Source of purchase"), max_length=250, blank=True, null=True)
     billing_series = models.ForeignKey(BillingSeries, related_name='order_sales', verbose_name='Billing series', blank=False, null=False)
 
-    def __unicode__(self):
-        return u"Order-{}".format(smart_text(self.code))
-
     def __str__(self):
-        return self.__unicode__()
+        return u"{}".format(smart_text(self.code))
+
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
@@ -1458,11 +1458,11 @@ class SalesLineOrderOption(CodenerixModel):
     product_final = models.ForeignKey(ProductFinal, related_name='line_order_option_sales', verbose_name=_("Product"))
     quantity = models.FloatField(_("Quantity"), blank=False, null=False)
 
-    def __unicode__(self):
-        return self.__str__()
-
     def __str__(self):
         return u"Order-{}".format(smart_text(self.code))
+
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
@@ -1475,21 +1475,19 @@ class SalesLineOrderOption(CodenerixModel):
 
 # albaranes
 class SalesAlbaran(GenVersion):
-    tax = models.FloatField(_("Tax"), blank=False, null=False, default=0)
     summary_delivery = models.TextField(_("Address delivery"), max_length=256, blank=True, null=True)
     billing_series = models.ForeignKey(BillingSeries, related_name='albaran_sales', verbose_name='Billing series', blank=False, null=False)
 
-    def __unicode__(self):
-        return u"Albaran-{}".format(smart_text(self.code))
-
     def __str__(self):
-        return self.__unicode__()
+        return u"{}".format(smart_text(self.code))
+
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
         fields.append(('code', _('Code')))
         fields.append(('date', _('Date')))
-        fields.append(('tax', _('Tax')))
         fields.append(('summary_delivery', _('Address delivery')))
         fields.append(('total', _('Total')))
         return fields
@@ -1522,11 +1520,11 @@ class SalesLineAlbaran(GenLineProductBasic):
     line_order = models.ForeignKey(SalesLineOrder, related_name='line_albaran_sales', verbose_name=_("Line orders"), null=True)
     invoiced = models.BooleanField(_("Invoiced"), blank=False, default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return u"{} - {}".format(smart_text(self.line_order.product), smart_text(self.quantity))
 
-    def __str__(self):
-        return self.__unicode__()
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
@@ -1538,9 +1536,10 @@ class SalesLineAlbaran(GenLineProductBasic):
 
     def update_total(self, force_save=True):
         self.subtotal = self.line_order.price_base * self.quantity
-        self.taxes = (self.subtotal * self.tax / 100.0)
-        self.discounts = (self.subtotal * self.discount / 100.0)
-        self.total = self.subtotal - self.discounts + self.taxes
+        self.taxes = (self.subtotal * self.line_order.tax / 100.0)
+        self.equivalence_surcharges = (self.subtotal * self.line_order.equivalence_surcharge / 100.0)
+        self.discounts = (self.subtotal * self.line_order.discount / 100.0)
+        self.total = self.subtotal - self.discounts + self.taxes + self.equivalence_surcharges
         if force_save:
             self.save()
 
@@ -1573,11 +1572,11 @@ class SalesTicket(GenVersion):
     customer = models.ForeignKey(Customer, related_name='ticket_sales', verbose_name=_("Customer"))
     billing_series = models.ForeignKey(BillingSeries, related_name='ticket_sales', verbose_name='Billing series', blank=False, null=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return u"Ticket-{}".format(smart_text(self.code))
 
-    def __str__(self):
-        return self.__unicode__()
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
@@ -1687,17 +1686,18 @@ class SalesLineTicketRectification(GenLineProductBasic):
 
     def update_total(self, force_save=True):
         self.subtotal = self.line_ticket.price_base * self.quantity
-        self.taxes = (self.subtotal * self.tax / 100.0) * (self.subtotal * self.equivalence_surcharge / 100.0)
-        self.discounts = (self.subtotal * self.discount / 100.0)
-        self.total = self.subtotal - self.discounts + self.taxes
+        self.taxes = (self.subtotal * self.line_ticket.tax / 100.0)
+        self.equivalence_surcharges = (self.subtotal * self.line_ticket.equivalence_surcharge / 100.0)
+        self.discounts = (self.subtotal * self.line_ticket.discount / 100.0)
+        self.total = self.subtotal - self.discounts + self.taxes + self.equivalence_surcharges
         if force_save:
             self.save()
 
     def get_customer(self):
-        return self.line_order.get_customer()
+        return self.line_ticket.get_customer()
 
     def get_product(self):
-        return self.line_order.product
+        return self.line_ticket.product
 
     def save(self, *args, **kwargs):
         force = kwargs.get('force_save', False)
@@ -1708,7 +1708,7 @@ class SalesLineTicketRectification(GenLineProductBasic):
                 kwargs.pop('standard_save')
                 self.update_total(force_save=False)
                 result = super(self._meta.model, self).save(*args, **kwargs)
-                self.create_ticket_from_order.update_totales()
+                self.ticket_rectification.update_totales()
                 return result
             else:
                 return self.__save__(args, kwargs, ticket_rectification=self.ticket_rectification, line_ticket=self.line_ticket)
@@ -1724,11 +1724,11 @@ class SalesInvoice(GenVersion):
     summary_invoice = models.TextField(_("Address invoice"), max_length=256, blank=True, null=True)
     billing_series = models.ForeignKey(BillingSeries, related_name='invoice_sales', verbose_name='Billing series')
 
-    def __unicode__(self):
-        return u"Invoice-{}".format(smart_text(self.code))
-
     def __str__(self):
-        return self.__unicode__()
+        return u"{}".format(smart_text(self.code))
+
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
@@ -1745,6 +1745,9 @@ class SalesInvoice(GenVersion):
 
     def calculate_price_doc_complete(self):
         return super(SalesInvoice, self).calculate_price_doc_complete(self.line_invoice_sales.filter(removed=False))
+
+    def get_customer(self):
+        return self.customer
 
     def print_counter(self, user):
         obj = PrintCounterDocumentInvoice()
@@ -1784,6 +1787,9 @@ class SalesLineInvoice(GenLineProduct):
                 return result
             else:
                 return self.__save__(args, kwargs, invoice=self.invoice, line_order=self.line_order)
+
+    def get_customer(self):
+        return self.invoice.customer
 
 
 # factura rectificativa
@@ -1832,9 +1838,10 @@ class SalesLineInvoiceRectification(GenLineProductBasic):
 
     def update_total(self, force_save=True):
         self.subtotal = self.line_invoice.price_base * self.quantity
-        self.taxes = (self.subtotal * self.tax / 100.0) * (self.subtotal * self.equivalence_surcharge / 100.0)
-        self.discounts = (self.subtotal * self.discount / 100.0)
-        self.total = self.subtotal - self.discounts + self.taxes
+        self.taxes = (self.subtotal * self.line_invoice.tax / 100.0)
+        self.equivalence_surcharges = (self.subtotal * self.line_invoice.equivalence_surcharge / 100.0)
+        self.discounts = (self.subtotal * self.line_invoice.discount / 100.0)
+        self.total = self.subtotal - self.discounts + self.taxes + self.equivalence_surcharges
         if force_save:
             self.save()
 
@@ -1854,6 +1861,9 @@ class SalesLineInvoiceRectification(GenLineProductBasic):
 
     def calculate_total(self):
         return self.total
+
+    def get_customer(self):
+        return self.invoice_rectification.invoice.customer
 
 
 # Reason of modification
