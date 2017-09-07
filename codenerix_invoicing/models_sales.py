@@ -26,7 +26,6 @@ from django.utils import timezone
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
-# from django.contrib.auth.models import User
 
 from codenerix.models import GenInterface, CodenerixModel
 from codenerix.models_people import GenRole
@@ -830,7 +829,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
 
                     if isinstance(obj_final, SalesOrder):
                         obj_final.budget = obj_src
-                    
+
                     obj_final.save()
 
                     for lb_pk in list_lines:
