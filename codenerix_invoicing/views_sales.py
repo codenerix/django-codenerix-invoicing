@@ -50,11 +50,15 @@ from codenerix_invoicing.models_sales import Customer, CustomerDocument, \
 from codenerix_invoicing.models_sales import ROLE_BASKET_SHOPPINGCART, ROLE_BASKET_BUDGET, ROLE_BASKET_WISHLIST
 from codenerix_invoicing.models_sales import SalesLineBasketOption
 
-from codenerix_invoicing.forms_sales import CustomerForm, CustomerDocumentForm, \
-    OrderForm, LineOrderForm, AlbaranForm, LineAlbaranForm, TicketForm, LineTicketForm, \
-    TicketRectificationForm, TicketRectificationUpdateForm, LineTicketRectificationLinkedForm, LineTicketRectificationForm, InvoiceForm, LineInvoiceForm, \
-    InvoiceRectificationForm, InvoiceRectificationUpdateForm, LineInvoiceRectificationForm, LineInvoiceRectificationLinkedForm, \
-    ReservedProductForm, BasketForm, LineBasketForm, OrderFromBudgetForm, OrderFromShoppingCartForm, LineBasketFormPack
+from codenerix_invoicing.forms_sales import CustomerForm, CustomerDocumentForm
+from codenerix_invoicing.forms_sales import OrderForm, LineOrderForm, LineOrderFormEdit, OrderFromBudgetForm, OrderFromShoppingCartForm
+from codenerix_invoicing.forms_sales import AlbaranForm, LineAlbaranForm
+from codenerix_invoicing.forms_sales import TicketForm, LineTicketForm
+from codenerix_invoicing.forms_sales import TicketRectificationForm, TicketRectificationUpdateForm, LineTicketRectificationLinkedForm, LineTicketRectificationForm
+from codenerix_invoicing.forms_sales import InvoiceForm, LineInvoiceForm
+from codenerix_invoicing.forms_sales import InvoiceRectificationForm, InvoiceRectificationUpdateForm, LineInvoiceRectificationForm, LineInvoiceRectificationLinkedForm
+from codenerix_invoicing.forms_sales import ReservedProductForm
+from codenerix_invoicing.forms_sales import BasketForm, LineBasketForm, LineBasketFormPack
 from codenerix_invoicing.views import PrinterHelper
 
 from .models_sales import ReasonModification, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
@@ -1049,8 +1053,37 @@ class LineOrderCreateModal(GenCreateModal, LineOrderCreate):
 
 class LineOrderUpdate(GenLineOrderUrl, GenUpdate):
     model = SalesLineOrder
-    form_class = LineOrderForm
+    form_class = LineOrderFormEdit
 
+    def form_valid(self, form):
+        reason = form.data['reason']
+        if reason:
+            reason_obj = ReasonModification.objects.filter(pk=reason).first()
+            if reason_obj:
+                try:
+                    with transaction.atomic():
+                        result = super(LineOrderUpdate, self).form_valid(form)
+
+                        reason_order = ReasonModificationLineOrder()
+                        reason_order.reason = reason_obj
+                        reason_order.line = self.object
+                        reason_order.user = get_current_user()
+                        reason_order.quantity = self.object.quantity
+                        reason_order.save()
+                        return result
+                except Exception as e:
+                    errors = form._errors.setdefault("other", ErrorList())
+                    errors.append(e)
+                    return super(LineOrderUpdate, self).form_invalid(form)
+            else:
+                errors = form._errors.setdefault("reason", ErrorList())
+                errors.append(_("Reason of modification invalid"))
+                return super(LineOrderUpdate, self).form_invalid(form)
+        else:
+            errors = form._errors.setdefault("reason", ErrorList())
+            errors.append(_("Reason of modification invalid"))
+            return super(LineOrderUpdate, self).form_invalid(form)
+            
 
 class LineOrderUpdateModal(GenUpdateModal, LineOrderUpdate):
     pass

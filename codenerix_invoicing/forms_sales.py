@@ -364,7 +364,7 @@ class OrderForm(GenModelForm):
 class LineOrderForm(GenModelForm):
     class Meta:
         model = SalesLineOrder
-        exclude = ['order', 'line_budget', 'tax', 'price_recommended']
+        exclude = ['order', 'line_budget', 'tax', 'price_recommended', 'equivalence_surcharge', 'equivalence_surcharges']
         autofill = {
             'product': ['select', 3, 'CDNX_products_productfinals_foreign_sales'],
         }
@@ -406,6 +406,23 @@ class LineOrderForm(GenModelForm):
                 ['discount', 6],
                 ['tax', 6],
                 ['notes', 6],)
+        ]
+        return g
+
+
+class LineOrderFormEdit(LineOrderForm):
+    reason = forms.ModelChoiceField(label=_('Reason of modification'), queryset=ReasonModification.objects.all().order_by('code'))
+
+    def __groups__(self):
+        g = [
+            (_('Details'), 12,
+                ['product', 6],
+                ['description', 6],
+                ['quantity', 6],
+                ['price_base', 6],
+                ['discount', 6],
+                ['reason', 6],
+                ['notes', 12])
         ]
         return g
 

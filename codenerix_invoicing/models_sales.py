@@ -27,6 +27,7 @@ from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
 
+from codenerix.middleware import get_current_user
 from codenerix.models import GenInterface, CodenerixModel
 from codenerix.models_people import GenRole
 from codenerix_extensions.helpers import get_external_method
@@ -1908,6 +1909,13 @@ class ReasonModificationLine(CodenerixModel):  # META: Abstract class
         fields.append(('line', _("Line")))
         fields.append(('quantity', _("Quantity")))
         return fields
+
+    def save(self, *args, **kwargs):
+        if self.user is None:
+            self.user = get_current_user()
+        if self.date is None:
+            self.date = datetime.datetime.now()
+        return super(ReasonModificationLine, self).save(*args, **kwargs)
 
 
 class ReasonModificationLineBasket(ReasonModificationLine):
