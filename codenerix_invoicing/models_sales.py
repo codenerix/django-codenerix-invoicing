@@ -1257,7 +1257,10 @@ class SalesBasket(GenVersion):
         else:
             obj.status_document = STATUS_PRINTER_DOCUMENT_TEMPORARY
         obj.save()
-        return PrintCounterDocumentBasket.objects.filter(status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE).count()
+        return PrintCounterDocumentBasket.objects.filter(
+            status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE,
+            basket=self
+        ).count()
 
 
 # nueva linea de la cesta de la compra
@@ -1408,7 +1411,10 @@ class SalesOrder(GenVersion):
         else:
             obj.status_document = STATUS_PRINTER_DOCUMENT_TEMPORARY
         obj.save()
-        return PrintCounterDocumentOrder.objects.filter(status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE).count()
+        return PrintCounterDocumentOrder.objects.filter(
+            status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE,
+            order=self
+        ).count()
 
 
 # lineas de pedidos
@@ -1501,7 +1507,10 @@ class SalesAlbaran(GenVersion):
         else:
             obj.status_document = STATUS_PRINTER_DOCUMENT_TEMPORARY
         obj.save()
-        return PrintCounterDocumentAlbaran.objects.filter(status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE).count()
+        return PrintCounterDocumentAlbaran.objects.filter(
+            status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE,
+            albaran=self
+        ).count()
 
 
 # lineas de albaranes
@@ -1592,7 +1601,10 @@ class SalesTicket(GenVersion):
         else:
             obj.status_document = STATUS_PRINTER_DOCUMENT_TEMPORARY
         obj.save()
-        return PrintCounterDocumentTicket.objects.filter(status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE).count()
+        return PrintCounterDocumentTicket.objects.filter(
+            status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE,
+            ticket=self
+        ).count()
 
 
 class SalesLineTicket(GenLineProduct):
@@ -1653,7 +1665,10 @@ class SalesTicketRectification(GenInvoiceRectification):
         else:
             obj.status_document = STATUS_PRINTER_DOCUMENT_TEMPORARY
         obj.save()
-        return PrintCounterDocumentTicketRectification.objects.filter(status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE).count()
+        return PrintCounterDocumentTicketRectification.objects.filter(
+            status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE,
+            ticket_rectification=self
+        ).count()
 
 
 class SalesLineTicketRectification(GenLineProductBasic):
@@ -1738,7 +1753,10 @@ class SalesInvoice(GenVersion):
         else:
             obj.status_document = STATUS_PRINTER_DOCUMENT_TEMPORARY
         obj.save()
-        return PrintCounterDocumentInvoice.objects.filter(status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE).count()
+        return PrintCounterDocumentInvoice.objects.filter(
+            status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE,
+            invoice=self
+        ).count()
 
 
 class SalesLineInvoice(GenLineProduct):
@@ -1792,7 +1810,10 @@ class SalesInvoiceRectification(GenInvoiceRectification):
         else:
             obj.status_document = STATUS_PRINTER_DOCUMENT_TEMPORARY
         obj.save()
-        return PrintCounterDocumentInvoiceRectification.objects.filter(status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE).count()
+        return PrintCounterDocumentInvoiceRectification.objects.filter(
+            status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE,
+            invoice_rectification=self
+        ).count()
 
 
 class SalesLineInvoiceRectification(GenLineProductBasic):
