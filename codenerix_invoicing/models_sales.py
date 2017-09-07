@@ -29,7 +29,6 @@ from django.conf import settings
 
 from codenerix.models import GenInterface, CodenerixModel
 from codenerix.models_people import GenRole
-from codenerix.helpers import model_inspect
 from codenerix_extensions.helpers import get_external_method
 from codenerix_extensions.files.models import GenDocumentFile
 
@@ -435,23 +434,30 @@ class GenVersion(CodenerixModel):  # META: Abstract class
 
     def setcode(self):
         model = self._meta.model
+        code_key = None
         if model == SalesBasket:
             code_format = {}
             code_format[ROLE_BASKET_BUDGET] = 'CDNX_INVOICING_CODE_FORMAT_BUDGET'
             code_format[ROLE_BASKET_WISHLIST] = 'CDNX_INVOICING_CODE_FORMAT_WISHLIST'
             code_format[ROLE_BASKET_SHOPPINGCART] = 'CDNX_INVOICING_CODE_FORMAT_SHOPPINGCART'
         elif model == SalesOrder:
-            code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_ORDER', None)
+            code_key = 'CDNX_INVOICING_CODE_FORMAT_ORDER'
+            code_format = getattr(settings, code_key, None)
         elif model == SalesAlbaran:
-            code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_ALBARAN', None)
+            code_key = 'CDNX_INVOICING_CODE_FORMAT_ALBARAN'
+            code_format = getattr(settings, code_key, None)
         elif model == SalesTicketRectification:
-            code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_TICKET', None)
+            code_key = 'CDNX_INVOICING_CODE_FORMAT_TICKET'
+            code_format = getattr(settings, code_key, None)
         elif model == SalesTicketRectification:
-            code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_TICKETRECTIFICATION', None)
+            code_key = 'CDNX_INVOICING_CODE_FORMAT_TICKETRECTIFICATION'
+            code_format = getattr(settings, code_key, None)
         elif model == SalesInvoice:
-            code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_INVOICE', None)
+            code_key = 'CDNX_INVOICING_CODE_FORMAT_INVOICE'
+            code_format = getattr(settings, code_key, None)
         elif model == SalesInvoiceRectification:
-            code_format = getattr(settings, 'CDNX_INVOICING_CODE_FORMAT_INVOICERECTIFCATION', None)
+            code_key = 'CDNX_INVOICING_CODE_FORMAT_INVOICERECTIFCATION'
+            code_format = getattr(settings, code_key, None)
         else:
             code_format = None
 
@@ -470,7 +476,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
                 'number': self.code_counter,
             }
             if isinstance(code_format, dict):
-                role = getattr(last, 'role', None)
+                role = getattr(self, 'role', None)
                 if role and role in code_format and hasattr(settings, code_format[role]):
                     code_format = getattr(settings, code_format[role], None)
                     if code_format:
@@ -480,9 +486,12 @@ class GenVersion(CodenerixModel):  # META: Abstract class
                 else:
                     raise Exception(_("Can not determine code, rol undefined"))
             else:
-                code_str = code_format.format(**values)
+                try:
+                    code_str = code_format.format(**values)
+                except KeyError as e:
+                    raise KeyError("We have detected that you are using the unknow key {} in '{}'. Available keys are: {}".format(e, code_key, ", ".join(values.keys())))
         else:
-            code_str = code
+            code_str = self.code_counter
 
         # Set new code to this object
         self.code = code_str
@@ -540,11 +549,25 @@ class GenVersion(CodenerixModel):  # META: Abstract class
         if make_code:
             with transaction.atomic():
                 # Find new code_counter
-                self.code_counter = 0 # ............... <<<<<<<
+                model = self._meta.model
+                last = model.objects.filter(
+                    date__gte=timezone.datetime(self.date.year, 1, 1),
+                    date__lt=timezone.datetime(self.date.year+1, 1, 1)
+                ).order_by("-code_counter").first()
+
+                # Check if we found a result
+                if last:
+                    # Add one more
+                    self.code_counter = last.code_counter+1
+                else:
+                    # This is the first one
+                    self.code_counter = 1
+
                 # Create new code
                 self.setcode()
+
                 # Save
-                result= super(GenVersion, self).save(*args, **kwargs)
+                result = super(GenVersion, self).save(*args, **kwargs)
         else:
             result = super(GenVersion, self).save(*args, **kwargs)
 
