@@ -830,7 +830,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
 
                     if isinstance(obj_final, SalesOrder):
                         obj_final.budget = obj_src
-                    
+
                     obj_final.save()
 
                     for lb_pk in list_lines:
