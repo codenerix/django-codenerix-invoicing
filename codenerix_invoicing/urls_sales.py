@@ -76,7 +76,7 @@ urlpatterns = [
     url(r'^customers/(?P<pk>\w+)/delete$', CustomerDelete.as_view(), name='CDNX_invoicing_customers_delete'),
 
     url(r'^customers/foreign/(?P<search>[\w\W]+|\*)$', CustomerForeignBudget.as_view(), name='CDNX_invoicing_customers_foreign_from_budget'),
-    url(r'^customers/foreign/(?P<search>[\w\W]+|\*)$', CustomerForeignShoppingCart.as_view(), name='CDNX_invoicing_customers_foreign_from_shoppingcart'),
+    url(r'^customers/foreign/shoppingcarts/(?P<search>[\w\W]+|\*)$', CustomerForeignShoppingCart.as_view(), name='CDNX_invoicing_customers_foreign_from_shoppingcart'),
 
     url(r'^customerdocuments/(?P<pk>\w+)/sublist$', CustomerDocumentSubList.as_view(), name='CDNX_invoicing_customerdocuments_sublist'),
     url(r'^customerdocuments/(?P<pk>\w+)/sublist/add$', CustomerDocumentCreateModal.as_view(), name='CDNX_invoicing_customerdocuments_sublist_add'),

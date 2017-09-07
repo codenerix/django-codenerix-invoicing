@@ -140,8 +140,9 @@ class BasketForm(GenModelForm):
                 ['date', 2],
                 ['signed', 2],
                 ['public', 2],
-                ['address_delivery', 6],
-                ['address_invoice', 6],
+                ['billing_series', 4],
+                ['address_delivery', 4],
+                ['address_invoice', 4],
                 ['name', 4],
                 ['pos_slot', 4],
                 ['haulier', 4],
@@ -158,6 +159,7 @@ class BasketForm(GenModelForm):
                 ['signed', 2],
                 ['public', 2],
                 ['code', 3],
+                ['billing_series', 4],
                 ['date', 4],
                 ['observations', 6],
                 ['address_delivery', 6],
@@ -270,7 +272,7 @@ class LineBasketFormPack(GenModelForm):
 class OrderFromBudgetForm(GenModelForm):
     class Meta:
         model = SalesOrder
-        fields = ['customer', 'budget']
+        fields = ['customer', 'budget', 'billing_series']
         autofill = {
             'customer': ['select', 3, 'CDNX_invoicing_customers_foreign_from_budget'],
             'budget': ['select', 3, 'CDNX_invoicing_salesbaskets_foreignkey_budget', 'customer'],
@@ -279,8 +281,9 @@ class OrderFromBudgetForm(GenModelForm):
     def __groups__(self):
         g = [
             (_('Select budget'), 12,
-                ['customer', 6],
-                ['budget', 6],)
+                ['customer', 4],
+                ['billing_series', 4],
+                ['budget', 4],)
         ]
         return g
 
@@ -288,17 +291,18 @@ class OrderFromBudgetForm(GenModelForm):
 class OrderFromShoppingCartForm(GenModelForm):
     class Meta:
         model = SalesOrder
-        fields = ['customer', 'budget']
+        fields = ['customer', 'budget', 'billing_series']
         autofill = {
-            'customer': ['select', 3, 'CDNX_invoicing_customers_foreign_from_budget'],
+            'customer': ['select', 3, 'CDNX_invoicing_customers_foreign_from_shoppingcart'],
             'budget': ['select', 3, 'CDNX_invoicing_salesbaskets_foreignkey_shoppingcart', 'customer'],
         }
 
     def __groups__(self):
         g = [
             (_('Select budget'), 12,
-                ['customer', 6],
-                ['budget', 6],)
+                ['customer', 4],
+                ['billing_series', 4],
+                ['budget', 4],)
         ]
         return g
 
@@ -306,7 +310,7 @@ class OrderFromShoppingCartForm(GenModelForm):
 class OrderForm(GenModelForm):
     class Meta:
         model = SalesOrder
-        exclude = ['lock', 'code', 'parent_pk']
+        exclude = ['lock', 'code', 'parent_pk', 'budget', 'payment']
         widgets = {
             'observations': WysiwygAngularInput()
         }
@@ -318,11 +322,13 @@ class OrderForm(GenModelForm):
         g = [
             (_('Details'), 12,
                 ['customer', 4],
-                ['date', 4],
+                ['billing_series', 2],
+                ['date', 2],
                 ['storage', 4],
                 ['status_order', 4],
                 ['payment_detail', 4],
                 ['source', 4],
+                ['number_tracking', 6],
                 ['observations', 12],)
         ]
         return g
@@ -335,6 +341,7 @@ class OrderForm(GenModelForm):
                 ['budget', 6],
                 ['date', 6],
                 ['code', 6],
+                ['billing_series', 2],
                 ['storage', 6],
                 ['status_order', 6],
                 ['payment_detail', 6],
@@ -415,8 +422,9 @@ class AlbaranForm(GenModelForm):
         g = [
             (_('Details'), 12,
                 ['date', 6],
-                ['tax', 6],
-                ['observations', 12],),
+                ['billing_series', 6],
+                ['summary_delivery', 6],
+                ['observations', 6],),
         ]
         return g
 
@@ -426,7 +434,8 @@ class AlbaranForm(GenModelForm):
             (_('Details'), 12,
                 ['date', 6],
                 ['code', 6],
-                ['tax', 6],
+                ['billing_series', 6],
+                ['summary_delivery', 6],
                 ['lock', 6],
                 ['observations', 6],),
             (
@@ -497,6 +506,7 @@ class TicketForm(GenModelForm):
             (_('Details'), 12,
                 ['customer', 8],
                 ['date', 4],
+                ['billing_series', 6],
                 ['observations', 12],)
         ]
         return g
@@ -508,6 +518,7 @@ class TicketForm(GenModelForm):
                 ['customer', 6],
                 ['date', 6],
                 ['code', 6],
+                ['billing_series', 6],
                 ['lock', 6],
                 ['observations', 6],),
             (
@@ -570,7 +581,7 @@ class LineTicketForm(GenModelForm):
 class TicketRectificationForm(GenModelForm):
     class Meta:
         model = SalesTicketRectification
-        exclude = ['lock', 'parent_pk']
+        exclude = ['lock', 'parent_pk', 'code']
         widgets = {
             'observations': WysiwygAngularInput()
         }
@@ -579,7 +590,7 @@ class TicketRectificationForm(GenModelForm):
         g = [
             (_('Details'), 12,
                 ['date', 4],
-                ['code', 4],
+                ['billing_series', 4],
                 ['ticket', 4],
                 ['observations', 12],)
         ]
@@ -608,7 +619,7 @@ class TicketRectificationForm(GenModelForm):
 class TicketRectificationUpdateForm(GenModelForm):
     class Meta:
         model = SalesTicketRectification
-        exclude = ['lock', 'parent_pk', 'ticket']
+        exclude = ['lock', 'parent_pk', 'ticket', 'code']
         widgets = {
             'observations': WysiwygAngularInput()
         }
@@ -617,7 +628,7 @@ class TicketRectificationUpdateForm(GenModelForm):
         g = [
             (_('Details'), 12,
                 ['date', 6],
-                ['code', 6],
+                ['billing_series', 6],
                 ['observations', 12],)
         ]
         return g
@@ -628,7 +639,7 @@ class LineTicketRectificationForm(GenModelForm):
 
     class Meta:
         model = SalesLineTicketRectification
-        exclude = ['ticket_rectification']
+        exclude = ['ticket_rectification', 'equivalence_surcharges']
         autofill = {
             'line_ticket': ['select', 3, 'CDNX_invoicing_lineticketsaless_foreign', 'ticket_rectification_pk'],
         }
@@ -666,7 +677,7 @@ class LineTicketRectificationForm(GenModelForm):
 class LineTicketRectificationLinkedForm(GenModelForm):
     class Meta:
         model = SalesLineTicketRectification
-        exclude = ['ticket_rectification', 'line_ticket']
+        exclude = ['ticket_rectification', 'line_ticket', 'equivalence_surcharges']
         widgets = {
             'notes': WysiwygAngularInput()
         }
@@ -690,11 +701,14 @@ class InvoiceForm(GenModelForm):
 
     def __groups__(self):
         g = [
-            (_('Details'), 12,
+            (
+                _('Details'), 12,
                 ['customer', 4],
                 ['date', 4],
                 ['billing_series', 4],
-                ['observations', 12],)
+                ['summary_invoice', 6],
+                ['observations', 6],
+            )
         ]
         return g
 
@@ -724,7 +738,7 @@ class LineInvoiceForm(GenModelForm):
 
     class Meta:
         model = SalesLineInvoice
-        exclude = ['invoice', 'tax', 'price_recommended']
+        exclude = ['invoice', 'tax', 'price_recommended', 'equivalence_surcharges', 'equivalence_surcharge']
         autofill = {
             'order': ['select', 3, 'CDNX_invoicing_ordersaless_foreign', 'invoice_pk'],
             'line_order': ['select', 3, 'CDNX_invoicing_lineordersaless_foreign_custom', 'order'],
@@ -736,12 +750,12 @@ class LineInvoiceForm(GenModelForm):
     def __groups__(self):
         g = [
             (_('Details'), 12,
-                ['line_order', 6],
-                ['description', 6],
                 ['order', 6],
-                ['quantity', 6],
-                ['price_base', 6],
-                ['discount', 6],
+                ['line_order', 6],
+                ['description', 12],
+                ['quantity', 4],
+                ['price_base', 4],
+                ['discount', 4],
                 ['notes', 12])
         ]
         return g
@@ -777,6 +791,7 @@ class InvoiceRectificationForm(GenModelForm):
             (_('Details'), 12,
                 ['date', 6],
                 ['invoice', 6],
+                ['billing_series', 6],
                 ['observations', 6],)
         ]
         return g
@@ -788,7 +803,6 @@ class InvoiceRectificationForm(GenModelForm):
                 ['invoice', 6],
                 ['date', 6],
                 ['code', 6],
-                ['tax', 6],
                 ['observations', 6],),
             (
                 _('Total'), 12,
@@ -813,7 +827,8 @@ class InvoiceRectificationUpdateForm(GenModelForm):
         g = [
             (_('Details'), 12,
                 ['date', 6],
-                ['observations', 6],)
+                ['billing_series', 6],
+                ['observations', 12],)
         ]
         return g
 

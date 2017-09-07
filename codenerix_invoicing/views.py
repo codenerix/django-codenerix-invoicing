@@ -62,7 +62,6 @@ for info in MODELS:
         formsfull[model].append((eval("{}TextForm{}".format(model, lang_code.upper())), field, None))
 
 
-
 # ###########################################
 # Print PDF
 class PrinterHelper(object):
@@ -241,8 +240,6 @@ class ProductStockOwnCreateModal(GenCreateModal, ProductStockCreate):
             form.instance.batch = batch
 
         return super(ProductStockOwnCreateModal, self).form_valid(form)
-"""
-"""
 
 
 class ProductStockUpdate(GenProductStockUrl, GenUpdate):
