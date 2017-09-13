@@ -71,11 +71,11 @@ class CashDiaryUpdate(GenUpdate):
 
     def form_valid(self, form):
         try:
-            return super(CashDiaryCreate, self).form_valid(form)
+            return super(CashDiaryUpdate, self).form_valid(form)
         except IntegrityError as e:
             errors = form._errors.setdefault("other", ErrorList())
             errors.append(e)
-            return super(CashDiaryCreate, self).form_invalid(form)
+            return super(CashDiaryUpdate, self).form_invalid(form)
 
 
 class CashDiaryUpdateModal(GenUpdateModal, CashDiaryUpdate):

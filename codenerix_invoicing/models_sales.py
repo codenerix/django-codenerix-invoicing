@@ -1572,6 +1572,12 @@ class SalesLineAlbaran(GenLineProductBasic):
 class SalesTicket(GenVersion):
     customer = models.ForeignKey(Customer, related_name='ticket_sales', verbose_name=_("Customer"))
     billing_series = models.ForeignKey(BillingSeries, related_name='ticket_sales', verbose_name='Billing series', blank=False, null=False)
+    # user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='order_sales', verbose_name=_("User"))
+
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            self.user = get_current_user()
+        return super(SalesTicket, self).save(*args, **kwargs)
 
     def __str__(self):
         return u"Ticket-{}".format(smart_text(self.code))

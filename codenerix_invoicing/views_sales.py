@@ -311,7 +311,7 @@ class BasketCreateSHOPPINGCART(GenBasketSHOPPINGCARTUrl, BasketCreate):
         form.instance.role = ROLE_BASKET_SHOPPINGCART
 
         return super(BasketCreateSHOPPINGCART, self).form_valid(form)
-    
+
 
 class BasketCreateSHOPPINGCARTModal(GenCreateModal, BasketCreateSHOPPINGCART):
     pass
@@ -323,7 +323,7 @@ class BasketCreateBUDGET(GenBasketBUDGETUrl, BasketCreate):
         form.instance.role = ROLE_BASKET_BUDGET
 
         return super(BasketCreateBUDGET, self).form_valid(form)
-    
+
 
 class BasketCreateBUDGETModal(GenCreateModal, BasketCreateBUDGET):
     pass
@@ -335,7 +335,7 @@ class BasketCreateWISHLIST(GenBasketWISHLISTUrl, BasketCreate):
         form.instance.role = ROLE_BASKET_WISHLIST
 
         return super(BasketCreateWISHLIST, self).form_valid(form)
-    
+
 
 class BasketCreateWISHLISTModal(GenCreateModal, BasketCreateWISHLIST):
     pass
@@ -425,7 +425,7 @@ class BasketPassToBudget(View):
     def post(self, request, *args, **kwargs):
         context = {}
         pk = kwargs.get('pk', None)
-        list_lines = ast.literal_eval(request._body)['lines']
+        list_lines = ast.literal_eval(request._body.decode())['lines']
         if pk:
             obj = SalesBasket.objects.filter(pk=pk).first()
             if obj:
@@ -454,7 +454,7 @@ class BasketPassToOrder(View):
         # raise Exception("Adatar desde aqui")
 
         pk = kwargs.get('pk', None)
-        list_lines = ast.literal_eval(request._body)['lines']
+        list_lines = ast.literal_eval(request._body.decode())['lines']
         context = SalesLineBasket.create_order_from_budget(pk, list_lines)
         try:
             context['obj_final'] = None
@@ -469,7 +469,7 @@ class BasketPassToOrder(View):
         pk = kwargs.get('pk', None)
         budget = SalesLineBasket.objects.filter(pk=pk).first()
         # list_budget = request.POST.get('lines', None)
-        list_budget = ast.literal_eval(request._body)['lines']
+        list_budget = ast.literal_eval(request._body.decode())['lines']
         if list_budget and budget:
             list_budget = [int(x) for x in list_budget]
             # raise Exception ([int(x) for x in list_budget])
@@ -711,7 +711,7 @@ class LineBasketSubList(GenLineBasketUrl, GenList):
             self.linkedit = True
             self.field_delete = True
         return super(LineBasketSubList, self).dispatch(*args, **kwargs)
-    
+
     def get_context_json(self, context):
         answer = super(LineBasketSubList, self).get_context_json(context)
 
@@ -907,7 +907,7 @@ class OrderCreateAlbaran(View):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
-        list_lines = ast.literal_eval(request._body)['lines']
+        list_lines = ast.literal_eval(request._body.decode())['lines']
         try:
             context = SalesLineOrder.create_albaran_from_order(pk, list_lines)
             context.pop('obj_final')
@@ -926,7 +926,7 @@ class OrderCreateTicket(View):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
-        list_lines = ast.literal_eval(request._body)['lines']
+        list_lines = ast.literal_eval(request._body.decode())['lines']
         try:
             context = SalesLineOrder.create_ticket_from_order(pk, list_lines)
             context.pop('obj_final')
@@ -945,7 +945,7 @@ class OrderCreateInvoice(View):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
-        list_lines = ast.literal_eval(request._body)['lines']
+        list_lines = ast.literal_eval(request._body.decode())['lines']
         try:
             context = SalesLineOrder.create_invoice_from_order(pk, list_lines)
             context.pop('obj_final')
@@ -1083,7 +1083,7 @@ class LineOrderUpdate(GenLineOrderUrl, GenUpdate):
             errors = form._errors.setdefault("reason", ErrorList())
             errors.append(_("Reason of modification invalid"))
             return super(LineOrderUpdate, self).form_invalid(form)
-            
+
 
 class LineOrderUpdateModal(GenUpdateModal, LineOrderUpdate):
     pass
@@ -1334,7 +1334,7 @@ class AlbaranCreateTicket(View):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
-        list_lines = ast.literal_eval(request._body)['lines']
+        list_lines = ast.literal_eval(request._body.decode())['lines']
         xxx = SalesLineOrder.create_ticket_from_albaran(pk, list_lines)
         try:
             json_answer = json.dumps(xxx)
@@ -1352,7 +1352,7 @@ class AlbaranCreateInvoice(View):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
-        list_lines = ast.literal_eval(request._body)['lines']
+        list_lines = ast.literal_eval(request._body.decode())['lines']
         try:
             json_answer = json.dumps(SalesLineOrder.create_invoice_from_albaran(pk, list_lines))
         except TypeError:
@@ -1622,7 +1622,7 @@ class TicketCreateInvoice(View):
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
-        list_lines = ast.literal_eval(request._body)['lines']
+        list_lines = ast.literal_eval(request._body.decode())['lines']
         try:
             json_answer = json.dumps(SalesLineOrder.create_invoice_from_ticket(pk, list_lines))
         except TypeError:
@@ -1640,7 +1640,7 @@ class TicketCreateRectification(View):
         pk = kwargs.get('pk', None)
         ticket = SalesTicket.objects.filter(pk=pk).first()
 
-        list_lines = ast.literal_eval(request._body)['lines']
+        list_lines = ast.literal_eval(request._body.decode())['lines']
         list_lines = [int(x) for x in list_lines]
 
         context = {}
@@ -2175,7 +2175,7 @@ class InvoiceCreateRectification(View):
         pk = kwargs.get('pk', None)
         invoice = SalesInvoice.objects.filter(pk=pk).first()
 
-        list_lines = ast.literal_eval(request._body)['lines']
+        list_lines = ast.literal_eval(request._body.decode())['lines']
         list_lines = [int(x) for x in list_lines]
 
         context = {}
@@ -2424,7 +2424,7 @@ class LineInvoiceForeign(GenLineInvoiceUrl, GenForeignKey):
             ).exclude(
                 pk__in=[x[0] for x in SalesLineInvoiceRectification.objects.filter(invoice_rectification__pk=invoice_rectification_pk).values_list('line_invoice__pk')]
             )
-        
+
         doc = filters.get('doc', None)
         if doc:
             qs = qs.filter(invoice__pk=doc)
@@ -2680,7 +2680,7 @@ class LineInvoiceRectificationForeign(GenLineInvoiceRectificationUrl, GenForeign
         # Filter with search string
         qsobject = Q(description__icontains=search)
         qs = queryset.filter(qsobject)
-        
+
         doc = filters.get('doc', None)
         if doc:
             qs = qs.filter(invoice_rectification__pk=doc)
