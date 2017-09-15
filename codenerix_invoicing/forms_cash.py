@@ -41,14 +41,16 @@ class CashDiaryForm(GenModelForm):
                 ['pos', 12],
             ), (
                 _('Opened'), 12,
-                ['opened_user', 4],
-                ['opened_date', 4],
-                ['opened_amount', 4],
+                ['opened_user', 3],
+                ['opened_date', 3],
+                ['opened_cash', 3],
+                ['opened_cards', 3],
             ), (
                 _('Closed'), 12,
-                ['closed_user', 4],
-                ['closed_date', 4],
-                ['closed_amount', 4],
+                ['closed_user', 3],
+                ['closed_date', 3],
+                ['closed_cash', 3],
+                ['closed_cards', 3],
             )
         ]
 
@@ -60,14 +62,16 @@ class CashDiaryForm(GenModelForm):
                 ['pos', 12],
             ), (
                 _('Opened'), 12,
-                ['opened_user', 4],
-                ['opened_date', 4],
-                ['opened_amount', 4],
+                ['opened_user', 3],
+                ['opened_date', 3],
+                ['opened_cash', 3],
+                ['opened_cards', 3],
             ), (
                 _('Closed'), 12,
-                ['closed_user', 4],
-                ['closed_date', 4],
-                ['closed_amount', 4],
+                ['closed_user', 3],
+                ['closed_date', 3],
+                ['closed_cash', 3],
+                ['closed_cards', 3],
             )
         ]
 

@@ -33,10 +33,12 @@ class CashDiary(CodenerixModel):
     pos = models.ForeignKey(POS, related_name='cash_movements', verbose_name=_("Point of Sales"), null=True)
     opened_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='opened_cash_diarys', verbose_name=_("User"))
     opened_date = models.DateTimeField(_("Opened Date"), blank=False, null=False)
-    opened_amount = models.FloatField(_("Opened Amount"), blank=False, null=False)
+    opened_cash = models.FloatField(_("Opened Cash"), blank=False, null=False)
+    opened_cards = models.FloatField(_("Opened Cards"), blank=False, null=False)
     closed_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='closed_cash_diarys', verbose_name=_("User"), blank=True, null=True)
     closed_date = models.DateTimeField(_("Closed Date"), blank=True, null=True)
-    closed_amount = models.FloatField(_("Closed Amount"), blank=True, null=True)
+    closed_cash = models.FloatField(_("Closed Cash"), blank=True, null=True)
+    closed_cards = models.FloatField(_("Closed Cards"), blank=True, null=True)
 
     def __str__(self):
         return u"({}) {}: {}".format(smart_text(self.pos), smart_text(self.opened_user), smart_text(self.opened_date))
@@ -49,10 +51,12 @@ class CashDiary(CodenerixModel):
         fields.append(('pos', _('Point of Sales')))
         fields.append(('opened_user', _('Opened user')))
         fields.append(('opened_date', _('Opened date')))
-        fields.append(('opened_amount', _('Opened amount')))
+        fields.append(('opened_cash', _('Opened cash')))
+        fields.append(('opened_cards', _('Opened cards')))
         fields.append(('closed_user', _('Closed user')))
         fields.append(('closed_date', _('Closed date')))
-        fields.append(('closed_amount', _('Closed amount')))
+        fields.append(('closed_cash', _('Closed cash')))
+        fields.append(('closed_cards', _('Closed cards')))
         return fields
 
     def save(self, *args, **kwargs):
