@@ -23,7 +23,9 @@ limitations under the License.
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.pos}}</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_user}}</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_date}}</td>
-<td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_amount}}</td>
+<td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_cash|codenerix:'money_euro'}}</td>
+<td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_cards|codenerix:'money_euro'}}</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.closed_user}}</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.closed_date}}</td>
-<td ng-class="{'bg-warning':!row.closed_user}"> {{row.closed_amount}}</td>
+<td ng-class="{'bg-warning':!row.closed_user}"> {{row.closed_cash|codenerix:'money_euro'}}</td>
+<td ng-class="{'bg-warning':!row.closed_user}"> {{row.closed_cards|codenerix:'money_euro'}}</td>
