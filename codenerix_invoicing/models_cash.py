@@ -66,7 +66,7 @@ class CashDiary(CodenerixModel):
         '''
 
         # Get checkpoint
-        ck = dateparse.parse_time(settings.get("CASHDIARY_CLOSES_AT", '03:00'))
+        ck = dateparse.parse_time(getattr(settings, "CASHDIARY_CLOSES_AT", '03:00'))
         year = timezone.now().year
         month = timezone.now().month
         day = timezone.now().day
@@ -76,10 +76,10 @@ class CashDiary(CodenerixModel):
         checkpoint = timezone.datetime(year, month, day, hour, minute, second)
 
         # Get
-        cashdiary = CashDiary.objects.filters(pos=pos, opened_date__gte=checkpoint).order_by("-opened_date").first()
+        cashdiary = CashDiary.objects.filter(pos=pos, opened_date__gte=checkpoint).order_by("-opened_date").first()
         if not cashdiary:
             # No cashdiary found for today, check older one
-            oldercashdiary = CashDiary.objects.filters(pos=pos, opened_date__lt=checkpoint).order_by("-opened_date").first()
+            oldercashdiary = CashDiary.objects.filter(pos=pos, opened_date__lt=checkpoint).order_by("-opened_date").first()
             if oldercashdiary:
                 if oldercashdiary.closed_user:
                     cashdiary = None
