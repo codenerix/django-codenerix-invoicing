@@ -37,8 +37,8 @@ from django.conf import settings
 from codenerix.views import GenList, GenCreate, GenCreateModal, GenUpdate, GenUpdateModal, GenDelete, GenDetail, GenDetailModal, GenForeignKey
 from codenerix.middleware import get_current_user
 
+from codenerix_corporate.models import CorporateImage
 from codenerix_extensions.views import GenCreateBridge, GenUpdateBridge
-from codenerix_extensions.corporate.models import CorporateImage
 from codenerix_extensions.files.views import DocumentFileView
 from codenerix_extensions.helpers import get_language_database
 from codenerix_products.models import ProductFinal

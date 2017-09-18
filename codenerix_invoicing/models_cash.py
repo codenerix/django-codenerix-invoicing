@@ -19,13 +19,15 @@
 # limitations under the License.
 
 from django.db import models, IntegrityError
+from django.db.models import Sum
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
+from django.utils import timezone, dateparse
 
 from codenerix.models import CodenerixModel
 from codenerix_invoicing.models_sales import SalesOrder
-from codenerix_invoicing.models_purchases import PAYMENT_DETAILS, KIND_CARD
+from codenerix_invoicing.models_purchases import PAYMENT_DETAILS, KIND_CARD, PAYMENT_DETAILS_CASH, PAYMENT_DETAILS_CARD
 from codenerix_pos.models import POS, POSSlot
 
 
@@ -39,6 +41,69 @@ class CashDiary(CodenerixModel):
     closed_date = models.DateTimeField(_("Closed Date"), blank=True, null=True)
     closed_cash = models.FloatField(_("Closed Cash"), blank=True, null=True)
     closed_cards = models.FloatField(_("Closed Cards"), blank=True, null=True)
+
+    def amount_cash(self):
+        total = self.cash_movements.filter(kind=PAYMENT_DETAILS_CASH).annotate(total=Sum('amount')).values('total').first()
+        if total:
+            return total['total']
+        else:
+            return 0.0
+
+    def amount_cards(self):
+        total = self.cash_movements.filter(kind=PAYMENT_DETAILS_CARD).annotate(total=Sum('amount')).values('total').first()
+        if total:
+            return total['total']
+        else:
+            return 0.0
+
+    @staticmethod
+    def find(pos, user):
+        '''
+        Get a valid CashDiary for today from the given POS, it will return:
+            - None: if no CashDiary is available today and older one was already closed
+            - New CashDiary: if no CashDiary is available today but there is an older one which it was opened
+            - Existing CashDiary: if a CashDiary is available today (open or close)
+        '''
+
+        # Get checkpoint
+        ck = dateparse.parse_time(settings.get("CASHDIARY_CLOSES_AT", '03:00'))
+        year = timezone.now().year
+        month = timezone.now().month
+        day = timezone.now().day
+        hour = ck.hour
+        minute = ck.minute
+        second = ck.second
+        checkpoint = timezone.datetime(year, month, day, hour, minute, second)
+
+        # Get
+        cashdiary = CashDiary.objects.filters(pos=pos, opened_date__gte=checkpoint).order_by("-opened_date").first()
+        if not cashdiary:
+            # No cashdiary found for today, check older one
+            oldercashdiary = CashDiary.objects.filters(pos=pos, opened_date__lt=checkpoint).order_by("-opened_date").first()
+            if oldercashdiary:
+                if oldercashdiary.closed_user:
+                    cashdiary = None
+                else:
+                    # Older cashdiary is not closed, we have to close it and open a new one
+                    amount_cash = oldercashdiary.amount_cash()
+                    amount_cards = oldercashdiary.amount_cards()
+                    # The older cashdiary is still opened, we have to close it and create a new one
+                    oldercashdiary.closed_cash = amount_cash
+                    oldercashdiary.closed_cards = amount_cards
+                    oldercashdiary.closed_user = user
+                    oldercashdiary.closed_date = timezone.now()
+                    oldercashdiary.save()
+                    # Open new cashdiary
+                    cashdiary = CashDiary()
+                    cashdiary.pos = pos
+                    cashdiary.opened_cash = amount_cash
+                    cashdiary.opened_cards = amount_cards
+                    cashdiary.opened_user = user
+                    cashdiary.opened_date = timezone.now()
+                    cashdiary.save()
+
+        # Return the found CashDiary
+        return cashdiary
 
     def __str__(self):
         return u"({}) {}: {}".format(smart_text(self.pos), smart_text(self.opened_user), smart_text(self.opened_date))

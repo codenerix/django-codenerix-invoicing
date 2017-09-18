@@ -44,7 +44,7 @@ from codenerix_invoicing.models import StockMovement, StockMovementProduct, Haul
 from codenerix_invoicing.forms import StockMovementForm, StockMovementProductForm, HaulierForm
 
 from codenerix_storages.models import StorageBatch
-from codenerix_extensions.corporate.models import CorporateImage
+from codenerix_corporate.models import CorporateImage
 from codenerix_extensions.files.views import ImageFileView
 
 
