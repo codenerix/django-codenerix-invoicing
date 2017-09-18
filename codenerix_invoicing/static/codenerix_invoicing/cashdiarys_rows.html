@@ -20,6 +20,9 @@ limitations under the License.
 
 -->
 
+<td ng-class="{'bg-warning':!row.closed_user}" class="text-center" ng-click="$event.stopPropagation()" ng-show="data.table.head.extra_fields.field_check!=None">
+       <input type="checkbox" name="checkline" value="{{ row.pk }}" ng-checked="CDNX_checkline_head" ng-model="data.CDNX_checkline[row.pk]" />
+</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.pos}}</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_user}}</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_date}}</td>

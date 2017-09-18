@@ -42,6 +42,7 @@ class CashDiaryList(GenList):
     show_details = True
     extra_context = {'menu': ['accounting', 'cashdiary'], 'bread': [_('Accounting'), _('CashDiary')]}
     default_ordering = "-opened_date"
+    field_check = False
 
 
 class CashDiaryCreate(GenCreate):
