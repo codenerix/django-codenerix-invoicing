@@ -19,7 +19,7 @@
 # limitations under the License.
 
 from django.db import models, IntegrityError
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
@@ -40,7 +40,11 @@ class CashDiary(CodenerixModel):
     closed_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='closed_cash_diarys', verbose_name=_("User"), blank=True, null=True)
     closed_date = models.DateTimeField(_("Closed Date"), blank=True, null=True)
     closed_cash = models.FloatField(_("Closed Cash"), blank=True, null=True)
+    closed_cash_extra = models.FloatField(_("Closed Cash Deviation"), blank=True, null=True, default=0.0)
     closed_cards = models.FloatField(_("Closed Cards"), blank=True, null=True)
+    closed_cards_extra = models.FloatField(_("Closed Cards Deviation"), blank=True, null=True, default=0.0)
+    checked = models.BooleanField(_("Checked"), blank=False, null=False, default=False)
+    notes = models.TextField(_("Notes"), blank=True, null=True)
 
     def amount_cash(self):
         total = self.cash_movements.filter(kind=PAYMENT_DETAILS_CASH).annotate(total=Sum('amount')).values('total').first()
@@ -122,7 +126,15 @@ class CashDiary(CodenerixModel):
         fields.append(('closed_date', _('Closed date')))
         fields.append(('closed_cash', _('Closed cash')))
         fields.append(('closed_cards', _('Closed cards')))
+        fields.append(('checked', None))
+        fields.append(('closed_cash_extra', None))
+        fields.append(('closed_cards_extra', None))
         return fields
+
+    def __searchF__(self, info):
+        tf = {}
+        tf['checked2'] = (_('Checked'), lambda x: Q(checked=x), [(True, _("True")), (False, _("False"))])
+        return tf
 
     def save(self, *args, **kwargs):
         if CashDiary.objects.filter(pos=self.pos, closed_date__isnull=True).exclude(pk=self.pk).exists():
