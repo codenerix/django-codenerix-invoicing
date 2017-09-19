@@ -20,14 +20,25 @@ limitations under the License.
 
 -->
 
-<td ng-if="row.checked=='False'" ng-class="{'bg-warning':!row.closed_user}" class="text-center" ng-click="$event.stopPropagation()" ng-show="data.table.head.extra_fields.field_check!=None"><input type="checkbox" name="checkline" value="{{ row.pk }}" ng-checked="CDNX_checkline_head" ng-model="data.CDNX_checkline[row.pk]" /></td>
 <td ng-class="{'bg-warning':!row.closed_user}" ng-if="row.checked=='True'" class="text-center"><span class="fa fa-check-square-o"></span></td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.pos}}</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_user}}</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_date}}</td>
-<td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_cash|codenerix:'money_euro'}}</td>
-<td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_cards|codenerix:'money_euro'}}</td>
+<td ng-class="{'bg-warning':!row.closed_user}">
+    {{row.opened_cash|codenerix:'money_euro'}}
+    <span ng-bind-html="row.opened_cash_extra|cashdiary:data.meta.context.error_margin"></span>
+</td>
+<td ng-class="{'bg-warning':!row.closed_user}">
+    {{row.opened_cards|codenerix:'money_euro'}}
+    <span ng-bind-html="row.opened_cards_extra|cashdiary:data.meta.context.error_margin"></span>
+</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.closed_user}}</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.closed_date}}</td>
-<td ng-class="{'bg-warning':!row.closed_user}"> {{row.closed_cash|codenerix:'money_euro'}} ({{row.closed_cash_extra}})</td>
-<td ng-class="{'bg-warning':!row.closed_user}"> {{row.closed_cards|codenerix:'money_euro'}} ({{row.closed_cards_extra}})</td>
+<td ng-class="{'bg-warning':!row.closed_user}">
+    {{row.closed_cash|codenerix:'money_euro'}}
+    <span ng-bind-html="row.closed_cash_extra|cashdiary:data.meta.context.error_margin"></span>
+</td>
+<td ng-class="{'bg-warning':!row.closed_user}">
+    {{row.closed_cards|codenerix:'money_euro'}}
+    <span ng-bind-html="row.closed_cards_extra|cashdiary:data.meta.context.error_margin"></span>
+</td>

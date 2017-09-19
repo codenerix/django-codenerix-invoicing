@@ -37,16 +37,18 @@ class CashDiary(CodenerixModel):
     opened_date = models.DateTimeField(_("Opened Date"), blank=False, null=False)
     opened_cash = models.FloatField(_("Opened Cash"), blank=False, null=False)
     opened_cash_extra = models.FloatField(_("Opened Cash Deviation"), blank=True, null=True, default=None)
+    opened_cash_notes = models.TextField(_("Opened Cash Notes"), blank=True, null=False, default="")
     opened_cards = models.FloatField(_("Opened Cards"), blank=False, null=False)
     opened_cards_extra = models.FloatField(_("Opened Cards Deviation"), blank=True, null=True, default=None)
+    opened_cards_notes = models.TextField(_("Opened Cards Notes"), blank=True, null=False, default="")
     closed_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='closed_cash_diarys', verbose_name=_("User"), blank=True, null=True)
     closed_date = models.DateTimeField(_("Closed Date"), blank=True, null=True)
     closed_cash = models.FloatField(_("Closed Cash"), blank=True, null=True)
     closed_cash_extra = models.FloatField(_("Closed Cash Deviation"), blank=True, null=True, default=None)
+    closed_cash_notes = models.TextField(_("Closed Cash Notes"), blank=True, null=False, default="")
     closed_cards = models.FloatField(_("Closed Cards"), blank=True, null=True)
     closed_cards_extra = models.FloatField(_("Closed Cards Deviation"), blank=True, null=True, default=None)
-    checked = models.BooleanField(_("Checked"), blank=False, null=False, default=False)
-    notes = models.TextField(_("Notes"), blank=True, null=True)
+    closed_cards_notes = models.TextField(_("Closed Cards Notes"), blank=True, null=False, default="")
 
     def amount_cash(self):
         total = self.cash_movements.filter(kind=PAYMENT_DETAILS_CASH).annotate(total=Sum('amount')).values('total').first()
@@ -128,16 +130,39 @@ class CashDiary(CodenerixModel):
         fields.append(('closed_date', _('Closed date')))
         fields.append(('closed_cash', _('Closed cash')))
         fields.append(('closed_cards', _('Closed cards')))
-        fields.append(('checked', None))
         fields.append(('opened_cash_extra', None))
+        fields.append(('opened_cash_notes', None))
         fields.append(('opened_cards_extra', None))
+        fields.append(('opened_cards_notes', None))
         fields.append(('closed_cash_extra', None))
+        fields.append(('closed_cash_notes', None))
         fields.append(('closed_cards_extra', None))
+        fields.append(('closed_cards_notes', None))
         return fields
 
     def __searchF__(self, info):
+        error_margin = getattr(settings, "CASHDIARY_ERROR_MARGIN", 0.5)
+        bigQ = Q(
+            Q(
+                Q(opened_cash_extra__isnull=False),
+                Q(opened_cash_notes=""),
+                Q(opened_cash_extra__gte=error_margin) | Q(opened_cash_extra__lte=-error_margin)
+            ) | Q(
+                Q(opened_cards_extra__isnull=False),
+                Q(opened_cards_notes=""),
+                Q(opened_cards_extra__gte=error_margin) | Q(opened_cards_extra__lte=-error_margin)
+            ) | Q(
+                Q(closed_cards_notes=""),
+                Q(closed_cash_extra__isnull=False),
+                Q(closed_cash_notes=""),
+                Q(closed_cash_extra__gte=error_margin) | Q(closed_cash_extra__lte=-error_margin)
+            ) | Q(
+                Q(closed_cards_extra__isnull=False),
+                Q(closed_cards_extra__gte=error_margin) | Q(closed_cards_extra__lte=-error_margin)
+            )
+        )
         tf = {}
-        tf['checked2'] = (_('Checked'), lambda x: Q(checked=x), [(True, _("True")), (False, _("False"))])
+        tf['pending'] = (_('Status'), lambda x: bigQ, [(False, _("Pending validation"))])
         return tf
 
     def save(self, *args, **kwargs):

@@ -26,6 +26,7 @@ from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext as _
 from django.views.generic import View
+from django.conf import settings
 
 from codenerix.middleware import get_current_user
 
@@ -41,8 +42,9 @@ class CashDiaryList(GenList):
     model = CashDiary
     show_details = True
     extra_context = {'menu': ['accounting', 'cashdiary'], 'bread': [_('Accounting'), _('CashDiary')]}
+    client_context = {'error_margin': getattr(settings, "CASHDIARY_ERROR_MARGIN", 0.5)}
     default_ordering = "-opened_date"
-    field_check = False
+    # field_check = False
 
 
 class CashDiaryCreate(GenCreate):
