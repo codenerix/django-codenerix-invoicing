@@ -14,4 +14,13 @@ angular.module('cashdiaryFilters', [])
             return '';
         }
     }
+})
+.filter('cashdiarytxt', function() {
+  return function(value, error_margin) {
+        if (Math.abs(value) >= error_margin) {
+            return parseFloat(value).toFixed(2)+' €';
+        } else {
+            return '';
+        }
+    }
 });

@@ -152,12 +152,12 @@ class CashDiary(CodenerixModel):
                 Q(opened_cards_notes=""),
                 Q(opened_cards_extra__gte=error_margin) | Q(opened_cards_extra__lte=-error_margin)
             ) | Q(
-                Q(closed_cards_notes=""),
                 Q(closed_cash_extra__isnull=False),
                 Q(closed_cash_notes=""),
                 Q(closed_cash_extra__gte=error_margin) | Q(closed_cash_extra__lte=-error_margin)
             ) | Q(
                 Q(closed_cards_extra__isnull=False),
+                Q(closed_cards_notes=""),
                 Q(closed_cards_extra__gte=error_margin) | Q(closed_cards_extra__lte=-error_margin)
             )
         )
@@ -166,8 +166,8 @@ class CashDiary(CodenerixModel):
         return tf
 
     def save(self, *args, **kwargs):
-        if CashDiary.objects.filter(pos=self.pos, closed_date__isnull=True).exclude(pk=self.pk).exists():
-            raise IntegrityError(_('Can not open a POS already open'))
+        if self.closed_user is None and CashDiary.objects.filter(pos=self.pos, closed_date__isnull=True).exclude(pk=self.pk).exists():
+            raise IntegrityError(_('Can not open a CashDiary in this POS, another CashDiary is already open'))
         else:
             return super(CashDiary, self).save(*args, **kwargs)
 
