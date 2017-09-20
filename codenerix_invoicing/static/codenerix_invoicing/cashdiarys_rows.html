@@ -20,12 +20,57 @@ limitations under the License.
 
 -->
 
+<td ng-class="{'bg-warning':!row.closed_user}" ng-if="row.checked=='True'" class="text-center"><span class="fa fa-check-square-o"></span></td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.pos}}</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_user}}</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_date}}</td>
-<td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_cash|codenerix:'money_euro'}}</td>
-<td ng-class="{'bg-warning':!row.closed_user}"> {{row.opened_cards|codenerix:'money_euro'}}</td>
+<td ng-class="{'bg-warning':!row.closed_user}">
+    {{row.opened_cash|codenerix:'money_euro'}}
+    <span ng-click="explain(row.pk,'opened','cash'); $event.stopPropagation();">
+        <span
+            ng-if="row.opened_cash_notes"
+            ng-class="{'fa-arrow-circle-down text-danger':row.opened_cash_extra<0, 'fa-arrow-circle-up text-success':row.opened_cash_extra>0}"
+            title="{{row.opened_cash_extra|cashdiarytxt:data.meta.context.error_margin}}"
+            class="fa"></span>
+        <span
+            ng-bind-html="row.opened_cash_extra|cashdiary:data.meta.context.error_margin"></span>
+    </span>
+</td>
+<td ng-class="{'bg-warning':!row.closed_user}">
+    {{row.opened_cards|codenerix:'money_euro'}}
+    <span ng-click="explain(row.pk,'opened','cards'); $event.stopPropagation();">
+        <span
+            ng-if="row.opened_cards_notes"
+            ng-class="{'fa-arrow-circle-down text-danger':row.opened_cards_extra<0, 'fa-arrow-circle-up text-success':row.opened_cards_extra>0}"
+            title="{{row.opened_cards_extra|cashdiarytxt:data.meta.context.error_margin}}"
+            class="fa"></span>
+        <span
+            ng-bind-html="row.opened_cards_extra|cashdiary:data.meta.context.error_margin"></span>
+    </span>
+</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.closed_user}}</td>
 <td ng-class="{'bg-warning':!row.closed_user}"> {{row.closed_date}}</td>
-<td ng-class="{'bg-warning':!row.closed_user}"> {{row.closed_cash|codenerix:'money_euro'}}</td>
-<td ng-class="{'bg-warning':!row.closed_user}"> {{row.closed_cards|codenerix:'money_euro'}}</td>
+<td ng-class="{'bg-warning':!row.closed_user}">
+    {{row.closed_cash|codenerix:'money_euro'}}
+    <span ng-click="explain(row.pk,'closed','cash'); $event.stopPropagation();">
+        <span
+            ng-if="row.closed_cash_notes"
+            ng-class="{'fa-arrow-circle-down text-danger':row.closed_cash_extra<0, 'fa-arrow-circle-up text-success':row.closed_cash_extra>0}"
+            title="{{row.closed_cash_extra|cashdiarytxt:data.meta.context.error_margin}}"
+            class="fa"></span>
+        <span
+            ng-bind-html="row.closed_cash_extra|cashdiary:data.meta.context.error_margin"></span>
+    </span>
+</td>
+<td ng-class="{'bg-warning':!row.closed_user}">
+    {{row.closed_cards|codenerix:'money_euro'}}
+    <span ng-click="explain(row.pk,'closed','cards'); $event.stopPropagation();">
+        <span
+            ng-if="row.closed_cards_notes"
+            ng-class="{'fa-arrow-circle-down text-danger':row.closed_cards_extra<0, 'fa-arrow-circle-up text-success':row.closed_cards_extra>0}"
+            title="{{row.closed_cards_extra|cashdiarytxt:data.meta.context.error_margin}}"
+            class="fa"></span>
+        <span
+            ng-bind-html="row.closed_cards_extra|cashdiary:data.meta.context.error_margin"></span>
+    </span>
+</td>

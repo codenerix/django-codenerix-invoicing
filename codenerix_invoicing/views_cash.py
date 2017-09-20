@@ -26,13 +26,15 @@ from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext as _
 from django.views.generic import View
+from django.conf import settings
+from django.forms.widgets import HiddenInput
 
 from codenerix.middleware import get_current_user
 
 from codenerix.views import GenList, GenCreate, GenCreateModal, GenUpdate, GenUpdateModal, GenDelete, GenDetail, GenDetailModal
 
 from .models_cash import CashDiary, CashMovement
-from .forms_cash import CashDiaryForm, CashMovementForm
+from .forms_cash import CashDiaryForm, CashDiaryExplainForm, CashMovementForm
 
 
 # ###########################################
@@ -41,6 +43,7 @@ class CashDiaryList(GenList):
     model = CashDiary
     show_details = True
     extra_context = {'menu': ['accounting', 'cashdiary'], 'bread': [_('Accounting'), _('CashDiary')]}
+    client_context = {'error_margin': getattr(settings, "CASHDIARY_ERROR_MARGIN", 0.5)}
     default_ordering = "-opened_date"
 
 
@@ -80,6 +83,35 @@ class CashDiaryUpdate(GenUpdate):
 
 class CashDiaryUpdateModal(GenUpdateModal, CashDiaryUpdate):
     pass
+
+class CashDiaryExplain(GenUpdateModal, GenUpdate):
+    template_name = 'codenerix_invoicing/cashdiary_explain.html'
+    model = CashDiary
+    form_class = CashDiaryExplainForm
+    linkdelete = False
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk')
+        self.__action = kwargs.get('action')
+        self.__kind = kwargs.get('kind')
+        return super(CashDiaryExplain, self).dispatch(*args, **kwargs)
+
+    def get_form_kwargs(self):
+        # Decide the field name
+        if self.__action != 'opened':
+            e1 = 'closed'
+        else:
+            e1 = 'opened'
+        if self.__kind != 'cash':
+            e2 = 'cards'
+        else:
+            e2 = 'cash'
+
+        # Build the final kwargs
+        kwargs = super(CashDiaryExplain, self).get_form_kwargs()
+        kwargs.update(field_name=e1+'_'+e2)
+        return kwargs
 
 
 class CashDiaryDelete(GenDelete):

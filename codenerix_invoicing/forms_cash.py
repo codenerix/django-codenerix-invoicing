@@ -76,6 +76,31 @@ class CashDiaryForm(GenModelForm):
         ]
 
 
+class CashDiaryExplainForm(GenModelForm):
+
+    def __init__(self, *args, **kwargs):
+        # Field name
+        self.field_name = kwargs.pop('field_name')
+        # Startup
+        super(CashDiaryExplainForm, self).__init__(*args, **kwargs)
+        # Remove not desired fields
+        if self.field_name != 'opened_cash':
+            del self.fields['opened_cash_notes']
+        if self.field_name != 'opened_cards':
+            del self.fields['opened_cards_notes']
+        if self.field_name != 'closed_cash':
+            del self.fields['closed_cash_notes']
+        if self.field_name != 'closed_cards':
+            del self.fields['closed_cards_notes']
+
+    class Meta:
+        model = CashDiary
+        fields = ['opened_cash_notes', 'opened_cards_notes', 'closed_cash_notes', 'closed_cards_notes']
+
+    def __groups__(self):
+        return [(_('Explanation'), 12, [self.field_name+'_notes', 12])]
+
+
 class CashMovementForm(GenModelForm):
     order = forms.ModelMultipleChoiceField(
         queryset=SalesOrder.objects.all(),
