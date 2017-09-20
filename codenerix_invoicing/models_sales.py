@@ -462,6 +462,10 @@ class GenVersion(CodenerixModel):  # META: Abstract class
             code_format = None
 
         if code_format:
+            if self.billing_series is None:
+                customer = self.get_customer()
+                self.billing_series = customer.billing_series
+
             now = datetime.datetime.now()
             values = {
                 'year': now.year,
@@ -552,13 +556,13 @@ class GenVersion(CodenerixModel):  # META: Abstract class
                 model = self._meta.model
                 last = model.objects.filter(
                     date__gte=timezone.datetime(self.date.year, 1, 1),
-                    date__lt=timezone.datetime(self.date.year+1, 1, 1)
+                    date__lt=timezone.datetime(self.date.year + 1, 1, 1)
                 ).order_by("-code_counter").first()
 
                 # Check if we found a result
                 if last:
                     # Add one more
-                    self.code_counter = last.code_counter+1
+                    self.code_counter = last.code_counter + 1
                 else:
                     # This is the first one
                     self.code_counter = 1
