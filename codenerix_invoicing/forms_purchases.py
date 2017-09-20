@@ -272,12 +272,14 @@ class LineAlbaranForm(GenModelForm):
 
     def __groups__(self):
         g = [
-            (_('Storage'), 12,
+            (
+                _('Storage'), 12,
                 ['storage', 4],
                 ['zone', 4],
                 ['batch', 4],
             ),
-            (_('Details'), 12,
+            (
+                _('Details'), 12,
                 ['product', 12],
                 ['line_order', 4],
                 ['status', 4],
