@@ -109,7 +109,7 @@ class GenLineProduct(CodenerixModel):  # META: Abstract class
 
 
 # documentos relacionados
-class GenBillingDocument(GenDocumentFile):  # META: Abstract class
+class GenBillingDocument(CodenerixModel, GenDocumentFile):  # META: Abstract class
     class Meta(CodenerixModel.Meta):
         abstract = True
 
