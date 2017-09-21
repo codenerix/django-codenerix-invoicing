@@ -51,16 +51,16 @@ class CashDiary(CodenerixModel):
     closed_cards_notes = models.TextField(_("Closed Cards Notes"), blank=True, null=False, default="")
 
     def amount_cash(self):
-        total = self.cash_movements.filter(kind=PAYMENT_DETAILS_CASH).annotate(total=Sum('amount')).values('total').first()
+        total = self.cash_movements.filter(kind=PAYMENT_DETAILS_CASH).aggregate(total=Sum('amount')).get('total', 0.0)
         if total:
-            return total['total']
+            return total
         else:
             return 0.0
 
     def amount_cards(self):
-        total = self.cash_movements.filter(kind=PAYMENT_DETAILS_CARD).annotate(total=Sum('amount')).values('total').first()
+        total = self.cash_movements.filter(kind=PAYMENT_DETAILS_CARD).aggregate(total=Sum('amount')).get('total', 0.0)
         if total:
-            return total['total']
+            return total
         else:
             return 0.0
 
