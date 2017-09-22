@@ -20,7 +20,8 @@
 
 import datetime
 from django.db import transaction, IntegrityError
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Value
+from django.db.models.functions import Concat
 from django.contrib.auth.decorators import login_required
 from django.core.urlresolvers import reverse
 from django.forms.utils import ErrorList
@@ -1952,6 +1953,17 @@ class BudgetDocumentDelete(GenBudgetDocumentUrl, GenDelete):
 
 class BudgetDocumentSubList(GenBudgetDocumentUrl, GenList):
     model = PurchasesBudgetDocument
+    annotations = {
+        'path': Concat(Value(settings.MEDIA_URL), 'doc_path'),
+    }
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('code', _('Code')))
+        fields.append(('date', _('Date')))
+        fields.append(('name_file', _('name_file')))
+        fields.append(('path', _('Download'), 60, 'center', 'link'))
+        return fields
 
     def __limitQ__(self, info):
         limit = {}
@@ -2018,6 +2030,17 @@ class OrderDocumentDelete(GenOrderDocumentUrl, GenDelete):
 
 class OrderDocumentSubList(GenOrderDocumentUrl, GenList):
     model = PurchasesOrderDocument
+    annotations = {
+        'path': Concat(Value(settings.MEDIA_URL), 'doc_path'),
+    }
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('code', _('Code')))
+        fields.append(('date', _('Date')))
+        fields.append(('name_file', _('name_file')))
+        fields.append(('path', _('Download'), 60, 'center', 'link'))
+        return fields
 
     def __limitQ__(self, info):
         limit = {}
@@ -2084,6 +2107,17 @@ class AlbaranDocumentDelete(GenAlbaranDocumentUrl, GenDelete):
 
 class AlbaranDocumentSubList(GenAlbaranDocumentUrl, GenList):
     model = PurchasesAlbaranDocument
+    annotations = {
+        'path': Concat(Value(settings.MEDIA_URL), 'doc_path'),
+    }
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('code', _('Code')))
+        fields.append(('date', _('Date')))
+        fields.append(('name_file', _('name_file')))
+        fields.append(('path', _('Download'), 60, 'center', 'link'))
+        return fields
 
     def __limitQ__(self, info):
         limit = {}
@@ -2150,6 +2184,17 @@ class TicketDocumentDelete(GenTicketDocumentUrl, GenDelete):
 
 class TicketDocumentSubList(GenTicketDocumentUrl, GenList):
     model = PurchasesTicketDocument
+    annotations = {
+        'path': Concat(Value(settings.MEDIA_URL), 'doc_path'),
+    }
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('code', _('Code')))
+        fields.append(('date', _('Date')))
+        fields.append(('name_file', _('name_file')))
+        fields.append(('path', _('Download'), 60, 'center', 'link'))
+        return fields
 
     def __limitQ__(self, info):
         limit = {}
@@ -2216,6 +2261,17 @@ class TicketRectificationDocumentDelete(GenTicketRectificationDocumentUrl, GenDe
 
 class TicketRectificationDocumentSubList(GenTicketRectificationDocumentUrl, GenList):
     model = PurchasesTicketRectificationDocument
+    annotations = {
+        'path': Concat(Value(settings.MEDIA_URL), 'doc_path'),
+    }
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('code', _('Code')))
+        fields.append(('date', _('Date')))
+        fields.append(('name_file', _('name_file')))
+        fields.append(('path', _('Download'), 60, 'center', 'link'))
+        return fields
 
     def __limitQ__(self, info):
         limit = {}
@@ -2282,6 +2338,17 @@ class InvoiceDocumentDelete(GenInvoiceDocumentUrl, GenDelete):
 
 class InvoiceDocumentSubList(GenInvoiceDocumentUrl, GenList):
     model = PurchasesInvoiceDocument
+    annotations = {
+        'path': Concat(Value(settings.MEDIA_URL), 'doc_path'),
+    }
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('code', _('Code')))
+        fields.append(('date', _('Date')))
+        fields.append(('name_file', _('name_file')))
+        fields.append(('path', _('Download'), 60, 'center', 'link'))
+        return fields
 
     def __limitQ__(self, info):
         limit = {}
@@ -2348,6 +2415,17 @@ class InvoiceRectificationDocumentDelete(GenInvoiceRectificationDocumentUrl, Gen
 
 class InvoiceRectificationDocumentSubList(GenInvoiceRectificationDocumentUrl, GenList):
     model = PurchasesInvoiceRectificationDocument
+    annotations = {
+        'path': Concat(Value(settings.MEDIA_URL), 'doc_path'),
+    }
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('code', _('Code')))
+        fields.append(('date', _('Date')))
+        fields.append(('name_file', _('name_file')))
+        fields.append(('path', _('Download'), 60, 'center', 'link'))
+        return fields
 
     def __limitQ__(self, info):
         limit = {}

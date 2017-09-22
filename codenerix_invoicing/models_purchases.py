@@ -92,11 +92,11 @@ class GenLineProduct(CodenerixModel):  # META: Abstract class
     tax = models.FloatField(_("Tax"), blank=True, null=True, default=0)
     description = models.TextField(_("description"), blank=True, null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return u"{} - {}".format(smart_text(self.product), smart_text(self.quantity))
 
-    def __str__(self):
-        return self.__unicode__()
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
@@ -116,17 +116,17 @@ class GenBillingDocument(CodenerixModel, GenDocumentFile):  # META: Abstract cla
     code = models.CharField(_("Code"), max_length=256, blank=False, null=False)
     date = models.DateTimeField(_("Date"), blank=False, null=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return u"{} ({})".format(self.code, self.date)
 
-    def __str__(self):
-        return self.__unicode__()
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []
         fields.append(('code', _('Code')))
         fields.append(('date', _('Date')))
-        fields.append(('name_file', _('name_file')))
+        fields.append(('name_file', _('Name file')))
         return fields
 
 
@@ -139,11 +139,11 @@ class GenPurchase(CodenerixModel):  # META: Abstract class
     date = models.DateTimeField(_("Date"), blank=False, null=False)
     observations = models.TextField(_("Observations"), max_length=256, blank=True, null=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return u"{}".format(smart_text(self.code))
 
-    def __str__(self):
-        return self.__unicode__()
+    def __unicode__(self):
+        return self.__str__()
 
     def __fields__(self, info):
         fields = []

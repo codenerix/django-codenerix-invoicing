@@ -521,9 +521,9 @@ class TicketForm(GenModelForm):
     def __groups__(self):
         g = [
             (_('Details'), 12,
-                ['customer', 8],
-                ['date', 4],
-                ['billing_series', 6],
+                ['customer', 6],
+                ['billing_series', 3],
+                ['date', 3],
                 ['observations', 12],)
         ]
         return g
