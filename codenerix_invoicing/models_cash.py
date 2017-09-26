@@ -182,6 +182,7 @@ class CashMovement(CodenerixModel):
     kind_card = models.CharField(_("Kind Card"), max_length=3, choices=KIND_CARD, blank=True, null=True)
     date_movement = models.DateTimeField(_("Date of movement"), blank=False, null=False)
     amount = models.FloatField(_("Amount"), blank=False, null=False)
+    reason = models.TextField(_("Reason"), blank=True, null=True, default=None)
 
     def __str__(self):
         if self.order.count() and self.pos_slot:
