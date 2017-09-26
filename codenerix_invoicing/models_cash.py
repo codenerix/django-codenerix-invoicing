@@ -175,7 +175,7 @@ class CashDiary(CodenerixModel):
 class CashMovement(CodenerixModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='cash_movements', verbose_name=_("User"))
 
-    order = models.ManyToManyField(SalesOrder, related_name='cash_movements', verbose_name=_("Order"), symmetrical=False, blank=False, null=False)
+    order = models.ManyToManyField(SalesOrder, related_name='cash_movements', verbose_name=_("Order"), symmetrical=False, blank=False, null=True)
     cash_diary = models.ForeignKey(CashDiary, related_name='cash_movements', verbose_name=_("Cash diary"), null=True)
     pos_slot = models.ForeignKey(POSSlot, related_name='cash_movements', verbose_name=_("Slot"), null=True)
     kind = models.CharField(_("Kind"), max_length=3, choices=PAYMENT_DETAILS, blank=False, null=False)
@@ -184,7 +184,10 @@ class CashMovement(CodenerixModel):
     amount = models.FloatField(_("Amount"), blank=False, null=False)
 
     def __str__(self):
-        return u"{}".format(smart_text(self.order), smart_text(self.pos_slot), smart_text(self.amount))
+        if self.order.count() and self.pos_slot:
+            return u"{}".format(smart_text(self.order), smart_text(self.pos_slot), smart_text(self.amount))
+        else:
+            return u"{}".format(smart_text(self.amount))
 
     def __unicode__(self):
         return self.__str__()
