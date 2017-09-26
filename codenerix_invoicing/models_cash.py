@@ -113,6 +113,14 @@ class CashDiary(CodenerixModel):
         # Return the found CashDiary
         return cashdiary
 
+    @property
+    def is_opened(self):
+        return self.closed_user is None
+
+    @property
+    def is_closed(self):
+        return not self.is_opened
+
     def __str__(self):
         return u"({}) {}: {}".format(smart_text(self.pos), smart_text(self.opened_user), smart_text(self.opened_date))
 
@@ -204,11 +212,3 @@ class CashMovement(CodenerixModel):
         fields.append(('date_movement', _('Date movement')))
         fields.append(('amount', _('Amount'), None, 'right'))
         return fields
-
-    @property
-    def is_open(self):
-        return self.closed_user is None
-
-    @property
-    def is_closed(self):
-        return not self.is_open()
