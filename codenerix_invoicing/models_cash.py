@@ -184,7 +184,7 @@ class CashMovement(CodenerixModel):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='cash_movements', verbose_name=_("User"))
 
     order = models.ManyToManyField(SalesOrder, related_name='cash_movements', verbose_name=_("Order"), symmetrical=False, blank=False, null=True)
-    cash_diary = models.ForeignKey(CashDiary, related_name='cash_movements', verbose_name=_("Cash diary"), null=True)
+    cash_diary = models.ForeignKey(CashDiary, related_name='cash_movements', verbose_name=_("Cash diary"), null=False)
     pos_slot = models.ForeignKey(POSSlot, related_name='cash_movements', verbose_name=_("Slot"), null=True)
     kind = models.CharField(_("Kind"), max_length=3, choices=PAYMENT_DETAILS, blank=False, null=False)
     kind_card = models.CharField(_("Kind Card"), max_length=3, choices=KIND_CARD, blank=True, null=True)
