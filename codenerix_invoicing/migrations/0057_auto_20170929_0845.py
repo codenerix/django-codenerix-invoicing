@@ -40,11 +40,7 @@ def get_cash_dary(model, date_movement):
 def run_migrate(apps, schema_editor):
     CashDiary = apps.get_model("codenerix_invoicing", "CashDiary")
     CashMovement = apps.get_model("codenerix_invoicing", "CashMovement")
-    print CashDiary
-    print CashMovement
     for x in CashMovement.objects.filter(cash_diary__isnull=True):
-        print x, x.date_movement
-        print x.date_movement.year
         cash_diary = get_cash_dary(CashDiary, x.date_movement)
         x.cash_diary = cash_diary
         x.save()
