@@ -462,7 +462,8 @@ class GenVersion(CodenerixModel):  # META: Abstract class
             code_format = None
 
         if code_format:
-            if self.billing_series is None:
+            billing_series = getattr(self, 'billing_series', None)
+            if billing_series is None:
                 customer = self.get_customer()
                 self.billing_series = customer.billing_series
 

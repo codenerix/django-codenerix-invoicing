@@ -22,6 +22,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db.models import F, Sum
+from django.utils.translation import ugettext as _
 
 from codenerix_invoicing.models import Haulier
 from codenerix_invoicing.models_sales import SalesBasket, SalesLineBasket, ROLE_BASKET_SHOPPINGCART
@@ -52,7 +53,10 @@ class ShoppingCartProxy(object):
 
         if request.user.is_authenticated():
             customer = request.user.person.customer
-            self._apply_surcharge = customer.apply_equivalence_surcharge
+            if customer:
+                self._apply_surcharge = customer.apply_equivalence_surcharge
+            else:
+                raise Exception(_('The user is not customer'))
 
             try:
                 self._cart = SalesBasket.objects.get(customer=customer, role=ROLE_BASKET_SHOPPINGCART)
