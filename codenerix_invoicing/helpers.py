@@ -171,7 +171,7 @@ class ShoppingCartProxy(object):
                 ).annotate(
                     name=F('attribute__{}__description'.format(self._lang))
                 )
-                price = final_product.calculate_price(self._apply_surcharge)
+                price = final_product.calculate_price()
 
                 stock_locked = final_product.line_basket_sales.filter(
                     basket__expiration_date__isnull=False
@@ -179,12 +179,13 @@ class ShoppingCartProxy(object):
                     quantity=Sum('quantity')
                 )['quantity'] or 0
 
+                url_reverse = reverse('sluglevel_get', kwargs={'slug1': final_product.slug, })
                 self._products['products'].append({
                     'pk': final_product.pk,
                     'name': final_product.name,
                     'code': final_product.code,
                     'description': final_product.description,
-                    'url': reverse('sluglevel_get', args=(final_product.slug,)),
+                    'url': url_reverse,
                     'thumbnail': final_product.product.products_image.filter(principal=True).first().image.url,
                     'quantity': self._quantities[final_product.pk],
                     'stock_real': final_product.stock_real - stock_locked,
@@ -192,7 +193,8 @@ class ShoppingCartProxy(object):
                     'tax': self._quantities[final_product.pk] * price['tax'],
                     'base_price': price['price_base'],
                     'unit_price': price['price_total'],
-                    'overcharge': price['overcharge'],
+                    # by compatibility
+                    'overcharge': 0,
                     'total_price': self._quantities[final_product.pk] * price['price_total'],
                     'features': [{
                         'name': feature['name'],
@@ -232,7 +234,7 @@ class ShoppingCartProxy(object):
             }
 
             for final_product in products:
-                price = final_product.calculate_price(self._apply_surcharge)
+                price = final_product.calculate_price()
                 self._totals['count'] += 1
                 self._totals['subtotal'] += self._quantities[final_product.pk] * price['price_base']
                 self._totals['total'] += self._quantities[final_product.pk] * price['price_total']
@@ -251,7 +253,7 @@ class ShoppingCartProxy(object):
 
     def product(self, product_pk):
         product = ProductFinal.objects.get(pk=product_pk)
-        price = product.calculate_price(self._apply_surcharge)
+        price = product.calculate_price()
 
         result = self.totals.copy()
         result['total_price'] = self._quantities[product_pk] * price['price_total']
