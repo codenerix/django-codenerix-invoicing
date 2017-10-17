@@ -646,6 +646,10 @@ class GenVersion(CodenerixModel):  # META: Abstract class
         # Add new register in the print counter and return the number of impressions definitives
         raise Exception("Method 'print_counter()' don't implemented")
 
+    def get_customer(self):
+        # returns the client associated with the document
+        raise Exception(_("Method 'get_customer()' don't implemented. ({})".format(self._meta.model_name)))
+
 
 class GenLineProductBasic(CodenerixModel):  # META: Abstract class
     class Meta(CodenerixModel.Meta):
@@ -1271,6 +1275,9 @@ class SalesBasket(GenVersion):
             basket=self
         ).count()
 
+    def get_customer(self):
+        return self.customer
+
 
 # nueva linea de la cesta de la compra
 class SalesLineBasket(GenLineProduct):
@@ -1424,6 +1431,9 @@ class SalesOrder(GenVersion):
             status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE,
             order=self
         ).count()
+
+    def get_customer(self):
+        return self.customer
 
 
 # lineas de pedidos
