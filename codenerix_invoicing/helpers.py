@@ -143,12 +143,13 @@ class ShoppingCartProxy(object):
                 'product__id',
                 'product__code',
                 'product__force_stock',
+                'code'
             ).annotate(
                 product_pk=F('product__id'),
                 name=F('{}__name'.format(self._lang)),
                 slug=F('{}__slug'.format(self._lang)),
                 description=F('{}__description_short'.format(self._lang)),
-                code=F('product__code'),
+                code_product=F('product__code'),
                 force_stock=F('product__force_stock')
             )
 
@@ -184,10 +185,14 @@ class ShoppingCartProxy(object):
                 )['quantity'] or 0
 
                 url_reverse = reverse('sluglevel_get', kwargs={'slug1': final_product.slug, })
+                if final_product.code is None:
+                    code = final_product.code_product
+                else:
+                    code = final_product.code
                 self._products['products'].append({
                     'pk': final_product.pk,
                     'name': final_product.name,
-                    'code': final_product.code,
+                    'code': code,
                     'description': final_product.description,
                     'url': url_reverse,
                     'thumbnail': final_product.product.products_image.filter(principal=True).first().image.url,
@@ -212,7 +217,7 @@ class ShoppingCartProxy(object):
 
                 self._products['count'] += 1
                 self._products['subtotal'] += self._quantities[final_product.pk] * price['price_base']
-                self._products['total'] += (price['price_base'] + self._products['products'][-1]['tax'])
+                self._products['total'] += (self._quantities[final_product.pk] * price['price_base'] + self._products['products'][-1]['tax'])
                 self._products['tax'] += self._products['products'][-1]['tax']
 
         return self._products
@@ -346,7 +351,9 @@ class ShoppingCartProxy(object):
                 line = SalesLineBasket(basket=self._cart, product=product)
                 line.quantity = quantity
             finally:
-                line.price = product.calculate_price()['price_total']
+                prices = product.calculate_price()
+                line.price = prices['price_total']
+                line.price_base = prices['price_base']
                 line.save()
         elif self._session is not None:
             for product_dict in self._session[ShoppingCartProxy.SESSION_KEY]:
