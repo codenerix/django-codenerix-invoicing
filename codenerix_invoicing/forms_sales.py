@@ -47,7 +47,7 @@ class CustomerForm(GenModelForm):
 
     class Meta:
         model = Customer
-        exclude = ['balance']
+        exclude = ['balance', 'default_customer', ]
         autofill = {
             'codenerix_external_field': ['select', 3, Customer.foreignkey_external()['related']],
         }
@@ -58,7 +58,6 @@ class CustomerForm(GenModelForm):
                 ['codenerix_external_field', 6],
                 ['billing_series', 2],
                 ['currency', 2],
-                ['default_customer', 2],
                 ['credit', 3],
                 ['final_balance', 3],
                 ['type_tax', 3],
@@ -74,7 +73,6 @@ class CustomerForm(GenModelForm):
                 ['billing_series', 6],
                 ['credit', 6],
                 ['currency', 6],
-                ['default_customer', 6],
                 ['final_balance', 6],
                 ['apply_equivalence_surcharge', 3],
                 ['type_tax', 3],)

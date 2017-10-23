@@ -640,7 +640,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
 
             return {'subtotal': subtotal, 'taxes': tax, 'total': total, 'discounts': discount, 'equivalence_surcharges': equivalence_surcharges}
         else:
-            raise Exception(_("Queryset undefined!!"))
+            return {'subtotal': 0, 'taxes': {}, 'total': 0, 'discounts': {}, 'equivalence_surcharges': {}}
 
     def print_counter(self, user):
         # Add new register in the print counter and return the number of impressions definitives
