@@ -217,7 +217,7 @@ class ShoppingCartProxy(object):
 
                 self._products['count'] += 1
                 self._products['subtotal'] += self._quantities[final_product.pk] * price['price_base']
-                self._products['total'] += (price['price_base'] + self._products['products'][-1]['tax'])
+                self._products['total'] += (self._quantities[final_product.pk] * price['price_base'] + self._products['products'][-1]['tax'])
                 self._products['tax'] += self._products['products'][-1]['tax']
 
         return self._products
@@ -351,7 +351,9 @@ class ShoppingCartProxy(object):
                 line = SalesLineBasket(basket=self._cart, product=product)
                 line.quantity = quantity
             finally:
-                line.price = product.calculate_price()['price_total']
+                prices = product.calculate_price()
+                line.price = prices['price_total']
+                line.price_base = prices['price_base']
                 line.save()
         elif self._session is not None:
             for product_dict in self._session[ShoppingCartProxy.SESSION_KEY]:
