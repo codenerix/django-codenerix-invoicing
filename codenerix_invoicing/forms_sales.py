@@ -55,7 +55,7 @@ class CustomerForm(GenModelForm):
     def __groups__(self):
         g = [
             (_('Details'), 12,
-                ['codenerix_external_field', 6],
+                ['codenerix_external_field', 8],
                 ['billing_series', 2],
                 ['currency', 2],
                 ['credit', 3],
@@ -69,10 +69,10 @@ class CustomerForm(GenModelForm):
     def __groups_details__():
         g = [
             (_('Details'), 12,
-                ['person', 6],
-                ['billing_series', 6],
+                ['codenerix_external_field', 6],
                 ['credit', 6],
                 ['currency', 6],
+                ['billing_series', 6],
                 ['final_balance', 6],
                 ['apply_equivalence_surcharge', 3],
                 ['type_tax', 3],)
