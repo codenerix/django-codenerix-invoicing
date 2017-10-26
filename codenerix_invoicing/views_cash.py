@@ -19,7 +19,8 @@
 # limitations under the License.
 
 from django.db import IntegrityError
-from django.db.models import Q
+from django.db.models import Q, Sum
+from django.db.models.functions import TruncDate
 from django.contrib.auth.decorators import login_required
 from django.forms.utils import ErrorList
 from django.shortcuts import render
@@ -30,6 +31,7 @@ from django.conf import settings
 from django.forms.widgets import HiddenInput
 
 from codenerix.middleware import get_current_user
+from codenerix.helpers import daterange_filter
 
 from codenerix.views import GenList, GenCreate, GenCreateModal, GenUpdate, GenUpdateModal, GenDelete, GenDetail, GenDetailModal
 
@@ -45,6 +47,51 @@ class CashDiaryList(GenList):
     extra_context = {'menu': ['accounting', 'cashdiary'], 'bread': [_('Accounting'), _('CashDiary')]}
     client_context = {'error_margin': getattr(settings, "CASHDIARY_ERROR_MARGIN", 0.5)}
     default_ordering = "-opened_date"
+
+
+class CashDiaryReport(GenList):
+    model = CashDiary
+    appname = 'invoicing'
+    modelname = 'cashdiary'
+    ws_entry_point = 'invoicing/cashdiarys/report'
+    show_details = False
+    extra_context = {'menu': ['accounting', 'cashdiaryreport'], 'bread': [_('Accounting'), _('CashDiary Report')]}
+    linkadd = False
+    linkedit = False
+    annotations = {
+        'date': TruncDate('opened_date')
+    }
+    default_ordering = "-date"
+
+    def custom_queryset(self, queryset):
+        return queryset.values('date', 'pos__name').annotate(**{
+            'diff_cash': Sum('closed_cash') - Sum('opened_cash'),
+            'diff_card': Sum('closed_cards') - Sum('opened_cards'),
+        })
+
+    def __searchF__(self, info):
+        tf = {}
+        tf['pos__name'] = (_('Point of Sales'), lambda x: Q(pos__name__icontains=x), 'input')
+        tf['date'] = (_('Date'), lambda x: Q(**daterange_filter(x, 'opened_date')), 'daterange')
+        return tf
+
+    def __searchQ__(self, info, text):
+        tf = {}
+        tf['pos__name'] = Q(pos__name__icontains=text)
+        return tf
+
+    def __limitQ__(self, info):
+        limits = {}
+        limits['closed'] = Q(closed_user__isnull=False)
+        return limits
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('pos__name', _('Point of Sales')))
+        fields.append(('date', _('Date')))
+        fields.append(('diff_cash', _('Cash')))
+        fields.append(('diff_card', _('Card')))
+        return fields
 
 
 class CashDiaryCreate(GenCreate):

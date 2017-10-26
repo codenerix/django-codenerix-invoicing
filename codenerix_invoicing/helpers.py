@@ -84,7 +84,7 @@ class ShoppingCartProxy(object):
                         product = None
                     if product:
                         try:
-                            line = SalesLineBasket.objects.get(basket=self._cart, product=product)
+                            line = SalesLineBasket.objects.get(basket=self._cart, product=product, removed=False)
                             line.quantity += product_dict['quantity']
                             line.save()
                         except ObjectDoesNotExist:
@@ -109,7 +109,7 @@ class ShoppingCartProxy(object):
         if self._lines is None:
             self._quantities = {}
             if self._cart is not None:
-                self._lines = self._cart.line_basket_sales.all().values(
+                self._lines = self._cart.line_basket_sales.filter(removed=False).values(
                     'product__pk',
                     'quantity'
                 ).annotate(
@@ -345,7 +345,7 @@ class ShoppingCartProxy(object):
         product = ProductFinal.objects.get(pk=product_pk)
         if self._cart is not None:
             try:
-                line = SalesLineBasket.objects.get(basket=self._cart, product=product)
+                line = SalesLineBasket.objects.get(basket=self._cart, product=product, removed=False)
                 line.quantity = line.quantity + quantity if add else quantity
             except ObjectDoesNotExist:
                 line = SalesLineBasket(basket=self._cart, product=product)
