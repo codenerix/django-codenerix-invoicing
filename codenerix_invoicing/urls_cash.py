@@ -20,12 +20,12 @@
 
 from django.conf.urls import url
 
-from .views_cash import CashDiaryList, CashDiaryExplain, CashDiaryCreate, CashDiaryCreateModal, CashDiaryUpdate, CashDiaryUpdateModal, CashDiaryDelete, CashDiarySubList, CashDiaryDetails, CashDiaryDetailModal
+from .views_cash import CashDiaryList, CashDiaryExplain, CashDiaryCreate, CashDiaryCreateModal, CashDiaryUpdate, CashDiaryUpdateModal, CashDiaryDelete, CashDiarySubList, CashDiaryDetails, CashDiaryDetailModal, CashDiaryReport
 from .views_cash import CashMovementList, CashMovementReport, CashMovementCreate, CashMovementCreateModal, CashMovementUpdate, CashMovementUpdateModal, CashMovementDelete, CashMovementSubList, CashMovementDetails, CashMovementDetailModal
 
 urlpatterns = [
     url(r'^cashdiarys$', CashDiaryList.as_view(), name='CDNX_invoicing_cashdiarys_list'),
-    # url(r'^cashdiarys/report$', CashDiaryReport.as_view(), name='CDNX_invoicing_cashdiarys_report'),
+    url(r'^cashdiarys/report$', CashDiaryReport.as_view(), name='CDNX_invoicing_cashdiarys_report'),
     url(r'^cashdiarys/add$', CashDiaryCreate.as_view(), name='CDNX_invoicing_cashdiarys_add'),
     url(r'^cashdiarys/addmodal$', CashDiaryCreateModal.as_view(), name='CDNX_invoicing_cashdiarys_addmodal'),
     url(r'^cashdiarys/explain/(?P<pk>\w+)/(?P<action>\w+)/(?P<kind>\w+)$', CashDiaryExplain.as_view(), name='CDNX_invoicing_cashdiarys_explain'),
