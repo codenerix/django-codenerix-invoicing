@@ -75,6 +75,11 @@ class CashDiaryReport(GenList):
         tf['date'] = (_('Date'), lambda x: Q(**daterange_filter(x, 'opened_date')), 'daterange')
         return tf
 
+    def __searchQ__(self, info, text):
+        tf = {}
+        tf['pos__name'] = Q(pos__name__icontains=text)
+        return tf
+
     def __limitQ__(self, info):
         limits = {}
         limits['closed'] = Q(closed_user__isnull=False)
