@@ -267,7 +267,7 @@ class Customer(GenRole, CodenerixModel):
         fields.append(('credit', _("Credit")))
         fields.append(('currency', _("Currency")))
         fields.append(('billing_series', _("Billing series")))
-        fields.append(('apply_equivalence_surcharge', _("Currency")))
+        fields.append(('apply_equivalence_surcharge', _("Equivalence Surcharge")))
         fields.append(('type_tax', _("Type tax")))
         fields.append(('default_customer', _("Default customer")))
         fields = get_external_method(Customer, '__fields_customer__', info, fields)
