@@ -96,14 +96,15 @@ class CustomerForm(GenModelForm):
 class CustomerDocumentForm(GenModelForm):
     class Meta:
         model = CustomerDocument
-        exclude = ['customer']
+        exclude = ['name_file', 'customer']
 
     def __groups__(self):
         g = [
-            (_('Details'), 12,
+            (
+                _('Details'), 12,
                 ['type_document', 6],
                 ['doc_path', 6],
-                ['name_file', 6],)
+            )
         ]
         return g
 
