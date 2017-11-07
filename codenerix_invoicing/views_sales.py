@@ -1172,7 +1172,7 @@ class LineOrderForeignCustom(GenLineOrderUrl, GenForeignKey):
         search = kwargs.get('search', None)
 
         filterstxt = self.request.GET.get('filter', '{}')
-        filters = json.loads(filterstxt)
+        filters = json.loads(filterstxt.decode('utf-8'))
 
         queryset = SalesLineOrder.objects.all()
         if search != '*':
@@ -2731,7 +2731,7 @@ class ShoppingCartManagement(View):
         """
         Adds new product to the current shopping cart
         """
-        POST = json.loads(request.body)
+        POST = json.loads(request.body.decode('utf-8'))
 
         if 'product_pk' in POST and 'quantity' in POST:
             cart = ShoppingCartProxy(request)
@@ -2744,7 +2744,7 @@ class ShoppingCartManagement(View):
         return HttpResponseBadRequest()
 
     def put(self, request, *args, **kwargs):
-        PUT = json.loads(request.body)
+        PUT = json.loads(request.body.decode('utf-8'))
 
         if 'product_pk' in PUT and 'quantity' in PUT:
             cart = ShoppingCartProxy(request)
@@ -2758,7 +2758,7 @@ class ShoppingCartManagement(View):
         return HttpResponseBadRequest()
 
     def delete(self, request, *args, **kwargs):
-        DELETE = json.loads(request.body)
+        DELETE = json.loads(request.body.decode('utf-8'))
 
         if 'product_pk' in DELETE:
             cart = ShoppingCartProxy(request)
