@@ -189,13 +189,18 @@ class ShoppingCartProxy(object):
                     code = final_product.code_product
                 else:
                     code = final_product.code
+                img = final_product.product.products_image.filter(principal=True).first()
+                if img:
+                    thumbnail = img.image.url
+                else:
+                    thumbnail = ''
                 self._products['products'].append({
                     'pk': final_product.pk,
                     'name': final_product.name,
                     'code': code,
                     'description': final_product.description,
                     'url': url_reverse,
-                    'thumbnail': final_product.product.products_image.filter(principal=True).first().image.url,
+                    'thumbnail': thumbnail,
                     'quantity': self._quantities[final_product.pk],
                     'stock_real': final_product.stock_real - stock_locked,
                     'force_stock': int(final_product.force_stock),
