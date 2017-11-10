@@ -142,6 +142,8 @@ class ShoppingCartProxy(object):
                 '{}__description_short'.format(self._lang),
                 'product__id',
                 'product__code',
+                'weight',
+                'product__weight',
                 'product__force_stock',
                 'code'
             ).annotate(
@@ -194,6 +196,12 @@ class ShoppingCartProxy(object):
                     thumbnail = img.image.url
                 else:
                     thumbnail = ''
+                if final_product.weight:
+                    weight = final_product.weight
+                else:
+                    weight = final_product.product.weight
+                if weight is None:
+                    weight = 0
                 self._products['products'].append({
                     'pk': final_product.pk,
                     'name': final_product.name,
@@ -207,6 +215,7 @@ class ShoppingCartProxy(object):
                     'tax': self._quantities[final_product.pk] * price['tax'],
                     'base_price': price['price_base'],
                     'unit_price': price['price_total'],
+                    'weight': weight,
                     # by compatibility
                     'overcharge': 0,
                     'total_price': self._quantities[final_product.pk] * price['price_total'],
