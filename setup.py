@@ -20,7 +20,7 @@ setup(
     long_description=README,
     url='https://github.com/centrologic/django-codenerix-invoicing',
     author=", ".join(codenerix_invoicing.__authors__),
-    keywords=['django', 'codenerix', 'management', 'erp', 'crm', 'invoicing', 'sales', 'purchases', ],
+    keywords=['django', 'codenerix', 'management', 'erp', 'crm', 'invoicing', 'sales', 'purchases', 'cash', 'cashdiary', 'diary'],
     platforms=['OS Independent'],
     classifiers=[
         'Environment :: Web Environment',
