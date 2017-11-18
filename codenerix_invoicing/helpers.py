@@ -128,10 +128,16 @@ class ShoppingCartProxy(object):
 
     @property
     def products(self):
+        return self.get_products()
+
+    def get_products(self, onlypublic=None):
         if self._products is None:
             products = ProductFinal.objects.filter(
                 pk__in=[int(line['pk']) for line in self.lines]
-            ).select_related(
+            )
+            if onlypublic:
+                products = products.filter(product__public=True)
+            products = products.select_related(
                 'product',
             ).only(
                 'pk',
@@ -283,7 +289,7 @@ class ShoppingCartProxy(object):
 
         return result
 
-    def get_info_prices(self):
+    def get_info_prices(self, onlypublic=False):
         if not self.__price_tax or not self.__price_base:
 
             with_stock = []
@@ -294,7 +300,7 @@ class ShoppingCartProxy(object):
             ws_line = {}
             wos_line = None
 
-            for line in self.products['products']:
+            for line in self.get_products(onlypublic=onlypublic)['products']:
                 ws_line = {
                     'description': line['name'],
                     'price': float("{0:.2f}".format(line['unit_price'] * line['quantity'])),
@@ -401,3 +407,6 @@ class ShoppingCartProxy(object):
                         self._session[ShoppingCartProxy.SESSION_KEY].remove(product)
                         self._session.modified = True
         self._reset_data()
+
+    def list(self):
+        return SalesLineBasket.objects.filter(basket=self._cart)

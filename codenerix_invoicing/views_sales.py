@@ -2725,7 +2725,7 @@ class ShoppingCartManagement(View):
         List all products in the shopping cart
         """
         cart = ShoppingCartProxy(request)
-        return JsonResponse(cart.products)
+        return JsonResponse(cart.get_products(onlypublic=request.GET.get('onlypublic', True)))
 
     def post(self, request, *args, **kwargs):
         """
