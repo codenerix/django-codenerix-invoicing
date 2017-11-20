@@ -365,7 +365,10 @@ class ShoppingCartProxy(object):
         product = ProductFinal.objects.get(pk=product_pk)
         if self._cart is not None:
             try:
-                line = SalesLineBasket.objects.get(basket=self._cart, product=product, removed=False)
+                line = SalesLineBasket.objects.get(basket=self._cart, product=product) # , removed=False)
+                if line.removed:
+                    line.removed = False
+                    line.quantity = 0
                 line.quantity = line.quantity + quantity if add else quantity
             except ObjectDoesNotExist:
                 line = SalesLineBasket(basket=self._cart, product=product)

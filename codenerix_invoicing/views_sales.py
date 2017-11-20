@@ -79,6 +79,7 @@ class CustomerList(GenCustomerUrl, GenList):
     model = Customer
     show_details = True
     extra_context = {'menu': ['Customer', 'people'], 'bread': [_('Customer'), _('People')]}
+    default_ordering = "-created"
 
 
 class CustomerCreate(GenCustomerUrl, GenCreate, GenCreateBridge):
@@ -238,6 +239,7 @@ class BasketList(GenList):
     show_details = True
     template_model = "sales/basket_list.html"
     form_ngcontroller = "codenerixSalesDetailsCtrl"
+    default_ordering = "-created"
 
 
 class BasketListSHOPPINGCART(GenBasketSHOPPINGCARTUrl, BasketList):
@@ -769,6 +771,7 @@ class OrderList(GenOrderUrl, GenList):
     linkadd = False
     extra_context = {'menu': ['Order', 'people'], 'bread': [_('Order'), _('People')]}
     ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_order.html"}
+    default_ordering = "-created"
     gentrans = {
         'CreateFromBudget': _("Create order from budget"),
         'CreateFromShoppingCart': _("Create order from shopping cart"),
@@ -1226,6 +1229,7 @@ class AlbaranList(GenAlbaranUrl, GenList):
     show_details = True
     template_model = "sales/albaran_list.html"
     extra_context = {'menu': ['Albaran', 'people'], 'bread': [_('Albaran'), _('People')]}
+    default_ordering = "-created"
 
 
 class AlbaranCreate(GenAlbaranUrl, GenCreate):
@@ -1517,6 +1521,7 @@ class TicketList(GenTicketUrl, GenList):
     show_details = True
     template_model = "sales/ticket_list.html"
     extra_context = {'menu': ['Ticket', 'people'], 'bread': [_('Ticket'), _('People')]}
+    default_ordering = "-created"
 
 
 class TicketCreate(GenTicketUrl, GenCreate):
@@ -1863,6 +1868,7 @@ class TicketRectificationList(GenTicketRectificationUrl, GenList):
     model = SalesTicketRectification
     show_details = True
     extra_context = {'menu': ['TicketRectification', 'people'], 'bread': [_('TicketRectification'), _('People')]}
+    default_ordering = "-created"
 
 
 class TicketRectificationCreate(GenTicketRectificationUrl, GenCreate):
@@ -2116,6 +2122,7 @@ class InvoiceList(GenInvoiceUrl, GenList):
     show_details = True
     template_model = "sales/invoice_list.html"
     extra_context = {'menu': ['Invoice', 'people'], 'bread': [_('Invoice'), _('People')]}
+    default_ordering = "-created"
 
 
 class InvoiceCreate(GenInvoiceUrl, GenCreate):
@@ -2228,7 +2235,7 @@ class InvoicePrint(PrinterHelper, GenInvoiceUrl, GenDetail):
         invoice.print_counter(get_current_user())
 
         # I take address for send.
-        if hasattr(ticket.customer.external, 'person_address'):
+        if hasattr(invoice.customer.external, 'person_address'):
             send_address = invoice.customer.external.person_address.filter(main=True).first()
         else:
             send_address = None
@@ -2441,6 +2448,7 @@ class InvoiceRectificationList(GenInvoiceRectificationUrl, GenList):
     model = SalesInvoiceRectification
     show_details = True
     extra_context = {'menu': ['InvoiceRectification', 'people'], 'bread': [_('InvoiceRectification'), _('People')]}
+    default_ordering = "-created"
 
 
 class InvoiceRectificationCreate(GenInvoiceRectificationUrl, GenCreate):
@@ -2696,6 +2704,7 @@ class GenReservedProduct(object):
 class ReservedProductList(GenReservedProduct, GenList):
     model = SalesReservedProduct
     extra_context = {'menu': ['SalesReservedProduct', 'people'], 'bread': [_('SalesReservedProduct'), _('People')]}
+    default_ordering = "-created"
 
 
 class ReservedProductCreate(GenReservedProduct, GenCreate):

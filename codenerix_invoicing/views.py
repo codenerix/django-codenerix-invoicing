@@ -214,6 +214,7 @@ class GenProductStockUrl(object):
 class ProductStockList(GenProductStockUrl, GenList):
     model = ProductStock
     extra_context = {'menu': ['ProductStock', 'people'], 'bread': [_('ProductStock'), _('People')]}
+    default_ordering = "-created"
 
 
 class ProductStockCreate(GenProductStockUrl, GenCreate):
@@ -289,6 +290,7 @@ class StockMovementList(GenList):
     model = StockMovement
     show_details = True
     extra_context = {'menu': ['StockMovement', 'people'], 'bread': [_('StockMovement'), _('People')]}
+    default_ordering = "-created"
 
 
 class StockMovementCreate(GenCreate):

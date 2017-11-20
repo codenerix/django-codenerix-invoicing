@@ -26,6 +26,7 @@ from django.utils import timezone
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
+from django.db.models import Q
 
 from codenerix.middleware import get_current_user
 from codenerix.models import GenInterface, CodenerixModel
@@ -671,6 +672,8 @@ class GenLineProductBasic(CodenerixModel):  # META: Abstract class
         return super(GenLineProductBasic, self).save(*args, **kwargs)
 
     def __save__(self, args, kwargs, **conditional):
+        if 'standard_save' in kwargs:
+            kwargs.pop('standard_save')
         other_line = self._meta.model.objects.filter(**conditional)
         if self.pk:
             other_line = other_line.exclude(pk=self.pk)
@@ -699,6 +702,9 @@ class GenLineProductBasic(CodenerixModel):  # META: Abstract class
         else:
             self.removed = True
             self.save(force_save=True)
+
+    def __limitQ__(self, info):
+        return {'removed': Q(removed=False) }
 
     def get_customer(self):
         # returns the client associated with the document
@@ -1306,7 +1312,7 @@ class SalesLineBasket(GenLineProduct):
         if self.basket.lock and force is False:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
-            if 'standard_save' in kwargs:
+            if kwargs.get('standard_save', False):
                 kwargs.pop('standard_save')
                 result = super(self._meta.model, self).save(*args, **kwargs)
                 self.basket.update_totales()
@@ -1453,7 +1459,7 @@ class SalesLineOrder(GenLineProduct):
         if self.order.lock and force is False:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
-            if 'standard_save' in kwargs:
+            if kwargs.get('standard_save', False):
                 kwargs.pop('standard_save')
                 result = super(self._meta.model, self).save(*args, **kwargs)
                 self.order.update_totales()
@@ -1570,7 +1576,7 @@ class SalesLineAlbaran(GenLineProductBasic):
         if self.albaran.lock and force is False:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
-            if 'standard_save' in kwargs:
+            if kwargs.get('standard_save', False):
                 kwargs.pop('standard_save')
                 self.update_total(force_save=False)
                 result = super(self._meta.model, self).save(*args, **kwargs)
@@ -1652,7 +1658,7 @@ class SalesLineTicket(GenLineProduct):
         if self.ticket.lock and force is False:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
-            if 'standard_save' in kwargs:
+            if kwargs.get('standard_save', False):
                 kwargs.pop('standard_save')
                 result = super(self._meta.model, self).save(*args, **kwargs)
                 self.ticket.update_totales()
@@ -1726,7 +1732,7 @@ class SalesLineTicketRectification(GenLineProductBasic):
         if self.ticket_rectification.lock and force is False:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
-            if 'standard_save' in kwargs:
+            if kwargs.get('standard_save', False):
                 kwargs.pop('standard_save')
                 self.update_total(force_save=False)
                 result = super(self._meta.model, self).save(*args, **kwargs)
@@ -1802,7 +1808,7 @@ class SalesLineInvoice(GenLineProduct):
         if self.invoice.lock and force is False:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
-            if 'standard_save' in kwargs:
+            if kwargs.get('standard_save', False):
                 kwargs.pop('standard_save')
                 result = super(self._meta.model, self).save(*args, **kwargs)
                 self.invoice.update_totales()
@@ -1872,7 +1878,7 @@ class SalesLineInvoiceRectification(GenLineProductBasic):
         if self.invoice_rectification.lock and force is False:
             raise IntegrityError(_('You can not modify, locked document'))
         else:
-            if 'standard_save' in kwargs:
+            if kwargs.get('standard_save', False):
                 kwargs.pop('standard_save')
                 result = super(self._meta.model, self).save(*args, **kwargs)
                 self.update_total(force_save=False)

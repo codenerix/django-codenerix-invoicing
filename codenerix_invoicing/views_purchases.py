@@ -67,6 +67,7 @@ class ProviderList(GenProviderUrl, GenList):
     model = Provider
     show_details = True
     extra_context = {'menu': ['Provider', 'people'], 'bread': [_('Provider'), _('People')]}
+    default_ordering = "-created"
 
 
 class ProviderCreate(GenProviderUrl, GenCreate, GenCreateBridge):
@@ -140,6 +141,7 @@ class BudgetList(GenBudgetUrl, GenList):
     show_details = True
     extra_context = {'menu': ['Budget', 'people'], 'bread': [_('Budget'), _('People')]}
     template_model = "purchases/budget_list.html"
+    default_ordering = "-created"
 
 
 class BudgetCreate(GenBudgetUrl, GenCreate):
@@ -215,7 +217,7 @@ class BudgetPrint(PrinterHelper, GenBudgetUrl, GenDetail):
 
         budget.lock = True
         budget.save()
-        
+
         return context
 
 
@@ -330,7 +332,8 @@ class OrderList(GenOrderUrl, GenList):
     model = PurchasesOrder
     show_details = True
     extra_context = {'menu': ['Order', 'people'], 'bread': [_('Order'), _('People')]}
-    
+    default_ordering = "-created"
+
 
 class OrderCreate(GenOrderUrl, GenCreate):
     model = PurchasesOrder
@@ -441,7 +444,7 @@ class OrderPrint(PrinterHelper, GenOrderUrl, GenDetail):
         context = super(OrderPrint, self).get_context_data(**kwargs)
 
         order = self.object
-        
+
         context["order"] = order
         lines = []
         total_order = 0
@@ -544,7 +547,8 @@ class AlbaranList(GenAlbaranUrl, GenList):
     model = PurchasesAlbaran
     show_details = True
     extra_context = {'menu': ['Albaran', 'people'], 'bread': [_('Albaran'), _('People')]}
-    
+    default_ordering = "-created"
+
 
 class AlbaranCreate(GenAlbaranUrl, GenCreate):
     model = PurchasesAlbaran
@@ -654,7 +658,7 @@ class LineAlbaranCreate(GenLineAlbaranUrl, GenCreate):
             errors = form._errors.setdefault("batch", ErrorList())
             errors.append(_("Batch invalid"))
             return super(LineAlbaranCreate, self).form_invalid(form)
-        
+
         # comprueba si el producto comprado requiere un valor de atributo especial
         product_final = ProductFinal.objects.filter(pk=form.data['product']).first()
         feature_special_value = None
@@ -697,7 +701,7 @@ class LineAlbaranCreate(GenLineAlbaranUrl, GenCreate):
             with transaction.atomic():
                 # save line albaran
                 result = super(LineAlbaranCreate, self).form_valid(form)
-                
+
                 if self.object.status != PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
                     # prepare stock
                     ps = ProductStock()
@@ -798,7 +802,7 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                 errors = form._errors.setdefault("feature_special_value", ErrorList())
                 errors.append(_("Product not selected"))
                 return super(LineAlbaranUpdate, self).form_invalid(form)
-            
+
             # FIN VALIDACION MINIMA
             if product_final != old.product:
                 """
@@ -811,14 +815,14 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                         errors = form._errors.setdefault("feature_special_value", ErrorList())
                         errors.append(_("Product needs information of feature special"))
                         return super(LineAlbaranUpdate, self).form_invalid(form)
-                    
+
                     try:
                         quantity = int(quantity)
                     except ValueError:
                         errors = form._errors.setdefault("quantity", ErrorList())
                         errors.append(_("Quantity is not valid"))
                         return super(LineAlbaranUpdate, self).form_invalid(form)
-                    
+
                     feature_special_value = list(set(filter(None, form.data['feature_special_value'].split('\n'))))
                     if product_final.product.feature_special.unique:
                         # mismo numero de caracteristicas que de cantidades
@@ -836,7 +840,7 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                         errors = form._errors.setdefault("feature_special_value", ErrorList())
                         errors.append(_("Some value of feature special exists"))
                         return super(LineAlbaranUpdate, self).form_invalid(form)
-                    
+
                     if old.product.product.feature_special:
                         """
                         comprobamos que el stock sea el mismo para poder eliminarlo
@@ -889,7 +893,7 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                                 product_final__product__feature_special=old.product.product.feature_special,
                                 value__in=fs_value_old
                             ).delete()
-                            
+
                             if self.object.status != PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
                                 # save product featureSpecial and stock
                                 for fs in feature_special_value:
@@ -1025,7 +1029,7 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                         errors = form._errors.setdefault("product", ErrorList())
                         errors.append(_("Product were bought, you can not change product"))
                         return super(LineInvoiceUpdate, self).form_invalid(form)
-                    
+
                     # guardar y actualizar
                     result = super(LineAlbaranUpdate, self).form_valid(form)
 
@@ -1085,7 +1089,7 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                 feature_special_value = list(set(filter(None, form.data['feature_special_value'].split('\n'))))
                 fs_value_old = list(set(filter(None, old.feature_special_value.split('\n'))))
                 product_unique = None
-                
+
                 if product_final.product.feature_special.unique:
                     # mismo numero de caracteristicas que de cantidades
                     if len(feature_special_value) != quantity:
@@ -1102,7 +1106,7 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                             errors = form._errors.setdefault("feature_special_value", ErrorList())
                             errors.append(_("Some value of feature special exists"))
                             return super(LineAlbaranUpdate, self).form_invalid(form)
-                    
+
                     # se han modificado las caracteristicas especiales
                     if fs_value_old != feature_special_value:
                         items_new = []
@@ -1278,6 +1282,7 @@ class TicketList(GenTicketUrl, GenList):
     model = PurchasesTicket
     show_details = True
     extra_context = {'menu': ['Ticket', 'people'], 'bread': [_('Ticket'), _('People')]}
+    default_ordering = "-created"
 
 
 class TicketCreate(GenTicketUrl, GenCreate):
@@ -1428,6 +1433,7 @@ class TicketRectificationList(GenTicketRectificationUrl, GenList):
     model = PurchasesTicketRectification
     show_details = True
     extra_context = {'menu': ['TicketRectification', 'people'], 'bread': [_('TicketRectification'), _('People')]}
+    default_ordering = "-created"
 
 
 class TicketRectificationCreate(GenTicketRectificationUrl, GenCreate):
@@ -1578,6 +1584,7 @@ class InvoiceList(GenInvoiceUrl, GenList):
     model = PurchasesInvoice
     show_details = True
     extra_context = {'menu': ['Invoice', 'people'], 'bread': [_('Invoice'), _('People')]}
+    default_ordering = "-created"
 
 
 class InvoiceCreate(GenInvoiceUrl, GenCreate):
@@ -1760,6 +1767,7 @@ class InvoiceRectificationList(GenInvoiceRectificationUrl, GenList):
     model = PurchasesInvoiceRectification
     show_details = True
     extra_context = {'menu': ['InvoiceRectification', 'people'], 'bread': [_('InvoiceRectification'), _('People')]}
+    default_ordering = "-created"
 
 
 class InvoiceRectificationCreate(GenInvoiceRectificationUrl, GenCreate):
@@ -1914,6 +1922,7 @@ class GenBudgetDocumentUrl(object):
 class BudgetDocumentList(GenBudgetDocumentUrl, GenList):
     model = PurchasesBudgetDocument
     extra_context = {'menu': ['BudgetDocument', 'people'], 'bread': [_('BudgetDocument'), _('People')]}
+    default_ordering = "-created"
 
 
 class BudgetDocumentCreate(GenBudgetDocumentUrl, DocumentFileView, GenCreate):
