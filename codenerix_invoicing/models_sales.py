@@ -233,6 +233,7 @@ class Customer(GenRole, CodenerixModel):
         force_methods = {
             'foreignkey_customer': ('CDNX_get_fk_info_customer', _('---')),
             'get_email': ('CDNX_get_email', ),
+            'info_customer_details': ('CDNX_get_details_info_customer', ),
         }
 
     currency = models.CharField(_("Currency"), max_length=250, blank=True, null=True)
@@ -312,7 +313,21 @@ class GenCustomer(GenInterface, ABSTRACT_GenCustomer):  # META: Abstract class
         # print({group: {'gperm': None, 'dperm': perms, 'model': None},})
 
 
+class ABSTRACT_GenAddress(models.Model):  # META: Abstract class
+    class Meta(object):
+        abstract = True
+
+
 class Address(CodenerixModel):
+
+    class CodenerixMeta:
+        abstract = ABSTRACT_GenAddress
+        force_methods = {
+            'foreignkey_address_delivery': ('CDNX_get_fk_info_address_delivery', _('---')),
+            'foreignkey_address_invoice': ('CDNX_get_fk_info_address_invoice', _('---')),
+            'get_summary': ('get_summary', ),
+        }
+
     def __str__(self):
         if hasattr(self, 'external_delivery'):
             return u"{}".format(smart_text(self.external_delivery.get_summary()))
@@ -333,22 +348,19 @@ class Address(CodenerixModel):
         else:
             raise Exception(_('Address unkown'))
         return fields
-
-
-class ABSTRACT_GenAddress():  # META: Abstract class
-    class Meta(object):
-        abstract = True
+        
+    @staticmethod
+    def foreignkey_external_delivery():
+        return get_external_method(Address, Address.CodenerixMeta.force_methods['foreignkey_address_delivery'][0])
+        
+    @staticmethod
+    def foreignkey_external_invoice():
+        return get_external_method(Address, Address.CodenerixMeta.force_methods['foreignkey_address_invoice'][0])
 
 
 class GenAddress(GenInterface, ABSTRACT_GenAddress):  # META: Abstract class
     class Meta(GenInterface.Meta, ABSTRACT_GenAddress.Meta):
         abstract = True
-
-    class CodenerixMeta:
-        force_methods = {
-            'foreignkey_address': ('CDNX_get_fk_info_address', _('---')),
-            'get_summary': ('get_summary', ),
-        }
 
     def save(self, *args, **kwargs):
         if hasattr(self, 'address_delivery') and self.address_delivery is None:

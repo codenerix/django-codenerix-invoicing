@@ -23,9 +23,10 @@ from django.utils.translation import ugettext as _
 
 from codenerix.forms import GenModelForm
 from codenerix.widgets import WysiwygAngularInput
-from codenerix_extensions.helpers import get_external_model
+from codenerix_extensions.helpers import get_external_model, get_external_method
 from codenerix_products.models import TypeTax
 
+from .models_sales import Address
 from .models_sales import Customer, CustomerDocument
 from .models_sales import SalesBasket, SalesLineBasket
 from .models_sales import SalesOrder, SalesLineOrder
@@ -128,8 +129,8 @@ class BasketForm(GenModelForm):
             'observations': WysiwygAngularInput()
         }
         autofill = {
-            'address_delivery': ['select', 3, 'CDNX_invoicing_salesbaskets_foreignkey_budget', 'customer'],
-            'address_invoice': ['select', 3, 'CDNX_invoicing_salesbaskets_foreignkey_budget', 'customer'],
+            'address_delivery': ['select', 3, Address.foreignkey_external_delivery()['related'], 'customer'],
+            'address_invoice': ['select', 3, Address.foreignkey_external_invoice()['related'], 'customer'],
         }
 
     def __groups__(self):
@@ -319,7 +320,8 @@ class OrderForm(GenModelForm):
 
     def __groups__(self):
         g = [
-            (_('Details'), 12,
+            (
+                _('Details'), 12,
                 ['customer', 4],
                 ['billing_series', 2],
                 ['date', 2],
@@ -328,14 +330,18 @@ class OrderForm(GenModelForm):
                 ['payment_detail', 4],
                 ['source', 4],
                 ['number_tracking', 6],
-                ['observations', 12],)
+                ['observations', 12],
+            )
         ]
         return g
 
     @staticmethod
     def __groups_details__():
+        info_customer = get_external_method(Customer, Customer.CodenerixMeta.force_methods['info_customer_details'][0])
+
         g = [
-            (_('Details'), 12,
+            (
+                _('Details'), 12,
                 ['customer', 6],
                 ['budget', 6],
                 ['date', 6],
@@ -348,7 +354,12 @@ class OrderForm(GenModelForm):
                 ['source', 6],
                 ['number_tracking', 6],
                 ['observations', 6],
-                ['lock', 6],),
+                ['lock', 6],
+            ),
+        ]
+        for info in info_customer:
+            g.append(info)
+        g.append(
             (
                 _('Total'), 12,
                 ['subtotal', 6],
@@ -356,7 +367,7 @@ class OrderForm(GenModelForm):
                 ['taxes', 6],
                 ['total', 6],
             )
-        ]
+        )
         return g
 
 
