@@ -989,7 +989,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
         related_line = 'line_order'
         related_object = 'albaran'
         msg_error_relation = _("Hay lineas asignadas a albaranes")
-        msg_error_not_found = _('Order not found')
+        msg_error_not_found = _('Sales order not found')
 
         return GenLineProduct.create_document_from_another(pk, list_lines,
                                                            MODEL_SOURCE, MODEL_FINAL, MODEL_LINE_SOURCE, MODEL_LINE_FINAL,
@@ -1007,7 +1007,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
         related_line = 'line_order'
         related_object = 'ticket'
         msg_error_relation = _("Hay lineas asignadas a ticket")
-        msg_error_not_found = _('Order not found')
+        msg_error_not_found = _('Sales order not found')
 
         with transaction.atomic():
             GenLineProduct.create_albaran_automatic(pk, list_lines)
@@ -1027,7 +1027,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
         related_line = 'line_order'
         related_object = 'invoice'
         msg_error_relation = _("Hay lineas asignadas a facturas")
-        msg_error_not_found = _('Order not found')
+        msg_error_not_found = _('Sales order not found')
 
         with transaction.atomic():
             GenLineProduct.create_albaran_automatic(pk, list_lines)
@@ -1456,13 +1456,13 @@ class SalesOrder(GenVersion):
 
 # lineas de pedidos
 class SalesLineOrder(GenLineProduct):
-    order = models.ForeignKey(SalesOrder, related_name='line_order_sales', verbose_name=_("Order"))
+    order = models.ForeignKey(SalesOrder, related_name='line_order_sales', verbose_name=_("Sales order"))
     line_budget = models.OneToOneField(SalesLineBasket, related_name='line_order_sales', verbose_name=_("Line budget"), null=True)
     product = models.ForeignKey(ProductFinal, related_name='line_order_sales', verbose_name=_("Product"))
 
     def __fields__(self, info):
         fields = super(SalesLineOrder, self).__fields__(info)
-        fields.insert(0, ('order', _("Order")))
+        fields.insert(0, ('order', _("Sales order")))
         fields.append(('line_budget', _("Line budget")))
         return fields
 
@@ -1562,7 +1562,7 @@ class SalesLineAlbaran(GenLineProductBasic):
 
     def __fields__(self, info):
         fields = []
-        fields.append(('line_order__order', _("Order")))
+        fields.append(('line_order__order', _("Sales order")))
         fields.append(('line_order__product', _("Product")))
         fields.append(('quantity', _("Quantity")))
         fields.append(('invoiced', _("Invoiced")))

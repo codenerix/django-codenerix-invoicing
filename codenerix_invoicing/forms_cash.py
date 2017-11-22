@@ -98,13 +98,13 @@ class CashDiaryExplainForm(GenModelForm):
         fields = ['opened_cash_notes', 'opened_cards_notes', 'closed_cash_notes', 'closed_cards_notes']
 
     def __groups__(self):
-        return [(_('Explanation'), 12, [self.field_name+'_notes', 12])]
+        return [(_('Explanation'), 12, [self.field_name + '_notes', 12])]
 
 
 class CashMovementForm(GenModelForm):
     order = forms.ModelMultipleChoiceField(
         queryset=SalesOrder.objects.all(),
-        label=_('Orders'),
+        label=_('Sales orders'),
         required=False,
         widget=MultiStaticSelect(
             attrs={'manytomany': True, }

@@ -22,6 +22,8 @@ from django.conf.urls import url
 
 from .views_cash import CashDiaryList, CashDiaryExplain, CashDiaryCreate, CashDiaryCreateModal, CashDiaryUpdate, CashDiaryUpdateModal, CashDiaryDelete, CashDiarySubList, CashDiaryDetails, CashDiaryDetailModal, CashDiaryReport
 from .views_cash import CashMovementList, CashMovementReport, CashMovementCreate, CashMovementCreateModal, CashMovementUpdate, CashMovementUpdateModal, CashMovementDelete, CashMovementSubList, CashMovementDetails, CashMovementDetailModal
+from .views_cash import CashDiaryOpenClose
+
 
 urlpatterns = [
     url(r'^cashdiarys$', CashDiaryList.as_view(), name='CDNX_invoicing_cashdiarys_list'),
@@ -54,4 +56,6 @@ urlpatterns = [
     url(r'^cashmovements/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', CashMovementDetailModal.as_view(), name='CDNX_invoicing_cashmovements_sublist_details'),
     url(r'^cashmovements/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/edit$', CashMovementUpdateModal.as_view(), name='CDNX_invoicing_cashmovements_sublist_details'),
     url(r'^cashmovements/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', CashMovementDelete.as_view(), name='CDNX_invoicing_cashmovements_sublist_delete'),
+
+    url(r'^cashdiary$', CashDiaryOpenClose.as_view(), name='cashdiarys_cashdiary'),
 ]

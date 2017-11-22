@@ -18,22 +18,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from django.core.urlresolvers import reverse_lazy
 from django.db import IntegrityError
 from django.db.models import Q, Sum
 from django.db.models.functions import TruncDate
 from django.contrib.auth.decorators import login_required
 from django.forms.utils import ErrorList
+from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render
+from django.template import loader
+from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.utils.translation import ugettext as _
 from django.views.generic import View
 from django.conf import settings
-from django.forms.widgets import HiddenInput
 
 from codenerix.middleware import get_current_user
 from codenerix.helpers import daterange_filter
 
 from codenerix.views import GenList, GenCreate, GenCreateModal, GenUpdate, GenUpdateModal, GenDelete, GenDetail, GenDetailModal
+from codenerix_pos.models import POS
 
 from .models_cash import CashDiary, CashMovement
 from .forms_cash import CashDiaryForm, CashDiaryExplainForm, CashMovementForm
@@ -131,6 +135,7 @@ class CashDiaryUpdate(GenUpdate):
 class CashDiaryUpdateModal(GenUpdateModal, CashDiaryUpdate):
     pass
 
+
 class CashDiaryExplain(GenUpdateModal, GenUpdate):
     template_name = 'codenerix_invoicing/cashdiary_explain.html'
     model = CashDiary
@@ -157,7 +162,7 @@ class CashDiaryExplain(GenUpdateModal, GenUpdate):
 
         # Build the final kwargs
         kwargs = super(CashDiaryExplain, self).get_form_kwargs()
-        kwargs.update(field_name=e1+'_'+e2)
+        kwargs.update(field_name=e1 + '_' + e2)
         return kwargs
 
 
@@ -224,7 +229,7 @@ class CashMovementReport(View):
                 ('Miercoles', 28, 324.3),
                 ('Martes', 23, 316.7),
                 ('Lunes', 15, 116.7),
-                ],
+            ],
         })
         tickets.append({
             'id': 'last4w',
@@ -277,7 +282,7 @@ class CashMovementReport(View):
         context['datas'].append({
             'title': _('People'),
             'id': 'person',
-            'columns': [_('User'), _('Order'), _('Amount')],
+            'columns': [_('User'), _('Sales order'), _('Amount')],
             'graph': (0, 2),
             'lasts': people,
         })
@@ -358,3 +363,183 @@ class CashMovementDetails(GenDetail):
 
 class CashMovementDetailModal(GenDetailModal, CashMovementDetails):
     pass
+
+
+class CashDiaryOpenClose(View):
+
+    def get_POS(self):
+        uuid = self.request.session.get('POS_client_UUID', None)
+        pos = POS.objects.filter(uuid=uuid).first()
+        if pos:
+            return {'uuid': str(pos.uuid), "POS": pos}
+        else:
+            return {'uuid': '', "POS": None}
+
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        self.template = 'codenerix_invoicing/cashdiary_openclose.html'
+        action = request.GET.get('action', None)
+
+        # Find a CashDiary
+        PDV = self.get_POS()['POS']
+        cashdiary = CashDiary.find(PDV, request.user)
+
+        # Initialize context
+        context = {}
+        context['comma'] = '.'
+        context['coin'] = '€'
+
+        error = None
+        title = None
+
+        # Decide if we got a cashdiary or not
+        if action == 'open':
+            # If cashdiary exists
+            if cashdiary:
+                # Cashdiary exits, check if it is closed
+                if cashdiary.closed_user:
+                    # Cashdiary is closed and we are opening a new one, keep going
+                    cash = (cashdiary.closed_cash, cashdiary.closed_cash)
+                    cards = (cashdiary.closed_cards, cashdiary.closed_cards)
+                    action_txt = _("Apertura de caja") + " - " + str(request.user.username)
+                    title = [_('Ultimo cierre'), _('Apertura')]
+                    label_btn = _('Abrir caja')
+                else:
+                    # Cashdiary already opened, we must stop here!
+                    error = _("Cashdiary already opened")
+            else:
+                # No cashdiary found, create a new one, keep going!
+                title = None
+        elif action == 'close':
+            # If cashdiary exists
+            if cashdiary:
+                # Cashdiary exists
+                if cashdiary.closed_user:
+                    # Cashdiary already closed, we must stop here!
+                    error = _("Cashdiary already closed")
+                else:
+                    # Cashdiary is opened, we are closing this one, keep going
+                    cash = (cashdiary.opened_cash, cashdiary.opened_cash + round(cashdiary.amount_cash(), 2))
+                    cards = (cashdiary.opened_cards, cashdiary.opened_cards + round(cashdiary.amount_cards(), 2))
+                    action_txt = _("Cierre de caja")
+                    title = [_('Ultima apertura'), _('Cierre')]
+                    label_btn = _('Cerrar caja')
+            else:
+                # No cashdiary found, we can not closed it, we must stop here!
+                error = _("No Cashdiary found")
+        else:
+            error = "Unknown action"
+
+        # Prepare action
+        context['action'] = action
+        if title:
+            context['action_txt'] = action_txt
+            context['info'] = {}
+            context['info']['title'] = title
+            context['info']['label_btn'] = label_btn
+            context['info']['cash'] = ["{:.2f} €".format(cash[0]), "{:.2f} €".format(cash[1])]
+            context['info']['cards'] = ["{:.2f} €".format(cards[0]), "{:.2f} €".format(cards[1])]
+            context['info']['total'] = ["{:.2f} €".format(cash[0] + cards[0]), "{:.2f} €".format(cash[1] + cards[1])]
+            context['values'] = [str(cash[1]), str(cards[1])]
+        else:
+            context['info'] = None
+
+        context['error'] = error
+
+        # Get template and render
+        template = loader.get_template(self.template)
+        return HttpResponse(template.render(context, request))
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+
+        # Get data
+        action = request.POST.get('action', None)
+        try:
+            amount_cash = float(request.POST.get('amount_cash', None))
+            amount_cards = float(request.POST.get('amount_cards', None))
+        except Exception:
+            amount_cash = None
+            amount_cards = None
+
+        # If we got an amount
+        answer = {}
+        if amount_cash is not None and amount_cards is not None:
+            # Get POS
+            PDV = self.get_POS()['POS']
+            # Find latest cashdiary
+            latestCD = CashDiary.find(PDV, request.user)
+
+            # Check action
+            if action == 'open':
+                # Check if we found a cash
+                if latestCD:
+                    closed_user = latestCD.closed_user
+                    closed_cash = latestCD.closed_cash
+                    closed_cards = latestCD.closed_cards
+                else:
+                    closed_user = True
+                    closed_cash = amount_cash
+                    closed_cards = amount_cards
+
+                # Check if it is already closed
+                if closed_user is not None:
+                    # It is already closed, open a new one
+                    cash = CashDiary()
+                    cash.pos = PDV
+                    cash.opened_cash = amount_cash
+                    cash.opened_cash_extra = amount_cash - closed_cash
+                    cash.opened_cards = amount_cards
+                    cash.opened_cards_extra = amount_cards - closed_cards
+                    cash.opened_user = request.user
+                    cash.opened_date = timezone.now()
+                    cash.save()
+                    # Send the user back to vending_start
+                    answer['error'] = None
+                    answer['error_code'] = None
+                    answer['url'] = reverse_lazy('home')
+                else:
+                    # Fail with opened
+                    answer['error'] = _('CashDiary is already open!')
+                    answer['error_code'] = 'E03'
+            elif action == 'close':
+                if latestCD:
+                    if latestCD.closed_user is None:
+                        # It is still open, close it!
+                        latestCD.closed_cash = amount_cash
+                        latestCD.closed_cash_extra = amount_cash - (latestCD.opened_cash + latestCD.amount_cash())
+                        latestCD.closed_cards = amount_cards
+                        latestCD.closed_cards_extra = amount_cards - (latestCD.opened_cards + latestCD.amount_cards())
+                        latestCD.closed_user = request.user
+                        latestCD.closed_date = timezone.now()
+                        latestCD.save()
+                        # Send the user back to vending_start
+                        answer['error'] = None
+                        answer['error_code'] = None
+                        answer['url'] = reverse_lazy('home')
+                    else:
+                        # Fail with opened
+                        answer['error'] = _('CashDiary is already open!')
+                        answer['error_code'] = 'E02'
+                else:
+                    # Fail with opened
+                    answer['error'] = _('You can not close a non-existant CashDiary!')
+                    answer['error_code'] = 'E06'
+            else:
+                # Unknown action
+                raise Http404("Unknown action")
+        elif amount_cash is None:
+            # Wrong amount
+            answer['error'] = _('Wrong amount for cash!')
+            answer['error_code'] = 'E04'
+        elif amount_cards is not None:
+            # Wrong amount
+            answer['error'] = _('Wrong amount for cards!')
+            answer['error_code'] = 'E05'
+        else:
+            # Wrong amount
+            answer['error'] = _('Wrong amount!')
+            answer['error_code'] = 'E01'
+
+        # Return result
+        return JsonResponse(answer)

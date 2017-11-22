@@ -26,6 +26,7 @@ from .models_purchases import Provider, PurchasesBudget, PurchasesLineBudget, Pu
 from .models_sales import Address, Customer, CustomerDocument, SalesReservedProduct, SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, SalesLineInvoiceRectification, SalesBasket, SalesLineBasket
 from .models_sales import SalesLineBasketOption
 from .models_sales import ReasonModification, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
+from .models_cash import CashDiary, CashMovement
 
 admin.site.register(Provider)
 admin.site.register(PurchasesBudget)
@@ -86,6 +87,8 @@ admin.site.register(ReasonModificationLineTicketRectification)
 admin.site.register(ReasonModificationLineInvoice)
 admin.site.register(ReasonModificationLineInvoiceRectification)
 
+admin.site.register(CashDiary)
+admin.site.register(CashMovement)
 
 for info in MODELS:
     model = info[1]

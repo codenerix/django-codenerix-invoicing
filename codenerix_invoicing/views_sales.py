@@ -78,7 +78,7 @@ class GenCustomerUrl(object):
 class CustomerList(GenCustomerUrl, GenList):
     model = Customer
     show_details = True
-    extra_context = {'menu': ['Customer', 'people'], 'bread': [_('Customer'), _('People')]}
+    extra_context = {'menu': ['Customer', 'sales'], 'bread': [_('Customer'), _('Sales')]}
     default_ordering = "-created"
 
 
@@ -174,7 +174,7 @@ class CustomerDocumentSubList(GenCustomerDocumentUrl, GenList):
     # show_details = False
     # json = False
     # template_model = "sales/customerdocument_sublist.html"
-    # extra_context = {'menu': ['CustomerDocument', 'people'], 'bread': [_('CustomerDocument'), _('People')]}
+    # extra_context = {'menu': ['CustomerDocument', 'sales'], 'bread': [_('CustomerDocument'), _('Sales')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -235,7 +235,7 @@ class GenBasketWISHLISTUrl(object):
 # SalesBasket
 class BasketList(GenList):
     model = SalesBasket
-    extra_context = {'menu': ['SalesBasket', 'people'], 'bread': [_('SalesBasket'), _('People')]}
+    extra_context = {'menu': ['SalesBasket', 'sales'], 'bread': [_('SalesBasket'), _('Sales')]}
     show_details = True
     template_model = "sales/basket_list.html"
     form_ngcontroller = "codenerixSalesDetailsCtrl"
@@ -519,7 +519,7 @@ class GenLineBasketUrl(object):
 # SalesLineBasket
 class LineBasketList(GenList):
     model = SalesLineBasket
-    extra_context = {'menu': ['SalesLineBasket', 'SalesLineBasket'], 'bread': [_('SalesLineBasket'), _('SalesLineBasket')]}
+    extra_context = {'menu': ['SalesLineBasket', 'sales'], 'bread': [_('SalesLineBasket'), _('Sales')]}
 
 
 class LineBasketCreate(GenLineBasketUrl, GenCreate):
@@ -769,7 +769,7 @@ class OrderList(GenOrderUrl, GenList):
     template_model = "sales/order_list.html"
     show_details = True
     linkadd = False
-    extra_context = {'menu': ['Order', 'people'], 'bread': [_('Order'), _('People')]}
+    extra_context = {'menu': ['sales_order', 'sales'], 'bread': [_('Sales orders'), _('Sales')]}
     ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_order.html"}
     default_ordering = "-created"
     gentrans = {
@@ -1029,7 +1029,7 @@ class GenLineOrderUrl(object):
 # LineOrder
 class LineOrderList(GenLineOrderUrl, GenList):
     model = SalesLineOrder
-    extra_context = {'menu': ['LineOrder', 'people'], 'bread': [_('LineOrder'), _('People')]}
+    extra_context = {'menu': ['LineOrder', 'sales'], 'bread': [_('LineOrder'), _('Sales')]}
 
 
 class LineOrderCreate(GenLineOrderUrl, GenCreate):
@@ -1228,7 +1228,7 @@ class AlbaranList(GenAlbaranUrl, GenList):
     model = SalesAlbaran
     show_details = True
     template_model = "sales/albaran_list.html"
-    extra_context = {'menu': ['Albaran', 'people'], 'bread': [_('Albaran'), _('People')]}
+    extra_context = {'menu': ['Albaran', 'sales'], 'bread': [_('Albaran'), _('Sales')]}
     default_ordering = "-created"
 
 
@@ -1373,7 +1373,7 @@ class GenLineAlbaranUrl(object):
 # LineAlbaran
 class LineAlbaranList(GenLineAlbaranUrl, GenList):
     model = SalesLineAlbaran
-    extra_context = {'menu': ['LineAlbaran', 'people'], 'bread': [_('LineAlbaran'), _('People')]}
+    extra_context = {'menu': ['LineAlbaran', 'sales'], 'bread': [_('LineAlbaran'), _('Sales')]}
 
 
 class LineAlbaranCreate(GenLineAlbaranUrl, GenCreate):
@@ -1520,7 +1520,7 @@ class TicketList(GenTicketUrl, GenList):
     model = SalesTicket
     show_details = True
     template_model = "sales/ticket_list.html"
-    extra_context = {'menu': ['Ticket', 'people'], 'bread': [_('Ticket'), _('People')]}
+    extra_context = {'menu': ['Ticket', 'sales'], 'bread': [_('Ticket'), _('Sales')]}
     default_ordering = "-created"
 
 
@@ -1688,7 +1688,7 @@ class GenLineTicketUrl(object):
 # LineTicket
 class LineTicketList(GenLineTicketUrl, GenList):
     model = SalesLineTicket
-    extra_context = {'menu': ['LineTicket', 'people'], 'bread': [_('LineTicket'), _('People')]}
+    extra_context = {'menu': ['LineTicket', 'sales'], 'bread': [_('LineTicket'), _('Sales')]}
 
 
 class LineTicketCreate(GenLineTicketUrl, GenCreate):
@@ -1867,7 +1867,7 @@ class GenTicketRectificationUrl(object):
 class TicketRectificationList(GenTicketRectificationUrl, GenList):
     model = SalesTicketRectification
     show_details = True
-    extra_context = {'menu': ['TicketRectification', 'people'], 'bread': [_('TicketRectification'), _('People')]}
+    extra_context = {'menu': ['TicketRectification', 'sales'], 'bread': [_('TicketRectification'), _('Sales')]}
     default_ordering = "-created"
 
 
@@ -1982,7 +1982,7 @@ class GenLineTicketRectificationUrl(object):
 # LineTicketRectification
 class LineTicketRectificationList(GenLineTicketRectificationUrl, GenList):
     model = SalesLineTicketRectification
-    extra_context = {'menu': ['LineTicketRectification', 'people'], 'bread': [_('LineTicketRectification'), _('People')]}
+    extra_context = {'menu': ['LineTicketRectification', 'sales'], 'bread': [_('LineTicketRectification'), _('Sales')]}
 
 
 class LineTicketRectificationCreate(GenLineTicketRectificationUrl, GenCreate):
@@ -2121,7 +2121,7 @@ class InvoiceList(GenInvoiceUrl, GenList):
     model = SalesInvoice
     show_details = True
     template_model = "sales/invoice_list.html"
-    extra_context = {'menu': ['Invoice', 'people'], 'bread': [_('Invoice'), _('People')]}
+    extra_context = {'menu': ['Invoice', 'sales'], 'bread': [_('Invoice'), _('Sales')]}
     default_ordering = "-created"
 
 
@@ -2277,7 +2277,7 @@ class GenLineInvoiceUrl(object):
 # LineInvoice
 class LineInvoiceList(GenLineInvoiceUrl, GenList):
     model = SalesLineInvoice
-    extra_context = {'menu': ['LineInvoice', 'people'], 'bread': [_('LineInvoice'), _('People')]}
+    extra_context = {'menu': ['LineInvoice', 'sales'], 'bread': [_('LineInvoice'), _('Sales')]}
 
 
 class LineInvoiceCreate(GenLineInvoiceUrl, GenCreate):
@@ -2447,7 +2447,7 @@ class GenInvoiceRectificationUrl(object):
 class InvoiceRectificationList(GenInvoiceRectificationUrl, GenList):
     model = SalesInvoiceRectification
     show_details = True
-    extra_context = {'menu': ['InvoiceRectification', 'people'], 'bread': [_('InvoiceRectification'), _('People')]}
+    extra_context = {'menu': ['InvoiceRectification', 'sales'], 'bread': [_('InvoiceRectification'), _('Sales')]}
     default_ordering = "-created"
 
 
@@ -2562,7 +2562,7 @@ class GenLineInvoiceRectificationUrl(object):
 # LineInvoiceRectification
 class LineInvoiceRectificationList(GenLineInvoiceRectificationUrl, GenList):
     model = SalesLineInvoiceRectification
-    extra_context = {'menu': ['LineInvoiceRectification', 'people'], 'bread': [_('LineInvoiceRectification'), _('People')]}
+    extra_context = {'menu': ['LineInvoiceRectification', 'sales'], 'bread': [_('LineInvoiceRectification'), _('Sales')]}
 
 
 class LineInvoiceRectificationCreate(GenLineInvoiceRectificationUrl, GenCreate):
@@ -2703,7 +2703,7 @@ class GenReservedProduct(object):
 # SalesReservedProduct
 class ReservedProductList(GenReservedProduct, GenList):
     model = SalesReservedProduct
-    extra_context = {'menu': ['SalesReservedProduct', 'people'], 'bread': [_('SalesReservedProduct'), _('People')]}
+    extra_context = {'menu': ['SalesReservedProduct', 'sales'], 'bread': [_('SalesReservedProduct'), _('Sales')]}
     default_ordering = "-created"
 
 

@@ -1,0 +1,266 @@
+{% extends "base/base.html" %}
+{% load codenerix_common %}
+{% load staticfiles %}
+{% load i18n %}
+
+{% block subbody %}
+    {% if error %}
+        <h1 class="text-danger">{{ error }}</h1>
+    {% else %}
+        {% csrf_token %}
+        {% if info %}
+            <div class="w3-container w3-white w3-center">
+                <h1 class="w3-wide">{{action_txt}}</h1>
+                <input type="hidden" name="user" id="action" value="{{action}}" />
+                
+                <div class="calculator calculator-funciones" ng-init="cash={{values.0}}; card={{values.1}}">
+                    <div class="col-md-7">
+                        <h1>
+                        <br/>
+                        <div class="input-group">
+                            <input type="text" class="form-control" disabled="disabled" value="{{info.title.0}}"/>
+                            <span class="input-group-addon">&rarr;</span>
+                            <input type="text" class="form-control" disabled="disabled" value="{{info.title.1}}"/>
+                        </div>
+                        <br/>
+                        <div class="input-group">
+                            <input type="text" class="form-control" readonly="readonly" value="{{info.cash.0}}"/>
+                            <span class="input-group-addon">{% trans "Cash" %}</span>
+                            <input
+                                  id="txt_cashdiary_cash"
+                                  name="amount_cash"
+                                  type="number"
+                                  class="form-control"
+                                  placeholder="{{info.cash.1}}"
+                                  ng-model="cash"
+                                  onclick="setfocus('txt_cashdiary_cash')"/>
+                        </div>
+                        <br/>
+                        <div class="input-group">
+                            <input type="text" class="form-control" readonly="readonly" value="{{info.cards.0}}"/>
+                            <span class="input-group-addon">{% trans "Cards" %}</span>
+                            <input
+                                  id="txt_cashdiary_cards"
+                                  name="amount_cards"
+                                  type="number"
+                                  class="form-control"
+                                  placeholder="{{info.cards.1}}"
+                                  ng-model="card"
+                                  onclick="setfocus('txt_cashdiary_cards')" />
+                        </div>
+                        <br/>
+                        <div class="input-group">
+                            <input type="text" class="form-control" readonly="readonly" value="{{info.total.0}}"/>
+                            <span class="input-group-addon"><strong>{% trans "Total" %}</strong></span>
+                            <input type="text" class="form-control" readonly="readonly" value="{{info.total.1}}" id="txt_cashdiary_total" ng-value="card+cash" />
+                        </div>
+
+                        <div id="msg_cashdiary_error" class="w3-red"></div>
+
+
+                        <br/>
+                        <div class="btn-group btn-group-lg" role="group" aria-label="Large button group"> 
+                            <button class="btn btn-warning" onclick="javascript:btn_clear_cashdiary()" title="{% trans "Clear" %}">
+                                {% trans "CLEAR" %}
+                            </button>
+                            <button class="btn btn-info" onclick="javascript:btn_cashdiary()" title="{{ info.label_btn }}">
+                                {{ info.label_btn }}
+                            </button>
+                        </div>
+                        </h1>
+                    </div>
+                    {% comment %}
+                    <div class="col-md-5">
+                        <div class="keypad">
+                            <div class="keys keys-funciones">
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <button type="button" onclick="javascript:btn_num_cashdiary(1)" class="btn btn-info btn-lg">1</button>
+                                        <button type="button" onclick="javascript:btn_num_cashdiary(2)" class="btn btn-info btn-lg">2</button>
+                                        <button type="button" onclick="javascript:btn_num_cashdiary(3)" class="btn btn-info btn-lg">3</button>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <button type="button" onclick="javascript:btn_num_cashdiary(4)" class="btn btn-info btn-lg">4</button>
+                                        <button type="button" onclick="javascript:btn_num_cashdiary(5)" class="btn btn-info btn-lg">5</button>
+                                        <button type="button" onclick="javascript:btn_num_cashdiary(6)" class="btn btn-info btn-lg">6</button>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <button type="button" onclick="javascript:btn_num_cashdiary(7)" class="btn btn-info btn-lg">7</button>
+                                        <button type="button" onclick="javascript:btn_num_cashdiary(8)" class="btn btn-info btn-lg">8</button>
+                                        <button type="button" onclick="javascript:btn_num_cashdiary(9)" class="btn btn-info btn-lg">9</button>
+                                    </div>
+                                    <div class="col-md-12">
+                                        <button type="button" onclick="javascript:btn_num_cashdiary('-')" class="btn btn-danger btn-lg">-</button>
+                                        <button type="button" onclick="javascript:btn_num_cashdiary(0)" class="btn btn-info btn-lg">0</button>
+                                        <button type="button" onclick="javascript:btn_num_cashdiary('{{comma}}', true)" class="btn btn-warning btn-lg">{{comma}}</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <button class="w3-button w3-grey w3-section" onclick="javascript:btn_clear_cashdiary()" title="{% trans "Clear" %}">
+                                {% trans "CLEAR" %}
+                            </button>
+                            <button class="w3-button w3-green w3-section" onclick="javascript:btn_cashdiary()" title="{% trans "Enter" %}">
+                                {% trans "ENTER" %}
+                            </button>
+                        </div>
+                    </div>
+                    {% endcomment %}
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+    {% if not error %}
+    <script type="text/javascript">
+        {% if info %}
+            // By default decimal is commma
+            var comma = ',';
+            var lastfocus = null;
+            var cash = {{values.0}};
+            var cards = {{values.1}};
+            function setfocus(focus) {
+                lastfocus = focus;
+            }
+            function getfocus() {
+                if (!lastfocus) {
+                    lastfocus = "txt_cashdiary_cash";
+                }
+                return lastfocus;
+            }
+            function btn_num_cashdiary(num, iscomma){
+                $("#msg_cashdiary_error").html('');
+                var oldvalue = $("#"+getfocus()).val().replace(" {{coin}}","");
+                var cleanvalue;
+                var newvalue;
+                if (typeof(iscomma) != "undefined" ) {
+                    comma = num;
+                }
+                if (num=="-") {
+                    cleanvalue = parseFloat(oldvalue.replace(comma, "."));
+                    if (isNaN(cleanvalue)) {
+                        cleanvalue = 0.0;
+                    }
+                    newvalue = (""+(-cleanvalue)).replace(".", comma);
+                } else {
+                    newvalue = oldvalue + num;
+                }
+                var spvalue = newvalue.split(comma);
+                if (spvalue.length == 1) {
+                    cleanvalue = newvalue;
+                } else {
+                    cleanvalue = spvalue[0] + comma + spvalue[1].substring(0,2);
+                }
+                // Save value
+                if (lastfocus=="txt_cashdiary_cards") {
+                    cards = parseFloat(cleanvalue.replace(comma, "."));
+                    if (isNaN(cards)) {
+                        cards = 0.0;
+                    }
+                } else {
+                    cash = parseFloat(cleanvalue.replace(comma, "."));
+                    if (isNaN(cash)) {
+                        cash = 0.0;
+                    }
+                }
+                // Recalculate total
+                if (cash=='') { cash=0.0; }
+                if (cards=='') { cards=0.0; }
+                $("#txt_cashdiary_total").val((cash+cards).toFixed(2)+' {{coin}}');
+
+                $("#"+getfocus()).val(cleanvalue+' {{coin}}');
+            }
+
+            function btn_clear_cashdiary(){
+                $("#msg_cashdiary_error").html('');
+                $("#"+getfocus()).val('');
+            }
+            /*
+            function btn_cashdiary_close_modal(){
+                // Clean up
+                $("#user").val('');
+                $(".test").removeClass("w3-green").addClass("w3-grey");
+                $("#msg_cashdiary_error").html('');
+                
+                hide_modal_cashdiary();
+            }*/
+
+            function btn_cashdiary(){
+                // Save value
+                var cleanvalue = $("#"+getfocus()).val().replace(" {{coin}}","");
+                if (lastfocus=="txt_cashdiary_cards") {
+                    cards = parseFloat(cleanvalue.replace(comma, "."));
+                    if (isNaN(cards)) {
+                        cards = 0.0;
+                    }
+                } else {
+                    cash = parseFloat(cleanvalue.replace(comma, "."));
+                    if (isNaN(cash)) {
+                        cash = 0.0;
+                    }
+                }
+
+                // Cleanup
+                $("#msg_cashdiary_error").html('');
+                var info = {
+                    csrfmiddlewaretoken: $("input[name='csrfmiddlewaretoken']").val(),
+                    action: '{{action}}',
+                    amount_cash: cash,
+                    amount_cards: cards,
+                };
+                var ruta = '{% url "cashdiarys_cashdiary" %}';
+
+                $.post(ruta, info, function(data){
+                    if (data.error != null){
+                        $("#msg_cashdiary_error").html(data.error);
+                    } else {
+                        window.location.href = data.url;
+                    }
+                }).done(function(data){
+
+                }).fail(function(data){
+                    var msg = "{% trans "ERROR while sending CashDiary" %}";
+                    console.error(msg);
+                    console.error(data);
+                    alert(msg+": "+data.responseText);
+                }).always(function(data){
+
+                });
+            }
+
+            // Clear window
+            $(".test").removeClass("w3-green").addClass("w3-grey");
+            $("#msg_cashdiary_error").html('');
+            $("#"+getfocus()).val('{{value|default:""}}');
+        {% else %}
+            function btn_cashdiary(){
+                var info = {
+                    csrfmiddlewaretoken: $("input[name='csrfmiddlewaretoken']").val(),
+                    action: '{{action}}',
+                    amount_cash: 0.0,
+                    amount_cards: 0.0,
+                };
+                var ruta = '{% url "cashdiarys_cashdiary" %}';
+
+                $.post(ruta, info, function(data){
+                    if (data.error != null){
+                        alert(data.error);
+                    }
+                    window.location.href = data.url;
+                }).done(function(data){
+
+                }).fail(function(data){
+                    var msg = "{% trans "ERROR while sending CashDiary" %}";
+                    console.error(msg);
+                    console.error(data);
+                    alert(msg+": "+data.responseText);
+                }).always(function(data){
+
+                });
+            }
+            btn_cashdiary();
+        {% endif %}
+    </script>
+    {% endif %}
+{% endblock %}

@@ -119,7 +119,7 @@ class GenBillingSeriesUrl(object):
 # BillingSeries
 class BillingSeriesList(GenBillingSeriesUrl, GenList):
     model = BillingSeries
-    extra_context = {'menu': ['BillingSeries', 'people'], 'bread': [_('BillingSeries'), _('People')]}
+    extra_context = {'menu': ['BillingSeries', 'invoicing'], 'bread': [_('BillingSeries'), _('Invoicing')]}
 
 
 class BillingSeriesCreate(GenBillingSeriesUrl, GenCreate):
@@ -148,7 +148,7 @@ class BillingSeriesDelete(GenBillingSeriesUrl, GenDelete):
 # LegalNote
 class LegalNoteList(GenList):
     model = LegalNote
-    extra_context = {'menu': ['LegalNote', 'people'], 'bread': [_('LegalNote'), _('People')]}
+    extra_context = {'menu': ['LegalNote', 'invoicing'], 'bread': [_('LegalNote'), _('Invoicing')]}
     default_ordering = '-public'
 
 
@@ -178,7 +178,7 @@ class LegalNoteDelete(GenDelete):
 # TypeDocument
 class TypeDocumentList(GenList):
     model = TypeDocument
-    extra_context = {'menu': ['TypeDocument', 'people'], 'bread': [_('TypeDocument'), _('People')]}
+    extra_context = {'menu': ['TypeDocument', 'invoicing'], 'bread': [_('TypeDocument'), _('Invoicing')]}
 
 
 class TypeDocumentCreate(MultiForm, GenCreate):
@@ -213,7 +213,7 @@ class GenProductStockUrl(object):
 # ProductStock
 class ProductStockList(GenProductStockUrl, GenList):
     model = ProductStock
-    extra_context = {'menu': ['ProductStock', 'people'], 'bread': [_('ProductStock'), _('People')]}
+    extra_context = {'menu': ['ProductStock', 'invoicing'], 'bread': [_('ProductStock'), _('Invoicing')]}
     default_ordering = "-created"
 
 
@@ -265,7 +265,7 @@ class ProductStockSubList(GenProductStockUrl, GenList):
     show_details = False
     json = True
     template_model = "storages/productstock_sublist.html"
-    extra_context = {'menu': ['ProductStock', 'people'], 'bread': [_('ProductStock'), _('People')]}
+    extra_context = {'menu': ['ProductStock', 'invoicing'], 'bread': [_('ProductStock'), _('Invoicing')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -289,7 +289,7 @@ class ProductStockDetailModal(GenDetailModal, ProductStockDetail):
 class StockMovementList(GenList):
     model = StockMovement
     show_details = True
-    extra_context = {'menu': ['StockMovement', 'people'], 'bread': [_('StockMovement'), _('People')]}
+    extra_context = {'menu': ['StockMovement', 'invoicing'], 'bread': [_('StockMovement'), _('Invoicing')]}
     default_ordering = "-created"
 
 
@@ -348,7 +348,7 @@ class StockMovementPrint(PrinterHelper, GenDetail):
 # StockMovementProduct
 class StockMovementProductList(GenList):
     model = StockMovementProduct
-    extra_context = {'menu': ['StockMovementProduct', 'people'], 'bread': [_('StockMovementProduct'), _('People')]}
+    extra_context = {'menu': ['StockMovementProduct', 'invoicing'], 'bread': [_('StockMovementProduct'), _('Invoicing')]}
 
 
 class StockMovementProductCreate(GenCreate):
@@ -413,7 +413,7 @@ class GenHaulierUrl(object):
 # Haulier
 class HaulierList(GenHaulierUrl, GenList):
     model = Haulier
-    extra_context = {'menu': ['Haulier', 'people'], 'bread': [_('Haulier'), _('People')]}
+    extra_context = {'menu': ['Haulier', 'invoicing'], 'bread': [_('Haulier'), _('Invoicing')]}
 
 
 class HaulierCreate(GenHaulierUrl, ImageFileView, GenCreate):

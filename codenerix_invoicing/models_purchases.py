@@ -263,24 +263,24 @@ class PurchasesOrder(GenPurchase):
 
 # lineas de pedidos
 class PurchasesLineOrder(GenLineProduct):
-    order = models.ForeignKey(PurchasesOrder, related_name='line_order_purchases', verbose_name=_("Order"))
+    order = models.ForeignKey(PurchasesOrder, related_name='line_order_purchases', verbose_name=_("Purchases order"))
     line_budget = models.ForeignKey(PurchasesLineBudget, related_name='line_order_purchases', verbose_name=_("Line budget"), null=True, blank=True)
     product = models.ForeignKey(ProductFinal, related_name='line_order_purchases', verbose_name=_("Product"), null=True, blank=True)
 
     def __fields__(self, info):
         fields = super(PurchasesLineOrder, self).__fields__(info)
-        fields.insert(0, ('order', _("Order")))
+        fields.insert(0, ('order', _("Purchases order")))
         fields.append(('line_budget', _("Line budget")))
         return fields
 
 
 # documentos asociados a los pedidos
 class PurchasesOrderDocument(GenBillingDocument):
-    order = models.ForeignKey(PurchasesOrder, related_name='orderdocument_purchases', verbose_name=_("Order"))
+    order = models.ForeignKey(PurchasesOrder, related_name='orderdocument_purchases', verbose_name=_("Purchases order"))
 
     def __fields__(self, info):
         fields = super(PurchasesOrderDocument, self).__fields__(info)
-        fields.append(('Order', _('Order')))
+        fields.append(('Order', _('Purchases order')))
         return fields
 
 

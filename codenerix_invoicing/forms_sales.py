@@ -478,7 +478,7 @@ class AlbaranForm(GenModelForm):
 
 class LineAlbaranForm(GenModelForm):
     albaran_pk = forms.IntegerField(widget=forms.HiddenInput())
-    order = forms.ModelChoiceField(label=_('Order'), queryset=SalesOrder.objects.all())
+    order = forms.ModelChoiceField(label=_('Sales order'), queryset=SalesOrder.objects.all())
 
     class Meta:
         model = SalesLineAlbaran
@@ -561,7 +561,7 @@ class TicketForm(GenModelForm):
 
 class LineTicketForm(GenModelForm):
     ticket_pk = forms.IntegerField(widget=forms.HiddenInput())
-    order = forms.ModelChoiceField(label=_('Order'), queryset=SalesOrder.objects.all())
+    order = forms.ModelChoiceField(label=_('Sales order'), queryset=SalesOrder.objects.all())
 
     class Meta:
         model = SalesLineTicket
@@ -761,7 +761,7 @@ class InvoiceForm(GenModelForm):
 
 class LineInvoiceForm(GenModelForm):
     invoice_pk = forms.IntegerField(widget=forms.HiddenInput())
-    order = forms.ModelChoiceField(label=_('Order'), queryset=SalesOrder.objects.all())
+    order = forms.ModelChoiceField(label=_('Sales order'), queryset=SalesOrder.objects.all())
 
     class Meta:
         model = SalesLineInvoice
