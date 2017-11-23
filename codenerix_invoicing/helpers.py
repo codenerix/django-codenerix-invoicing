@@ -56,7 +56,7 @@ class ShoppingCartProxy(object):
             if customer:
                 self._apply_surcharge = customer.apply_equivalence_surcharge
             else:
-                raise Exception(_('The user is not customer'))
+                raise Exception(_('User {user} is not a Customer').format(user=request.user.username))
 
             try:
                 self._cart = SalesBasket.objects.get(customer=customer, role=ROLE_BASKET_SHOPPINGCART)
@@ -365,7 +365,7 @@ class ShoppingCartProxy(object):
         product = ProductFinal.objects.get(pk=product_pk)
         if self._cart is not None:
             try:
-                line = SalesLineBasket.objects.get(basket=self._cart, product=product) # , removed=False)
+                line = SalesLineBasket.objects.get(basket=self._cart, product=product)  # , removed=False)
                 if line.removed:
                     line.removed = False
                     line.quantity = 0
