@@ -2310,7 +2310,7 @@ class LineInvoiceCreate(GenLineInvoiceUrl, GenCreate):
 
         if line_order.quantity < quantity:
             errors = form._errors.setdefault("quantity", ErrorList())
-            errors.append(_("La cantidad seleccionada es excesiva. Quedan pendiente {} unidades por crear facturar".format(units_pending)))
+            errors.append(_("La cantidad seleccionada es excesiva. Quedan pendiente {} unidades por facturar".format(units_pending)))
             return super(LineInvoiceCreate, self).form_invalid(form)
 
         # initial invoice
@@ -2650,7 +2650,7 @@ class LineInvoiceRectificationDelete(GenLineInvoiceRectificationUrl, GenDelete):
 class LineInvoiceRectificationSubList(GenLineInvoiceRectificationUrl, GenList):
     model = SalesLineInvoiceRectification
     gentrans = {
-        'CreateInvoice': _("Create Invoice leches"),
+        'CreateInvoice': _("Create Invoice Rectification"),
     }
     linkadd = False
     linkedit = False

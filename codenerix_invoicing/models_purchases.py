@@ -204,7 +204,7 @@ class Provider(GenRole, CodenerixModel):
         fields.append(('billing_series', _("Billing series")))
         fields.append(('type_tax', _("Type tax")))
         fields.append(('shipping_tax', _("Impuesto de gastos de envio")))
-        fields.append(('finance_surcharge', _("Finance surcharg")))
+        fields.append(('finance_surcharge', _("Finance surcharge")))
         fields.append(('payment_methods', _("Payment methods")))
         fields.append(('delivery_time', _("Delivery time")))
         fields.append(('categories', _("Categories")))
@@ -263,7 +263,7 @@ class PurchasesOrder(GenPurchase):
 
 # lineas de pedidos
 class PurchasesLineOrder(GenLineProduct):
-    order = models.ForeignKey(PurchasesOrder, related_name='line_order_purchases', verbose_name=_("Purchases order"))
+    order = models.ForeignKey(PurchasesOrder, related_name='line_order_purchases', verbose_name=_("Purchase order"))
     line_budget = models.ForeignKey(PurchasesLineBudget, related_name='line_order_purchases', verbose_name=_("Line budget"), null=True, blank=True)
     product = models.ForeignKey(ProductFinal, related_name='line_order_purchases', verbose_name=_("Product"), null=True, blank=True)
 
@@ -393,7 +393,7 @@ class PurchasesLineInvoice(GenLineProduct):
 
     def __fields__(self, info):
         fields = super(PurchasesLineInvoice, self).__fields__(info)
-        fields.insert(0, ('invoice', _("Ticket invoices")))
+        fields.insert(0, ('invoice', _("Invoices")))
         fields.append(('line_albaran', _("Line albaran")))
         fields.append(('feature_special_value', _("Feature special values")))
         return fields

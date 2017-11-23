@@ -1811,7 +1811,7 @@ class SalesLineInvoice(GenLineProduct):
 
     def __fields__(self, info):
         fields = super(SalesLineInvoice, self).__fields__(info)
-        fields.insert(0, ('invoice', _("Ticket invoices")))
+        fields.insert(0, ('invoice', _("Invoice")))
         fields.append(('line_order', _("Line order")))
         return fields
 
