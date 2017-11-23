@@ -65,11 +65,15 @@ STATUS_BUDGET = (
     (STATUS_BUDGET_PAYMENT_ACCETED, _("Payment accepted")),
 )
 
+STATUS_ORDER_PENDING = 'PE'
+STATUS_ORDER_PAYMENT_ACCEPTED = 'PA'
+STATUS_ORDER_SENT = 'SE'
+STATUS_ORDER_DELIVERED = 'DE'
 STATUS_ORDER = (
-    ('PE', _("Pending")),
-    ('PA', _("Payment accepted")),
-    ('SE', _("Sent")),
-    ('DE', _("Delivered")),
+    (STATUS_ORDER_PENDING, _("Pending")),
+    (STATUS_ORDER_PAYMENT_ACCEPTED, _("Payment accepted")),
+    (STATUS_ORDER_SENT, _("Sent")),
+    (STATUS_ORDER_DELIVERED, _("Delivered")),
 )
 
 
@@ -716,7 +720,7 @@ class GenLineProductBasic(CodenerixModel):  # META: Abstract class
             self.save(force_save=True)
 
     def __limitQ__(self, info):
-        return {'removed': Q(removed=False) }
+        return {'removed': Q(removed=False)}
 
     def get_customer(self):
         # returns the client associated with the document
@@ -1231,6 +1235,8 @@ class SalesBasket(GenVersion):
                 order.customer = self.customer
                 order.budget = self
                 order.payment = payment_request
+                if order.payment and order.payment.is_paid():
+                    order.status_order = STATUS_ORDER_PAYMENT_ACCEPTED
                 order.save()
 
                 for line in self.line_basket_sales.all():
@@ -1427,6 +1433,7 @@ class SalesOrder(GenVersion):
         fields.append(('budget__address_delivery', _('Address delivery')))
         fields.append(('budget__address_invoice', _('Address invoice')))
         fields.append(('total', _('Total')))
+        fields.append(('status_order', None))
         return fields
 
     def calculate_price_doc(self):

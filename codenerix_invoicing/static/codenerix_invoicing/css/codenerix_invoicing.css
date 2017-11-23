@@ -1,0 +1,9 @@
+.CDNX_invoicing_order_paid{
+	background-color: #dff0d8;
+	}
+.CDNX_invoicing_order_sent{
+	background-color: #fcf8e3;
+	}
+.CDNX_invoicing_order_delivered{
+	background-color: #d9edf7;
+}

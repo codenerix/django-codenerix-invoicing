@@ -776,6 +776,7 @@ class OrderList(GenOrderUrl, GenList):
         'CreateFromBudget': _("Create order from budget"),
         'CreateFromShoppingCart': _("Create order from shopping cart"),
     }
+    static_partial_row = "codenerix_invoicing/partials/sales/salesorder_rows.html"
 
 
 class OrderCreate(GenOrderUrl, GenCreate):
