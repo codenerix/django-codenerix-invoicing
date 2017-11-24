@@ -742,6 +742,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
     desde el formulario se podrá modificar el precio y la descripcion del producto
     se guarda el tax usado y la relacion para poder hacer un seguimiento
     """
+    code = models.CharField(_("Code"), max_length=250, blank=True, null=True)
     description = models.CharField(_("Description"), max_length=256, blank=True, null=True)
     discount = models.FloatField(_("Discount (%)"), blank=False, null=False, default=0)
     price_base = models.FloatField(_("Price base"), blank=False, null=False)
@@ -763,6 +764,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
 
     def __fields__(self, info):
         fields = []
+        fields.append(('code', _("Code")))
         fields.append(('description', _("Description")))
         fields.append(('quantity', _("Quantity")))
         fields.append(('price_base', _("Price base")))
@@ -876,6 +878,8 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
                                 line_final.product = line_src.product
                             if 'description' in src_list_fields and 'description' in dst_list_fields:
                                 line_final.description = line_src.description
+                            if 'code' in src_list_fields and 'code' in dst_list_fields:
+                                line_final.code = line_src.code
                             # if hasattr(line_src, 'line_order') and hasattr(line_final, 'line_order'):
                             if 'line_order' in src_list_fields and 'line_order' in dst_list_fields:
                                 line_final.line_order = line_src.line_order
@@ -1460,6 +1464,18 @@ class SalesOrder(GenVersion):
     def get_customer(self):
         return self.customer
 
+    def get_invoices(self, only_code=True):
+        queryset = SalesLineInvoice.objects.filter(
+            removed=False,
+            invoice__removed=False,
+            line_order__in=self.line_order_sales.filter(removed=False)
+        )
+        if only_code:
+            result = list(queryset.values('invoice__code', 'invoice__pk').distinct())
+        else:
+            result = queryset.distinct()
+        return result
+
 
 # lineas de pedidos
 class SalesLineOrder(GenLineProduct):
@@ -1469,8 +1485,8 @@ class SalesLineOrder(GenLineProduct):
 
     def __fields__(self, info):
         fields = super(SalesLineOrder, self).__fields__(info)
-        fields.insert(0, ('order', _("Sales order")))
-        fields.append(('line_budget', _("Line budget")))
+        # fields.insert(0, ('order', _("Sales order")))
+        # fields.append(('line_budget', _("Line budget")))
         return fields
 
     def save(self, *args, **kwargs):
@@ -1662,8 +1678,8 @@ class SalesLineTicket(GenLineProduct):
 
     def __fields__(self, info):
         fields = super(SalesLineTicket, self).__fields__(info)
-        fields.insert(0, ('ticket', _("Ticket")))
-        fields.append(('line_order', _("Line order")))
+        # fields.insert(0, ('ticket', _("Ticket")))
+        # fields.append(('line_order', _("Line order")))
         return fields
 
     def get_customer(self):
@@ -1818,8 +1834,8 @@ class SalesLineInvoice(GenLineProduct):
 
     def __fields__(self, info):
         fields = super(SalesLineInvoice, self).__fields__(info)
-        fields.insert(0, ('invoice', _("Invoice")))
-        fields.append(('line_order', _("Line order")))
+        # fields.insert(0, ('invoice', _("Invoice")))
+        # fields.append(('line_order', _("Line order")))
         return fields
 
     def save(self, *args, **kwargs):

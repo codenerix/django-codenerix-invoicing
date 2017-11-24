@@ -88,7 +88,7 @@ class ShoppingCartProxy(object):
                             line.quantity += product_dict['quantity']
                             line.save()
                         except ObjectDoesNotExist:
-                            line = SalesLineBasket(basket=self._cart, product=product, quantity=product_dict['quantity'], price_base=product.price_base)
+                            line = SalesLineBasket(basket=self._cart, product=product, quantity=product_dict['quantity'], price_base=product.price_base, code=product.code)
                             line.save()
                 del request.session[ShoppingCartProxy.SESSION_KEY]
                 request.session.modified = True
@@ -371,7 +371,7 @@ class ShoppingCartProxy(object):
                     line.quantity = 0
                 line.quantity = line.quantity + quantity if add else quantity
             except ObjectDoesNotExist:
-                line = SalesLineBasket(basket=self._cart, product=product)
+                line = SalesLineBasket(basket=self._cart, product=product, code=product.code)
                 line.quantity = quantity
             finally:
                 prices = product.calculate_price()

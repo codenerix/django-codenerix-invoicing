@@ -89,10 +89,11 @@ class PrinterHelper(object):
             filename = "{0}.pdf".format(self.output_filename)
             html = loader.render_to_string(self.template_model, context, **response_kwargs)
 
-            # Render the full document
-            result = StringIO()
-
-            pdf = pisa.pisaDocument(StringIO(html.encode('UTF-8')), result, encoding='UTF-8')
+            # Prepare answer
+            response = HttpResponse(content_type="application/pdf")
+            response['Content-Disposition'] = 'attachment; filename=%s' % (filename)
+                
+            pdf = pisa.CreatePDF(html, dest=response)
 
             # Check if we got an error
             if pdf.err:
@@ -102,10 +103,6 @@ class PrinterHelper(object):
                     answer += "\nDEBUG: {0}".format(pdf.err)
                 raise IOError(answer)
             else:
-                # Prepare answer
-                response = HttpResponse(content_type="application/pdf")
-                response['Content-Disposition'] = 'attachment; filename=%s' % (filename)
-                response.write(result.getvalue())
                 return response
         else:
             raise IOError("Can not render: unknown format '{0}'".format(output))

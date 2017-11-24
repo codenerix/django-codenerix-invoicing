@@ -2125,6 +2125,11 @@ class InvoiceList(GenInvoiceUrl, GenList):
     extra_context = {'menu': ['Invoice', 'sales'], 'bread': [_('Invoice'), _('Sales')]}
     default_ordering = "-created"
 
+    def __limitQ__(self, info):
+        limit = {}
+        limit['removed'] = Q(removed=False)
+        return limit
+
 
 class InvoiceCreate(GenInvoiceUrl, GenCreate):
     model = SalesInvoice
