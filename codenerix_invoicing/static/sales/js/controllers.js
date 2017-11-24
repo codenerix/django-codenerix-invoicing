@@ -73,6 +73,7 @@ angular.module('codenerixSalesControllers', [])
             }
         }
 
+        $scope.order_status_next = function(pk){ console.log(pk); }
         $scope.create_budget = function(msg_line){
             create_doc($scope, "/"+url+"/createbudget", msg_line);
         };

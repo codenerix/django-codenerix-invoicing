@@ -47,7 +47,7 @@ from codenerix_invoicing.models_sales import Customer, CustomerDocument, \
     SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, \
     SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, \
     SalesLineInvoiceRectification, SalesReservedProduct, SalesBasket, SalesLineBasket
-from codenerix_invoicing.models_sales import ROLE_BASKET_SHOPPINGCART, ROLE_BASKET_BUDGET, ROLE_BASKET_WISHLIST
+from codenerix_invoicing.models_sales import ROLE_BASKET_SHOPPINGCART, ROLE_BASKET_BUDGET, ROLE_BASKET_WISHLIST, STATUS_ORDER
 from codenerix_invoicing.models_sales import SalesLineBasketOption
 
 from codenerix_invoicing.forms_sales import CustomerForm, CustomerDocumentForm
@@ -778,6 +778,18 @@ class OrderList(GenOrderUrl, GenList):
     }
     static_partial_row = "codenerix_invoicing/partials/sales/salesorder_rows.html"
 
+    def __init__(self, *args, **kwargs):
+        new={}
+        last=None
+        for (key, trans) in STATUS_ORDER:
+            if last:
+                new[last]=str(trans)
+                last=key
+            else:
+                last=key
+        new[key] = None
+        self.gentrans['status_order_next'] = new
+        return super(OrderList, self).__init__(*args, **kwargs)
 
 class OrderCreate(GenOrderUrl, GenCreate):
     model = SalesOrder
