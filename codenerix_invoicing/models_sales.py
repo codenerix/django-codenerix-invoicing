@@ -352,11 +352,11 @@ class Address(CodenerixModel):
         else:
             raise Exception(_('Address unkown'))
         return fields
-        
+
     @staticmethod
     def foreignkey_external_delivery():
         return get_external_method(Address, Address.CodenerixMeta.force_methods['foreignkey_address_delivery'][0])
-        
+
     @staticmethod
     def foreignkey_external_invoice():
         return get_external_method(Address, Address.CodenerixMeta.force_methods['foreignkey_address_invoice'][0])
@@ -1430,6 +1430,7 @@ class SalesOrder(GenVersion):
         fields.append(('code', _('Code')))
         fields.append(('date', _('Date')))
         fields.append(('storage', _('Storage')))
+        fields.append(('status_order', None))
         fields.append(('get_status_order_display', _('Status')))
         fields.append(('get_payment_detail_display', _('Payment detail')))
         fields.append(('source', _('Source of purchase')))

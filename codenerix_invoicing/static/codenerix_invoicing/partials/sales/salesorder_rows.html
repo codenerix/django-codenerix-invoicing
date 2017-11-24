@@ -27,7 +27,20 @@
 	CDNX_invoicing_order_paid: row.status_order=='PA',
 	CDNX_invoicing_order_sent: row.status_order=='SE',
 	CDNX_invoicing_order_delivered: row.status_order=='DE',
-}">{{ row.get_status_order_display }}</td>
+    }" ng-init='over=false'>
+    <button 
+        class="btn btn-sm"
+        ng-class="{'btn-default': !over, 'btn-info': over}"
+        ng-controller="codenerixSalesDetailsCtrl"
+        ng-click="order_status_next(row.pk); $event.stopPropagation();"
+        ng-mouseover="over=true"
+        ng-mouseleave="over=false">
+            <span ng-show='!over'>{{ row.get_status_order_display }}</span>
+            <span ng-repeat="(key, label) in data.meta.gentranslate.status_order_next" ng-show="over && key==row.status_order">
+                {{ label }}
+            </span>
+    </button>
+</td>
 <td ng-class="{
 	CDNX_invoicing_order_pending: row.status_order=='PE',
 	CDNX_invoicing_order_paid: row.status_order=='PA',
@@ -63,4 +76,4 @@
 	CDNX_invoicing_order_paid: row.status_order=='PA',
 	CDNX_invoicing_order_sent: row.status_order=='SE',
 	CDNX_invoicing_order_delivered: row.status_order=='DE',
-}">{{ row.total }}</td>
+}">{{ row.total|codenerix:'money_euro' }}</td>
