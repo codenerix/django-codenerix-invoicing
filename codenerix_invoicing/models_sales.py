@@ -742,7 +742,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
     desde el formulario se podrá modificar el precio y la descripcion del producto
     se guarda el tax usado y la relacion para poder hacer un seguimiento
     """
-    code = models.CharField(_("Code"), max_length=250, blank=True, null=True)
+    code = models.CharField(_("Code"), max_length=250, blank=True, null=True, default=None)
     description = models.CharField(_("Description"), max_length=256, blank=True, null=True)
     discount = models.FloatField(_("Discount (%)"), blank=False, null=False, default=0)
     price_base = models.FloatField(_("Price base"), blank=False, null=False)
