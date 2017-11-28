@@ -34,7 +34,7 @@ from codenerix.models_people import GenRole
 from codenerix_extensions.helpers import get_external_method
 from codenerix_extensions.files.models import GenDocumentFile
 
-from codenerix_invoicing.models import Haulier, BillingSeries
+from codenerix_invoicing.models import Haulier, BillingSeries, TypeDocument
 from codenerix_invoicing.models_purchases import PAYMENT_DETAILS
 from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
 
@@ -1528,6 +1528,25 @@ class SalesLineOrderOption(CodenerixModel):
         fields.append(('product_option', _('Product option')))
         fields.append(('product_final', _('Product final')))
         fields.append(('quantity', _('Quantity')))
+        return fields
+
+
+# documentos de pedidos
+class SalesOrderDocument(CodenerixModel, GenDocumentFile):
+    order = models.ForeignKey(SalesOrder, related_name='order_document_sales', verbose_name=_("Sales order"))
+    kind = models.ForeignKey(TypeDocument, related_name='order_document_sales', verbose_name=_('Document type'), blank=False, null=False)
+    notes = models.TextField(_("Notes"), max_length=256, blank=True, null=True)
+
+    def __str__(self):
+        return u'{}'.format(smart_text(self.name_file))
+
+    def __unicode__(self):
+        return self.__str__()
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('kind', _('Document type')))
+        fields.append(('name_file', _('Name')))
         return fields
 
 
