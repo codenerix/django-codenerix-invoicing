@@ -941,6 +941,38 @@ class OrderDetails(GenOrderUrl, GenDetail):
         return super(OrderDetails, self).dispatch(*args, **kwargs)
 
 
+class OrderStatus(View):
+
+    def get(self, request, *args, **kwargs):
+        raise Exception("get")
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        pk = kwargs.get('pk', None)
+        action = kwargs.get('action', None)
+
+        answer = {'changed': False}
+        if action in ['next', 'previous']:
+            so = SalesOrder.objects.get(pk=pk)
+            first=None
+            last=None
+            for (key, label) in STATUS_ORDER:
+                if not first:
+                    first=key
+                elif so.status_order == last:
+                    so.status_order = key
+                    so.save()
+                    answer['changed']=True
+                    break
+                last = key
+        else:
+            answer['error'] = True
+            answer['errortxt'] = _("Action not allowed here!")
+
+        # Return the new context
+        return JsonResponse(answer)
+
+
 class OrderPrint(PrinterHelper, GenOrderUrl, GenDetail):
     model = SalesOrder
     modelname = "list"

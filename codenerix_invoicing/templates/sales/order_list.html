@@ -28,5 +28,19 @@ limitations under the License.
     <script type="text/javascript" src="{% static "codenerix/js/controllers.js" %}"></script>
     <script type="text/javascript" src="{% static "sales/js/app.js" %}"></script>
     <script type="text/javascript" src="{% static "sales/js/controllers.js" %}"></script>
-    <script type="text/javascript" src="{% static static_filters_row %}"></script>
+    <script type="text/javascript" src="{{ static_filters_row }}"></script>
+    <script type="text/ng-template" id="executingModal.html">
+        <div class="modal-body" id="executingModal">
+        {% trans "Executing, please wait!" %}
+        </div>
+    </script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.status > .status_normal { display:block; }
+.status > .status_hover { display:none; }
+.status:hover > .status_normal { display:none; }
+.status:hover > .status_hover { display:block; }
+</style>
 {% endblock %}

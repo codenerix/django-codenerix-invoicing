@@ -23,8 +23,8 @@
 
 // Angular codenerix invoicing sales controllers
 angular.module('codenerixSalesControllers', [])
-.controller('codenerixSalesDetailsCtrl', ['$scope', '$rootScope', '$timeout', '$http', '$window', '$uibModal', '$state', '$stateParams', '$templateCache', 'Register', '$location', 
-    function($scope, $rootScope, $timeout, $http, $window, $uibModal, $state, $stateParams, $templateCache, Register, $location) {
+.controller('codenerixSalesDetailsCtrl', ['$scope', '$rootScope', '$timeout', '$http', '$window', '$uibModal', '$uibModalStack', '$state', '$stateParams', '$templateCache', 'Register', '$location', 
+    function($scope, $rootScope, $timeout, $http, $window, $uibModal, $uibModalStack, $state, $stateParams, $templateCache, Register, $location) {
         if (ws_entry_point==undefined) { ws_entry_point=""; }
         var url = ws_entry_point+"/"+$stateParams.pk;
 
@@ -74,7 +74,19 @@ angular.module('codenerixSalesControllers', [])
         }
 
         $scope.order_status_next = function(pk){
-            console.log(pk); 
+            var modalInstance = $uibModal.open({ templateUrl: 'executingModal.html', size: 'sm' });
+            $http.post( "/"+ws_entry_point+"/"+pk+"/status/next" )
+            .success(function(answer, stat) {
+                if (answer['error']) {
+                    $("#executingModal").html(answer['errortxt']);
+                } else {
+                    $uibModalStack.dismissAll();
+                    $scope.$parent.$parent.refresh();
+                }
+            })
+            .error(function(data) {
+                alert("Some error happened while executing: "+data)
+            });
         }
         $scope.create_budget = function(msg_line){
             create_doc($scope, "/"+url+"/createbudget", msg_line);

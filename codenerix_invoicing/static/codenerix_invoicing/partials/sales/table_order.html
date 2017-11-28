@@ -20,7 +20,9 @@ limitations under the License.
 
 -->
 
-<div ng-include="'/static/codenerix/partials/table.html'"></div>
+<div
+    ng-controller="codenerixSalesDetailsCtrl"
+    ng-include="'/static/codenerix/partials/table.html'"></div>
 <div>
     <label class="sr-only" for="submit_create_from_budget">{{ data.meta.gentranslate.CreateFromBudget }}</label>
     <button ng-controller="codenerixSalesDetailsCtrl" id="submit_create_from_budget" ng-click="create_order_from_budget()" class="btn btn-sm btn-info">{{ data.meta.gentranslate.CreateFromBudget }}</button>

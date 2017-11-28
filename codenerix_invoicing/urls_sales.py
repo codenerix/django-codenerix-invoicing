@@ -35,7 +35,7 @@ from .views_sales import TicketCreate, TicketCreateModal, TicketDelete, TicketLi
 from .views_sales import AlbaranDetails, LineAlbaranSubList, AlbaranPrint, LineAlbaranDetailsModal
 from .views_sales import TicketDetails, LineTicketSubList, TicketPrint, LineTicketDetailsModal
 from .views_sales import InvoiceDetails, LineInvoiceSubList, LineInvoiceDetailsModal
-from .views_sales import OrderCreateAlbaran, OrderCreateTicket, OrderCreateInvoice
+from .views_sales import OrderCreateAlbaran, OrderCreateTicket, OrderCreateInvoice, OrderStatus
 from .views_sales import AlbaranCreateTicket, AlbaranCreateInvoice
 from .views_sales import TicketCreateInvoice
 from .views_sales import OrderForeign, LineOrderForeign, LineOrderForeignCustom
@@ -100,6 +100,7 @@ urlpatterns = [
     url(r'^orders/(?P<pk>\w+)/edit$', OrderUpdate.as_view(), name='CDNX_invoicing_ordersaless_edit'),
     url(r'^orders/(?P<pk>\w+)/editmodal$', OrderUpdateModal.as_view(), name='CDNX_invoicing_ordersaless_editmodal'),
     url(r'^orders/(?P<pk>\w+)/delete$', OrderDelete.as_view(), name='CDNX_invoicing_ordersaless_delete'),
+    url(r'^orders/(?P<pk>\w+)/status/(?P<action>\w+)$', OrderStatus.as_view(), name='CDNX_invoicing_ordersaless_status'),
     url(r'^orders/(?P<pk>\w+)/createalbaran$', OrderCreateAlbaran.as_view(), name='CDNX_invoicing_ordersaless_create_albaran'),
     url(r'^orders/(?P<pk>\w+)/createticket$', OrderCreateTicket.as_view(), name='CDNX_invoicing_ordersaless_create_ticket'),
     url(r'^orders/(?P<pk>\w+)/createinvoice$', OrderCreateInvoice.as_view(), name='CDNX_invoicing_ordersaless_create_invoice'),
@@ -207,7 +208,7 @@ urlpatterns = [
     url(r'^lineinvoicerectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', LineInvoiceRectificationUpdateModal.as_view(), name='CDNX_invoicing_lineinvoicerectificationsaless_sublist_details'),
     url(r'^lineinvoicerectifications/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', LineInvoiceRectificationDelete.as_view(), name='CDNX_invoicing_lineinvoicerectificationsaless_sublist_delete'),
     url(r'^lineinvoicerectifications/foreign/(?P<search>[\w\W]+|\*)$', LineInvoiceRectificationForeign.as_view(), name='CDNX_invoicing_lineinvoicerectificationsaless_sublist_foreign'),
-   
+
     url(r'^reservedproducts$', ReservedProductList.as_view(), name='CDNX_invoicing_reservedproducts_list'),
     url(r'^reservedproducts/add$', ReservedProductCreate.as_view(), name='CDNX_invoicing_reservedproducts_add'),
     url(r'^reservedproducts/(?P<pk>\w+)/edit$', ReservedProductUpdate.as_view(), name='CDNX_invoicing_reservedproducts_edit'),
@@ -230,7 +231,7 @@ urlpatterns = [
     url(r'^nshoppingcarts/addmodal$', BasketCreateSHOPPINGCARTModal.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_addmodal'),
     url(r'^nbudgets/addmodal$', BasketCreateBUDGETModal.as_view(), name='CDNX_invoicing_salesbaskets_BUDGET_addmodal'),
     url(r'^nwishlists/addmodal$', BasketCreateWISHLISTModal.as_view(), name='CDNX_invoicing_salesbaskets_WISHLIST_addmodal'),
-    
+
     url(r'^nshoppingcarts/(?P<pk>\w+)/edit$', BasketUpdateSHOPPINGCART.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_edit'),
     url(r'^nbudgets/(?P<pk>\w+)/edit$', BasketUpdateBUDGET.as_view(), name='CDNX_invoicing_salesbaskets_BUDGET_edit'),
     url(r'^nwishlists/(?P<pk>\w+)/edit$', BasketUpdateWISHLIST.as_view(), name='CDNX_invoicing_salesbaskets_WISHLIST_edit'),
