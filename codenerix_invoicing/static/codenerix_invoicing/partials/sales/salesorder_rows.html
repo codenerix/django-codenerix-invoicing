@@ -29,14 +29,14 @@
 	CDNX_invoicing_order_delivered: row.status_order=='DE',
     }" ng-init='over=false'>
     <button 
-        class="btn btn-sm"
+        class="btn btn-sm status"
         ng-class="{'btn-default': !over, 'btn-info': over}"
         ng-controller="codenerixSalesDetailsCtrl"
         ng-click="order_status_next(row.pk); $event.stopPropagation();"
         ng-mouseover="over=true"
         ng-mouseleave="over=false">
-            <span ng-show='!over'>{{ row.get_status_order_display }}</span>
-            <span ng-repeat="(key, label) in data.meta.gentranslate.status_order_next" ng-show="over && key==row.status_order">
+            <span class="status_normal">{{ row.get_status_order_display }}</span>
+            <span class="status_hover" ng-repeat="(key, label) in data.meta.gentranslate.status_order_next" ng-if="key==row.status_order">
                 {{ label }}
             </span>
     </button>
