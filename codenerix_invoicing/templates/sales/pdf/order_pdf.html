@@ -26,7 +26,7 @@ limitations under the License.
 {% block modal_title %}{% endblock %}
 
 {% block modal_content %}
-
+<meta http-equiv="content-type" content="text/html; charset=utf-8"> 
 <style>
     @page {
         size: a4 portrait;
@@ -44,90 +44,207 @@ limitations under the License.
 
 
     }
+    .tbl_products{
+        border: 1px solid #dddddd;
+    }
+    .tbl_totals{
+        border: 0px solid #dddddd;
+    }
+    .tbl_observations{
+        border: 1px solid #dddddd;
+    }
+    .tbl_delivery{
+        border: 1px solid #dddddd;
+    }
+
+    .tbl_products th{
+        background-color: #eeeeee;
+    }
+    .text-right{
+        text-align: right;
+    }
+    .text-center{
+        text-align: center;
+    }
+    .tam_code{
+        width: 10%;
+    }
+    .tam_amount{
+        width: 20%;
+    }
+    .head_logo{
+        text-align: center;
+    }
+    .border_sup{
+        border-top: 1px solid #dddddd;
+    }
+    .border_izq{
+        border-left: 1px solid #dddddd;
+    }
+    .border_der{
+        border-right: 1px solid #dddddd;
+    }
+    .border_inf{
+        border-bottom: 1px solid #dddddd;
+    }
+    .total{
+        font-weight: bold;
+        font-size: +1;
+    }
+    .destacado{
+        font-weight: bold;
+    }
 </style>
 
 
 
 
 
-
-
-<table class="c-product-compare-table c-factura-print">
-	<thead>
-		<tr>
-            <th align="left" colspan="2" class="c-compare-info c-bg-white">
+<table class="head" border="0" cellpadding="2" cellspacing="2">
+    <tbody>
+        <tr>
+            <td rowspan="3" class="head_logo">
                 <img src="{{media_root}}{{corporate_image.company_logo}}" style="width: 250px" class="c-print-logo">
-            </th>
-            <th class="">
-                <p><strong>{{ corporate_image.business_name }}</strong></p>
-                <p><strong>{% trans "CIF:" %} {{customer.external.nid}}</strong></p>
-                <p>{% trans "Dirección:" %}</p>
-                <p>{{order.customer.external.address}}</p>
-                <p>{% trans "Teléfono:" %}</p>
-                <p>{{order.customer.external.phone}}</p>
-            </th>
-            <th class="c-print-encabezado">
-                <h1 class="c-font-uppercase c-font-bold c-theme-font">{% trans "ORDER" %}</h1>
-                <h2>{% trans "Número" %}</h2>
-                <p>{{order.code}}</p>
-                <h4>{% trans "Fecha" %}</h4>
-                <p>{{order.date}}</p>
-            </th>
+            </td>
+            <td class="head_company" colspan="3">
+                {{ corporate_image.business_name }}
+            </td>
         </tr>
         <tr>
-            <td>
-                <h2>{% trans "Detalles del Producto"%}</h2>
+            <td class="head_address" colspan="3">{{ corporate_image.address }}</td>
+            <td class="head_cif">{% trans "CIF/NIF" %}: {{ corporate_image.nid }}</td>
+        </tr>
+        <tr>
+            <td class="head_zipcode">{{ corporate_image.zipcode }}</td>
+            <td colspan="2" class="head_city">{{ corporate_image.city }}</td>
+            <td class="head_province">{{ corporate_image.province }}</td>
+        </tr>
+    </tbody>
+</table>
+<br />
+<table class="subhead" border="0" cellpadding="2" cellspacing="2">
+    <tbody>
+        <tr>
+            <td class="border_sup border_izq">{% trans "ORDER" %}</td>
+            <td class="border_sup border_der text-right">{{ order.code }}</td>
+            <td rowspan="4">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+            <td class="border_sup border_izq border_der" colspan="3">{% trans "CLIENTE" %}</td>
+        </tr>
+        <tr>
+            <td class="border_izq border_inf">{% trans "Date" %}</td>
+            <td class="border_der border_inf text-right">{{ order.date|date:'Y-m-d' }}</td>
+            <td class="border_izq" colspan="2">{{ order.customer.external }}</td>
+            <td class="border_der">{{ order.customer.external.nid }}</td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td class="border_der border_izq" colspan="3">{{ address_invoice.address }}</td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td class="border_izq border_inf">{{ address_invoice.zipcode }}</td>
+            <td class="border_inf">{{ address_invoice.city }}</td>
+            <td class="border_der border_inf">
+                {{ address_invoice.province }}
+                {% if address_invoice.province and address_invoice.country %}
+                /
+                {% endif %}
+                {{ address_invoice.country }}
             </td>
-            <td class="c-compare-item">
-                <h2>{% trans "Cantidad" %}</h2>
-            </td>
-            <td class="c-compare-item">
-                <h2>{% trans "Precio" %}</h2>
-            </td>
-             <td class="c-compare-item">
-                <h2>{% trans "Importe" %}</h2>
-            </td>
+        </tr>
+    </tbody>
+</table>
+<br />
+<table class="tbl_products" border="0" cellpadding="2" cellspacing="2">
+    <thead>
+        <tr>
+            <th class="tam_code">{% trans "Code"%}</th>
+            <th>{% trans "Description"%}</th>
+            <th class="tam_amount">{% trans "Quantity" %}</th>
+            <th class="tam_amount">{% trans "Price" %}</th>
+            <th class="tam_amount">{% trans "Amount" %}</th>
         </tr>
     </thead>
     <tbody>
-    	{% for lbs in line_order_sales %}
+        {% for lbs in line_order_sales %}
         <tr>
-            <td class="c-compare-info"> {{lbs.product}}</td>
-            <td class="c-compare-item"> {{lbs.quantity}}</td>
-            <td class="c-compare-item"> {{lbs.price}} </td>
-            <td class="c-compare-item"> {{lbs.total}}</td>
+            <td class="tam_code text-center"> {{ lbs.code | nicenull }}</td>
+            <td class=""> {{ lbs.product  }}</td>
+            <td class="tam_amount text-right"> {{ lbs.quantity }}</td>
+            <td class="tam_amount text-right"> {{ lbs.price_base|floatformat:"2" }} &euro;</td>
+            <td class="tam_amount text-right"> {{ lbs.total|floatformat:"2" }} &euro;</td>
         </tr>
         {% endfor %}
-
     </tbody>
-    <tfoot>
-        <tr>
-            <td>&nbsp;</td>
-            <td>&nbsp;</td>
-            <td>&nbsp;</td>
-            <td class="c-compare-item"> <h4 class="c-font-bold c-theme-font">{% trans "TOTAL" %}</h4> </td>
-        </tr>
-        	<tr><td>&nbsp;</td>
-            <td>&nbsp;</td>
-            <td>&nbsp;</td>
-            <td class="c-compare-item"> <h4 class="c-font-bold c-theme-font">{{total_order}}</h4> </td>
-        </tr>
-        <tr>
-            <td colspan="2" class="c-factura-print-40">
-                <p><strong>{% trans "Dirección de Facturación:" %}</strong> </p>
-                <p>{{order.customer.external.address}} </p>
-            </td>
-            <td colspan="2" class="c-factura-print-40">
-                <p><strong>{% trans "Dirección de Envío:" %}</strong> </p>
-                <p>{{send_address.address}}, {{send_address.city.name}}, {{send_address.country.name}} </p>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="4" class="c-factura-print-40">
-                <p><strong>{% trans "Nota" %}:</strong> {{order.observations | nicenull }} </p>
-            </td>
-        </tr>
-
-    </tfoot>
 </table>
+<br />
+<table class="tbl_totals" border="0" cellpadding="2" cellspacing="2">
+    <tbody>
+        <tr>
+            <td colspan="3">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+            <td class="text-right destacado">{% trans "Base imponible" %}</td>
+            <td class="text-right destacado">{{ total_order.subtotal|floatformat:"2" }} &euro;</td>
+        </tr>
+        {% for key, tax in total_order.taxes.items %}
+        <tr>
+            <td colspan="3">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+            <td class="text-right">
+                {% if tax.label %}
+                    {{ tax.label }}
+                {% else %}
+                    {{ key }} (%)
+                {% endif %}
+            </td>
+            <td class="text-right">{{ tax.amount|floatformat:"2" }} &euro;</td>
+        </tr>
+        {% endfor %}
+        {% for tax, amount in total_budget.discounts.items %}
+            {% if tax %}
+            <tr>
+                <td colspan="3">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                <td class="text-right">{% trans "Discount" %}: ({{ tax }} %)</td>
+                <td class="text-right">{{ amount|floatformat:"2" }} &euro;</td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+        {% for tax, amount in total_order.equivalence_surcharges %}
+        <tr>
+            <td colspan="3">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+            <td class="text-right">{% trans "Equivalence surchage" %}: {{ tax }}</td>
+            <td class="text-right">{{ amount|floatformat:"2" }} &euro;</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="3">&nbsp;&nbsp;&nbsp;&nbsp;</td>
+            <td class="text-right total">{% trans "Total" %}</td>
+            <td class="text-right total">{{ total_order.total|floatformat:"2"}} &euro;</td>
+        </tr>
+    </tbody>
+</table>
+<br />
+<table class="tbl_delivery" border="0" cellpadding="2" cellspacing="2">
+    <tbody>
+        <tr>
+            <td>
+                <span class="address_delivery">{% trans "Address delivery" %}:</span><br />
+                {{ order.budget.address_delivery | nicenull }}
+            </td>
+        </tr>
+    </tbody>
+</table>
+<br />
+<table class="tbl_observations" border="0" cellpadding="2" cellspacing="2">
+    <tbody>
+        <tr>
+            <td>
+                <span class="observations">{% trans "Observaciones" %}:</span><br />
+                {{ order.observations | nicenull }}
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+
 {% endblock %}

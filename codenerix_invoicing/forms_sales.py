@@ -185,7 +185,7 @@ class LineBasketForm(GenModelForm):
 
     class Meta:
         model = SalesLineBasket
-        exclude = ['basket', 'price_recommended', 'equivalence_surcharges', 'equivalence_surcharge']
+        exclude = ['basket', 'price_recommended', 'equivalence_surcharges', 'equivalence_surcharge', 'tax_label', 'code']
         autofill = {
             'product': ['select', 3, 'CDNX_products_productfinals_foreign_sales', ],
             'type_tax': ['select', 3, 'CDNX_products_typetaxs_foreing', ],
@@ -205,7 +205,7 @@ class LineBasketForm(GenModelForm):
                 ['type_tax', 6, {'extra': ['ng-controller=codenerixSalesLineBasketCtrl', 'ng-blur=update_price()']}],
                 ['tax', 6],
                 ['discount', 6],
-                ['notes', 6],)
+                ['notes', 12],)
         ]
         return g
 

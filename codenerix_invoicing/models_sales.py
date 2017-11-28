@@ -330,6 +330,11 @@ class Address(CodenerixModel):
             'foreignkey_address_delivery': ('CDNX_get_fk_info_address_delivery', _('---')),
             'foreignkey_address_invoice': ('CDNX_get_fk_info_address_invoice', _('---')),
             'get_summary': ('get_summary', ),
+            'get_address': ('get_address', ),
+            'get_zipcode': ('get_zipcode', ),
+            'get_city': ('get_city', ),
+            'get_province': ('get_province', ),
+            'get_country': ('get_country', ),
         }
 
     def __str__(self):
@@ -614,7 +619,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
         if force_save:
             self.save()
 
-    def calculate_price_doc_complete(self, queryset=None):
+    def calculate_price_doc_complete(self, queryset=None, details=False):
         # calculate totals with details
         if queryset:
             subtotal = 0
@@ -627,9 +632,18 @@ class GenVersion(CodenerixModel):  # META: Abstract class
 
                 if hasattr(line, 'tax'):
                     if line.tax not in tax:
-                        tax[line.tax] = 0
+                        if not details:
+                            tax[line.tax] = 0
+                        else:
+                            tax[line.tax] = {
+                                'label': line.tax_label,
+                                'amount': 0
+                            }
                     price_tax = line.taxes
-                    tax[line.tax] += price_tax
+                    if not details:
+                        tax[line.tax] += price_tax
+                    else:
+                        tax[line.tax]['amount'] += price_tax
                 else:
                     price_tax = 0
 
@@ -746,8 +760,9 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
     description = models.CharField(_("Description"), max_length=256, blank=True, null=True)
     discount = models.FloatField(_("Discount (%)"), blank=False, null=False, default=0)
     price_base = models.FloatField(_("Price base"), blank=False, null=False)
-    tax = models.FloatField(_("Tax"), blank=True, null=True, default=0)
+    tax = models.FloatField(_("Tax (%)"), blank=True, null=True, default=0)
     equivalence_surcharge = models.FloatField(_("Equivalence surcharge (%)"), blank=True, null=True, default=0)
+    tax_label = models.CharField(_("Tax Name"), max_length=250, blank=True, null=True)
 
     def __str__(self):
         description = ''
@@ -803,6 +818,14 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
 
         if hasattr(self, 'tax') and hasattr(self, 'type_tax'):
             self.tax = self.type_tax.tax
+
+        if hasattr(self, 'product'):
+            self.tax_label = self.product.product.tax.name
+            if self.product.code:
+                self.code = self.product.code
+            else:
+                self.code = self.product.product.code
+
         """
         si al guardar una linea asociada a un documento bloqueado (lock==True), duplicar el documento en una nueva versión
         """
@@ -1281,8 +1304,8 @@ class SalesBasket(GenVersion):
 
         return super(SalesBasket, self).lock_delete()
 
-    def calculate_price_doc_complete(self):
-        return super(SalesBasket, self).calculate_price_doc_complete(self.line_basket_sales.filter(removed=False))
+    def calculate_price_doc_complete(self, details=False):
+        return super(SalesBasket, self).calculate_price_doc_complete(self.line_basket_sales.filter(removed=False), details)
 
     def list_tickets(self):
         # retorna todos los tickets en los que hay lineas de la cesta
@@ -1444,8 +1467,8 @@ class SalesOrder(GenVersion):
     def calculate_price_doc(self):
         return self.total
 
-    def calculate_price_doc_complete(self):
-        return super(SalesOrder, self).calculate_price_doc_complete(self.line_order_sales.filter(removed=False))
+    def calculate_price_doc_complete(self, details=False):
+        return super(SalesOrder, self).calculate_price_doc_complete(self.line_order_sales.filter(removed=False), details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentOrder()
@@ -1572,8 +1595,8 @@ class SalesAlbaran(GenVersion):
     def calculate_price_doc(self):
         return self.total
 
-    def calculate_price_doc_complete(self):
-        return super(SalesAlbaran, self).calculate_price_doc_complete(self.line_albaran_sales.filter(removed=False))
+    def calculate_price_doc_complete(self, details=False):
+        return super(SalesAlbaran, self).calculate_price_doc_complete(self.line_albaran_sales.filter(removed=False), details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentAlbaran()
@@ -1673,8 +1696,8 @@ class SalesTicket(GenVersion):
     def calculate_price_doc(self):
         return self.total
 
-    def calculate_price_doc_complete(self):
-        return super(SalesTicket, self).calculate_price_doc_complete(self.line_ticket_sales.filter(removed=False))
+    def calculate_price_doc_complete(self, details=False):
+        return super(SalesTicket, self).calculate_price_doc_complete(self.line_ticket_sales.filter(removed=False), details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentTicket()
@@ -1737,8 +1760,8 @@ class SalesTicketRectification(GenInvoiceRectification):
     def calculate_price_doc(self):
         return self.total
 
-    def calculate_price_doc_complete(self):
-        return super(SalesTicketRectification, self).calculate_price_doc_complete(self.line_ticketrectification_sales.filter(removed=False))
+    def calculate_price_doc_complete(self, details=False):
+        return super(SalesTicketRectification, self).calculate_price_doc_complete(self.line_ticketrectification_sales.filter(removed=False), details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentTicketRectification()
@@ -1826,8 +1849,8 @@ class SalesInvoice(GenVersion):
     def calculate_price_doc(self):
         return self.total
 
-    def calculate_price_doc_complete(self):
-        return super(SalesInvoice, self).calculate_price_doc_complete(self.line_invoice_sales.filter(removed=False))
+    def calculate_price_doc_complete(self, details=False):
+        return super(SalesInvoice, self).calculate_price_doc_complete(self.line_invoice_sales.filter(removed=False), details)
 
     def get_customer(self):
         return self.customer
@@ -1889,8 +1912,8 @@ class SalesInvoiceRectification(GenInvoiceRectification):
     def calculate_price_doc(self):
         return self.total
 
-    def calculate_price_doc_complete(self):
-        return super(SalesInvoiceRectification, self).calculate_price_doc_complete(self.line_invoicerectification_sales.filter(removed=False))
+    def calculate_price_doc_complete(self, details=False):
+        return super(SalesInvoiceRectification, self).calculate_price_doc_complete(self.line_invoicerectification_sales.filter(removed=False), details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentInvoiceRectification()

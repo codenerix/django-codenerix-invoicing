@@ -268,6 +268,7 @@ class BasketListWISHLIST(GenBasketWISHLISTUrl, BasketList):
 class BasketDetails(GenBasketUrl, GenDetail):
     model = SalesBasket
     groups = BasketForm.__groups_details__()
+    template_model = "sales/basket_details.html"
     exclude_fields = ['parent_pk', 'payment']
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslinebaskets_sublist', 'rows': 'base'},
@@ -421,6 +422,76 @@ class BasketForeignShoppingCart(GenBasketSHOPPINGCARTUrl, GenForeignKey):
         return qs[:settings.LIMIT_FOREIGNKEY]
 
 
+class BasketPrint(PrinterHelper, GenBasketUrl, GenDetail):
+    model = SalesBasket
+    modelname = "list"
+    template_model = 'sales/pdf/budget_pdf.html'
+    output_filename = '{0}{1}{2}_budget'.format(datetime.datetime.now().year, datetime.datetime.now().month, datetime.datetime.now().day)
+
+    def get_context_data(self, **kwargs):
+        # Get context
+        context = super(BasketPrint, self).get_context_data(**kwargs)
+
+        budget = self.object
+        budget.print_counter(get_current_user())
+
+        # I take address for send.
+        if hasattr(budget.customer.external, 'person_address'):
+            send_address = budget.customer.external.person_address.filter(main=True).first()
+        else:
+            send_address = None
+
+        context["budget"] = budget
+        lines = []
+        total_order = 0
+        for line in budget.line_basket_sales.all():
+            base = (line.price_base * line.quantity)
+            subtotal = base + (base * line.tax / 100.0)
+            total_order += subtotal
+            lines.append({
+                'code': line.code,
+                'product': line.product,
+                'price_base': line.price_base,
+                'quantity': line.quantity,
+                'tax': line.tax,
+                'total': subtotal
+            })
+        if budget.address_invoice:
+            context['address_invoice'] = {
+                'address': budget.address_invoice.external_invoice.get_address(),
+                'zipcode': budget.address_invoice.external_invoice.get_zipcode(),
+                'city': budget.address_invoice.external_invoice.get_city(),
+                'province': budget.address_invoice.external_invoice.get_province(),
+                'country': budget.address_invoice.external_invoice.get_country(),
+            }
+        else:
+            context['address_invoice'] = {}
+        context['line_budget_sales'] = lines
+        context['total_budget'] = budget.calculate_price_doc_complete(details=True)
+        context['send_address'] = send_address
+        context['media_root'] = settings.MEDIA_ROOT + "/"
+        corporate_image = CorporateImage.objects.filter(public=True).first()
+        context["corporate_image"] = corporate_image
+        self.output_filename = "{0}".format(budget.date)
+
+        # bloqueo del documento
+        budget.lock = True
+        budget.save()
+        return context
+
+
+class BasketPrintSHOPPINGCART(GenBasketSHOPPINGCARTUrl, BasketPrint):
+    model = SalesBasket
+
+
+class BasketPrintBUDGET(GenBasketBUDGETUrl, BasketPrint):
+    model = SalesBasket
+
+
+class BasketPrintWISHLIST(GenBasketWISHLISTUrl, BasketPrint):
+    model = SalesBasket
+
+
 class BasketPassToBudget(View):
     def get(self, request, *args, **kwargs):
         raise Exception("get")
@@ -503,7 +574,6 @@ class BasketPassToOrder(View):
                 context['error'] = _("Hay lineas asignadas a pedidos")
         else:
             context['error'] = _('Budget not found')
-        print(context)
 
         try:
             json_answer = json.dumps(context)
@@ -898,14 +968,26 @@ class OrderPrint(PrinterHelper, GenOrderUrl, GenDetail):
             subtotal = base + (base * line.tax / 100.0)
             total_order += subtotal
             lines.append({
+                'code': line.code,
                 'product': line.product,
                 'price_base': line.price_base,
                 'quantity': line.quantity,
                 'tax': line.tax,
                 'total': subtotal
             })
+        if order.budget.address_invoice:
+            context['address_invoice'] = {
+                'address': order.budget.address_invoice.external_invoice.get_address(),
+                'zipcode': order.budget.address_invoice.external_invoice.get_zipcode(),
+                'city': order.budget.address_invoice.external_invoice.get_city(),
+                'province': order.budget.address_invoice.external_invoice.get_province(),
+                'country': order.budget.address_invoice.external_invoice.get_country(),
+            }
+        else:
+            context['address_invoice'] = {}
+            
         context['line_order_sales'] = lines
-        context['total_order'] = total_order
+        context['total_order'] = order.calculate_price_doc_complete(details=True)
         context['send_address'] = send_address
         context['media_root'] = settings.MEDIA_ROOT + "/"
         corporate_image = CorporateImage.objects.filter(public=True).first()

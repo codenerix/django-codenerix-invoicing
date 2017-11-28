@@ -67,6 +67,7 @@ from .views_sales import LineAlbaranForeign, LineTicketRectificationForeign, Lin
 from .views_sales import PrintCounterDocumentBasketSublist, PrintCounterDocumentOrderSublist, PrintCounterDocumentAlbaranSublist, PrintCounterDocumentTicketSublist, PrintCounterDocumentTicketRectificationSublist, PrintCounterDocumentInvoiceSublist, PrintCounterDocumentInvoiceRectificationSublist
 from .views_sales import OrderDocumentList, OrderDocumentCreate, OrderDocumentCreateModal, OrderDocumentUpdate, OrderDocumentUpdateModal, OrderDocumentDelete, OrderDocumentSubList, OrderDocumentDetails, OrderDocumentDetailModal
 
+from .views_sales import BasketPrintBUDGET
 
 urlpatterns = [
     url(r'^customers$', CustomerList.as_view(), name='CDNX_invoicing_customers_list'),
@@ -243,6 +244,8 @@ urlpatterns = [
 
     url(r'^nshoppingcarts/foreign/(?P<search>[\w\W]+|\*)$', BasketForeignShoppingCart.as_view(), name='CDNX_invoicing_salesbaskets_foreignkey_shoppingcart'),
     url(r'^nbudgets/foreign/(?P<search>[\w\W]+|\*)$', BasketForeignBudget.as_view(), name='CDNX_invoicing_salesbaskets_foreignkey_budget'),
+
+    url(r'^nbudgets/(?P<pk>\w+)/print$', BasketPrintBUDGET.as_view(), name='CDNX_invoicing_budgetsaless_print'),
 
     url(r'^linebaskets$', LineBasketList.as_view(), name='CDNX_invoicing_saleslinebaskets_list'),
     url(r'^linebaskets/add$', LineBasketCreate.as_view(), name='CDNX_invoicing_saleslinebaskets_add'),
