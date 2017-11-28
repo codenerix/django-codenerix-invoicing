@@ -27,19 +27,28 @@
 	CDNX_invoicing_order_paid: row.status_order=='PA',
 	CDNX_invoicing_order_sent: row.status_order=='SE',
 	CDNX_invoicing_order_delivered: row.status_order=='DE',
-    }" ng-init='over=false'>
-    <button 
-        class="btn btn-sm status"
-        ng-class="{'btn-default': !over, 'btn-info': over}"
-        ng-controller="codenerixSalesDetailsCtrl"
-        ng-click="order_status_next(row.pk); $event.stopPropagation();"
-        ng-mouseover="over=true"
-        ng-mouseleave="over=false">
-            <span class="status_normal">{{ row.get_status_order_display }}</span>
-            <span class="status_hover" ng-repeat="(key, label) in data.meta.gentranslate.status_order_next" ng-if="key==row.status_order">
-                {{ label }}
-            </span>
-    </button>
+    }"
+    ng-init='over=false'>
+    <div ng-repeat="(key, label) in data.meta.gentranslate.status_order_next">
+        <button
+            ng-if="key==row.status_order && label"
+            class="btn btn-sm status"
+            ng-class="{'btn-default': !over, 'btn-info': over}"
+            ng-click="order_status_next(row.pk); $event.stopPropagation();"
+            ng-mouseover="over=true"
+            ng-mouseleave="over=false">
+                <span class="status_normal">{{ row.get_status_order_display }}</span>
+                <span class="status_hover" ng-repeat="(key, label) in data.meta.gentranslate.status_order_next" ng-if="key==row.status_order">
+                    {{ label }}
+                </span>
+        </button>
+        <button
+            class="btn btn-sm status btn-default"
+            ng-click='$event.stopPropagation();'
+            ng-if="key==row.status_order && !label">
+                {{ row.get_status_order_display }}
+        </button>
+    </div>
 </td>
 <td ng-class="{
 	CDNX_invoicing_order_pending: row.status_order=='PE',
