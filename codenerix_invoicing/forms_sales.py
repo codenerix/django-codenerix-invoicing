@@ -29,7 +29,7 @@ from codenerix_products.models import TypeTax
 from .models_sales import Address
 from .models_sales import Customer, CustomerDocument
 from .models_sales import SalesBasket, SalesLineBasket
-from .models_sales import SalesOrder, SalesLineOrder
+from .models_sales import SalesOrder, SalesLineOrder, SalesOrderDocument
 from .models_sales import SalesAlbaran, SalesLineAlbaran
 from .models_sales import SalesTicket, SalesLineTicket
 from .models_sales import SalesTicketRectification, SalesLineTicketRectification
@@ -37,7 +37,6 @@ from .models_sales import SalesInvoice, SalesLineInvoice
 from .models_sales import SalesInvoiceRectification, SalesLineInvoiceRectification
 from .models_sales import SalesReservedProduct
 from .models_sales import ReasonModification, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
-
 
 
 class CustomerForm(GenModelForm):
@@ -433,6 +432,61 @@ class LineOrderFormEdit(LineOrderForm):
                 ['discount', 6],
                 ['reason', 6],
                 ['notes', 12])
+        ]
+        return g
+
+
+class OrderDocumentForm(GenModelForm):
+    class Meta:
+        model = SalesOrderDocument
+        exclude = ['name_file']
+        widgets = {
+            'notes': WysiwygAngularInput()
+        }
+
+    def __groups__(self):
+        g = [
+            (
+                _('Details'), 12,
+                ['order', 6],
+                ['kind', 6],
+                ['doc_path', 6],
+                ['notes', 12],
+            ),
+        ]
+        return g
+
+    @staticmethod
+    def __groups_details__():
+        g = [
+            (
+                _('Details'), 12,
+                ['order', 6],
+                ['name_file', 6],
+                ['kind', 6],
+                ['doc_path', 6],
+                ['notes', 6],
+            )
+        ]
+        return g
+
+
+class OrderDocumentSublistForm(GenModelForm):
+    class Meta:
+        model = SalesOrderDocument
+        exclude = ['name_file', 'order']
+        widgets = {
+            'notes': WysiwygAngularInput()
+        }
+
+    def __groups__(self):
+        g = [
+            (
+                _('Details'), 12,
+                ['kind', 6],
+                ['doc_path', 6],
+                ['notes', 12],
+            ),
         ]
         return g
 

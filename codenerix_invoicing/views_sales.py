@@ -48,7 +48,7 @@ from codenerix_invoicing.models_sales import Customer, CustomerDocument, \
     SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, \
     SalesLineInvoiceRectification, SalesReservedProduct, SalesBasket, SalesLineBasket
 from codenerix_invoicing.models_sales import ROLE_BASKET_SHOPPINGCART, ROLE_BASKET_BUDGET, ROLE_BASKET_WISHLIST, STATUS_ORDER
-from codenerix_invoicing.models_sales import SalesLineBasketOption
+from codenerix_invoicing.models_sales import SalesLineBasketOption, SalesOrderDocument
 
 from codenerix_invoicing.forms_sales import CustomerForm, CustomerDocumentForm
 from codenerix_invoicing.forms_sales import OrderForm, LineOrderForm, LineOrderFormEdit, OrderFromBudgetForm, OrderFromShoppingCartForm
@@ -59,6 +59,8 @@ from codenerix_invoicing.forms_sales import InvoiceForm, LineInvoiceForm
 from codenerix_invoicing.forms_sales import InvoiceRectificationForm, InvoiceRectificationUpdateForm, LineInvoiceRectificationForm, LineInvoiceRectificationLinkedForm
 from codenerix_invoicing.forms_sales import ReservedProductForm
 from codenerix_invoicing.forms_sales import BasketForm, LineBasketForm, LineBasketFormPack
+from codenerix_invoicing.forms_sales import OrderDocumentForm, OrderDocumentSublistForm
+
 from codenerix_invoicing.views import PrinterHelper
 
 from .models_sales import ReasonModification, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
@@ -852,6 +854,7 @@ class OrderDetails(GenOrderUrl, GenDetail):
     exclude_fields = ['parent_pk']
     tabs = [
         {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineordersaless_sublist', 'rows': 'base'},
+        {'id': 'documents', 'name': _('Documents'), 'ws': 'CDNX_invoicing_salesorderdocuments_sublist', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlineorders_sublist', 'rows': 'base'},
         {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumentorders_sublist', 'rows': 'base'},
     ]
@@ -1229,6 +1232,83 @@ class LineOrderForeignCustom(GenLineOrderUrl, GenForeignKey):
             raise TypeError("The structure can not be encoded to JSON")
         # Return the new answer
         return HttpResponse(json_answer, content_type='application/json')
+
+
+# ###########################################
+class GenOrderDocumentUrl(object):
+    ws_entry_point = '{}/orderdocuments'.format(settings.CDNX_INVOICING_URL_SALES)
+
+
+# OrderDocument
+class OrderDocumentList(GenOrderDocumentUrl, GenList):
+    model = SalesOrderDocument
+    extra_context = {'menu': ['OrderDocument', 'sales'], 'bread': [_('OrderDocument'), _('Sales')]}
+
+    def __limitQ__(self, info):
+        limit = {}
+        limit['removed'] = Q(removed=False)
+        return limit
+
+
+class OrderDocumentCreate(GenOrderDocumentUrl, DocumentFileView, GenCreate):
+    model = SalesOrderDocument
+    form_class = OrderDocumentForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        if self.__pk:
+            self.form_class = OrderDocumentSublistForm
+        return super(OrderDocumentCreate, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        if self.__pk:
+            obj = SalesOrder.objects.get(pk=self.__pk)
+            self.request.order = obj
+            form.instance.order = obj
+        return super(OrderDocumentCreate, self).form_valid(form)
+
+
+class OrderDocumentCreateModal(GenCreateModal, OrderDocumentCreate):
+    pass
+
+
+class OrderDocumentUpdate(GenOrderDocumentUrl, DocumentFileView, GenUpdate):
+    model = SalesOrderDocument
+    form_class = OrderDocumentForm
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('cpk', None)
+        if self.__pk:
+            self.form_class = OrderDocumentSublistForm
+        return super(OrderDocumentUpdate, self).dispatch(*args, **kwargs)
+
+
+class OrderDocumentUpdateModal(GenUpdateModal, OrderDocumentUpdate):
+    pass
+
+
+class OrderDocumentDelete(GenOrderDocumentUrl, GenDelete):
+    model = SalesOrderDocument
+
+
+class OrderDocumentSubList(GenOrderDocumentUrl, GenList):
+    model = SalesOrderDocument
+    extra_context = {'menu': ['SalesOrderDocument', 'sales'], 'bread': [_('SalesOrderDocument'), _('Sales')]}
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(order__pk=pk)
+        return limit
+
+
+class OrderDocumentDetails(GenDetail):
+    model = SalesOrderDocument
+    groups = OrderDocumentForm.__groups_details__()
+
+
+class OrderDocumentDetailModal(GenDetailModal, OrderDocumentDetails):
+    pass
 
 
 # ###########################################

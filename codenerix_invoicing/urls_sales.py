@@ -65,6 +65,8 @@ from .views_sales import ReasonModificationLineInvoiceRectificationList, ReasonM
 
 from .views_sales import LineAlbaranForeign, LineTicketRectificationForeign, LineInvoiceRectificationForeign
 from .views_sales import PrintCounterDocumentBasketSublist, PrintCounterDocumentOrderSublist, PrintCounterDocumentAlbaranSublist, PrintCounterDocumentTicketSublist, PrintCounterDocumentTicketRectificationSublist, PrintCounterDocumentInvoiceSublist, PrintCounterDocumentInvoiceRectificationSublist
+from .views_sales import OrderDocumentList, OrderDocumentCreate, OrderDocumentCreateModal, OrderDocumentUpdate, OrderDocumentUpdateModal, OrderDocumentDelete, OrderDocumentSubList, OrderDocumentDetails, OrderDocumentDetailModal
+
 
 urlpatterns = [
     url(r'^customers$', CustomerList.as_view(), name='CDNX_invoicing_customers_list'),
@@ -394,5 +396,19 @@ urlpatterns = [
     url(r'^printcounterdocumentinvoices/(?P<pk>\w+)/sublist$', PrintCounterDocumentInvoiceSublist.as_view(), name='CDNX_invoicing_printcounterdocumentinvoices_sublist'),
     url(r'^printcounterdocumentinvoicerectifications/(?P<pk>\w+)/sublist$', PrintCounterDocumentInvoiceRectificationSublist.as_view(), name='CDNX_invoicing_printcounterdocumentinvoicerectifications_sublist'),
 
+    url(r'^salesorderdocuments$', OrderDocumentList.as_view(), name='CDNX_invoicing_salesorderdocuments_list'),
+    url(r'^salesorderdocuments/add$', OrderDocumentCreate.as_view(), name='CDNX_invoicing_salesorderdocuments_add'),
+    url(r'^salesorderdocuments/addmodal$', OrderDocumentCreateModal.as_view(), name='CDNX_invoicing_salesorderdocuments_addmodal'),
+    url(r'^salesorderdocuments/(?P<pk>\w+)$', OrderDocumentDetails.as_view(), name='CDNX_invoicing_salesorderdocuments_details'),
+    url(r'^salesorderdocuments/(?P<pk>\w+)/edit$', OrderDocumentUpdate.as_view(), name='CDNX_invoicing_salesorderdocuments_edit'),
+    url(r'^salesorderdocuments/(?P<pk>\w+)/editmodal$', OrderDocumentUpdateModal.as_view(), name='CDNX_invoicing_salesorderdocuments_editmodal'),
+    url(r'^salesorderdocuments/(?P<pk>\w+)/delete$', OrderDocumentDelete.as_view(), name='CDNX_invoicing_salesorderdocuments_delete'),
+    url(r'^salesorderdocuments/(?P<pk>\w+)/sublist$', OrderDocumentSubList.as_view(), name='CDNX_invoicing_salesorderdocuments_sublist'),
+    url(r'^salesorderdocuments/(?P<pk>\w+)/sublist/add$', OrderDocumentCreateModal.as_view(), name='CDNX_invoicing_salesorderdocuments_sublist_add'),
+    url(r'^salesorderdocuments/(?P<pk>\w+)/sublist/addmodal$', OrderDocumentCreateModal.as_view(), name='CDNX_invoicing_salesorderdocuments_sublist_addmodal'),
+    url(r'^salesorderdocuments/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', OrderDocumentDetailModal.as_view(), name='CDNX_invoicing_salesorderdocuments_sublist_details'),
+    url(r'^salesorderdocuments/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/edit$', OrderDocumentUpdateModal.as_view(), name='CDNX_invoicing_salesorderdocuments_sublist_edit'),
+    url(r'^salesorderdocuments/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', OrderDocumentUpdateModal.as_view(), name='CDNX_invoicing_salesorderdocuments_sublist_editmodal'),
+    url(r'^salesorderdocuments/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', OrderDocumentDelete.as_view(), name='CDNX_invoicing_salesorderdocuments_sublist_delete'),
 
 ]
