@@ -356,8 +356,9 @@ class OrderForm(GenModelForm):
                 ['lock', 6],
             ),
         ]
-        for info in info_customer:
-            g.append(info)
+        if info_customer:
+            for info in info_customer:
+                g.append(info)
         g.append(
             (
                 _('Total'), 12,
@@ -796,12 +797,15 @@ class InvoiceForm(GenModelForm):
     @staticmethod
     def __groups_details__():
         g = [
-            (_('Details'), 12,
+            (
+                _('Details'), 12,
                 ['customer', 6],
                 ['date', 6],
                 ['code', 6],
                 ['billing_series', 6],
-                ['observations', 6],),
+                ['observations', 6],
+                ['summary_invoice']
+            ),
             (
                 _('Total'), 12,
                 ['subtotal', 6],
