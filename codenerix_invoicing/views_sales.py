@@ -248,6 +248,7 @@ class BasketListSHOPPINGCART(GenBasketSHOPPINGCARTUrl, BasketList):
     def __limitQ__(self, info):
         limit = {}
         limit['role'] = Q(role=ROLE_BASKET_SHOPPINGCART)
+        limit['removed'] = Q(removed=False)
         return limit
 
 
@@ -255,6 +256,7 @@ class BasketListBUDGET(GenBasketBUDGETUrl, BasketList):
     def __limitQ__(self, info):
         limit = {}
         limit['role'] = Q(role=ROLE_BASKET_BUDGET)
+        limit['removed'] = Q(removed=False)
         return limit
 
 
@@ -262,6 +264,7 @@ class BasketListWISHLIST(GenBasketWISHLISTUrl, BasketList):
     def __limitQ__(self, info):
         limit = {}
         limit['role'] = Q(role=ROLE_BASKET_WISHLIST)
+        limit['removed'] = Q(removed=False)
         return limit
 
 
@@ -593,6 +596,11 @@ class LineBasketList(GenList):
     model = SalesLineBasket
     extra_context = {'menu': ['SalesLineBasket', 'sales'], 'bread': [_('SalesLineBasket'), _('Sales')]}
 
+    def __limitQ__(self, info):
+        limit = {}
+        limit['removed'] = Q(removed=False)
+        return limit
+
 
 class LineBasketCreate(GenLineBasketUrl, GenCreate):
     model = SalesLineBasket
@@ -804,6 +812,7 @@ class LineBasketSubList(GenLineBasketUrl, GenList):
         limit = {}
         pk = info.kwargs.get('pk', None)
         limit['file_link'] = Q(basket__pk=pk)
+        limit['removed'] = Q(removed=False)
         return limit
 
 
@@ -851,17 +860,23 @@ class OrderList(GenOrderUrl, GenList):
     static_partial_row = "codenerix_invoicing/partials/sales/salesorder_rows.html"
 
     def __init__(self, *args, **kwargs):
-        new={}
-        last=None
+        new = {}
+        last = None
         for (key, trans) in STATUS_ORDER:
             if last:
-                new[last]=str(trans)
-                last=key
+                new[last] = str(trans)
+                last = key
             else:
-                last=key
+                last = key
         new[key] = None
         self.gentrans['status_order_next'] = new
         return super(OrderList, self).__init__(*args, **kwargs)
+
+    def __limitQ__(self, info):
+        limit = {}
+        limit['removed'] = Q(removed=False)
+        return limit
+
 
 class OrderCreate(GenOrderUrl, GenCreate):
     model = SalesOrder
@@ -1161,6 +1176,11 @@ class LineOrderList(GenLineOrderUrl, GenList):
     model = SalesLineOrder
     extra_context = {'menu': ['LineOrder', 'sales'], 'bread': [_('LineOrder'), _('Sales')]}
 
+    def __limitQ__(self, info):
+        limit = {}
+        limit['removed'] = Q(removed=False)
+        return limit
+
 
 class LineOrderCreate(GenLineOrderUrl, GenCreate):
     model = SalesLineOrder
@@ -1252,6 +1272,7 @@ class LineOrderSubList(GenLineOrderUrl, GenList):
         limit = {}
         pk = info.kwargs.get('pk', None)
         limit['file_link'] = Q(order__pk=pk)
+        limit['removed'] = Q(removed=False)
         return limit
 
     def get_context_data(self, **kwargs):
@@ -1360,7 +1381,7 @@ class OrderDocumentList(GenOrderDocumentUrl, GenList):
 
     def __limitQ__(self, info):
         limit = {}
-        limit['removed'] = Q(removed=False)
+        limit['removed'] = Q(order__removed=False)
         return limit
 
 
@@ -1413,6 +1434,7 @@ class OrderDocumentSubList(GenOrderDocumentUrl, GenList):
         limit = {}
         pk = info.kwargs.get('pk', None)
         limit['link'] = Q(order__pk=pk)
+        limit['removed'] = Q(order__removed=False)
         return limit
 
 
@@ -1437,6 +1459,11 @@ class AlbaranList(GenAlbaranUrl, GenList):
     template_model = "sales/albaran_list.html"
     extra_context = {'menu': ['Albaran', 'sales'], 'bread': [_('Albaran'), _('Sales')]}
     default_ordering = "-created"
+
+    def __limitQ__(self, info):
+        limit = {}
+        limit['removed'] = Q(removed=False)
+        return limit
 
 
 class AlbaranCreate(GenAlbaranUrl, GenCreate):
@@ -1582,6 +1609,11 @@ class LineAlbaranList(GenLineAlbaranUrl, GenList):
     model = SalesLineAlbaran
     extra_context = {'menu': ['LineAlbaran', 'sales'], 'bread': [_('LineAlbaran'), _('Sales')]}
 
+    def __limitQ__(self, info):
+        limit = {}
+        limit['removed'] = Q(removed=False)
+        return limit
+
 
 class LineAlbaranCreate(GenLineAlbaranUrl, GenCreate):
     model = SalesLineAlbaran
@@ -1674,12 +1706,13 @@ class LineAlbaranSubList(GenLineAlbaranUrl, GenList):
             self.linkadd = True
             self.linkedit = True
             self.field_delete = True
-        return super(LineOrderSubList, self).dispatch(*args, **kwargs)
+        return super(LineAlbaranSubList, self).dispatch(*args, **kwargs)
 
     def __limitQ__(self, info):
         limit = {}
         pk = info.kwargs.get('pk', None)
         limit['file_link'] = Q(albaran__pk=pk)
+        limit['removed'] = Q(removed=False)
         return limit
 
     def get_context_data(self, **kwargs):
@@ -1729,6 +1762,11 @@ class TicketList(GenTicketUrl, GenList):
     template_model = "sales/ticket_list.html"
     extra_context = {'menu': ['Ticket', 'sales'], 'bread': [_('Ticket'), _('Sales')]}
     default_ordering = "-created"
+
+    def __limitQ__(self, info):
+        limit = {}
+        limit['removed'] = Q(removed=False)
+        return limit
 
 
 class TicketCreate(GenTicketUrl, GenCreate):
@@ -1897,6 +1935,11 @@ class LineTicketList(GenLineTicketUrl, GenList):
     model = SalesLineTicket
     extra_context = {'menu': ['LineTicket', 'sales'], 'bread': [_('LineTicket'), _('Sales')]}
 
+    def __limitQ__(self, info):
+        limit = {}
+        limit['removed'] = Q(removed=False)
+        return limit
+
 
 class LineTicketCreate(GenLineTicketUrl, GenCreate):
     model = SalesLineTicket
@@ -2018,6 +2061,7 @@ class LineTicketSubList(GenLineTicketUrl, GenList):
         limit = {}
         pk = info.kwargs.get('pk', None)
         limit['file_link'] = Q(ticket__pk=pk)
+        limit['removed'] = Q(removed=False)
         return limit
 
     def get_context_data(self, **kwargs):
@@ -2076,6 +2120,11 @@ class TicketRectificationList(GenTicketRectificationUrl, GenList):
     show_details = True
     extra_context = {'menu': ['TicketRectification', 'sales'], 'bread': [_('TicketRectification'), _('Sales')]}
     default_ordering = "-created"
+
+    def __limitQ__(self, info):
+        limit = {}
+        limit['removed'] = Q(removed=False)
+        return limit
 
 
 class TicketRectificationCreate(GenTicketRectificationUrl, GenCreate):
@@ -2191,6 +2240,11 @@ class LineTicketRectificationList(GenLineTicketRectificationUrl, GenList):
     model = SalesLineTicketRectification
     extra_context = {'menu': ['LineTicketRectification', 'sales'], 'bread': [_('LineTicketRectification'), _('Sales')]}
 
+    def __limitQ__(self, info):
+        limit = {}
+        limit['removed'] = Q(removed=False)
+        return limit
+
 
 class LineTicketRectificationCreate(GenLineTicketRectificationUrl, GenCreate):
     model = SalesLineTicketRectification
@@ -2289,6 +2343,7 @@ class LineTicketRectificationSubList(GenLineTicketRectificationUrl, GenList):
         limit = {}
         pk = info.kwargs.get('pk', None)
         limit['file_link'] = Q(ticket_rectification__pk=pk)
+        limit['removed'] = Q(removed=False)
         return limit
 
 
@@ -2491,6 +2546,11 @@ class LineInvoiceList(GenLineInvoiceUrl, GenList):
     model = SalesLineInvoice
     extra_context = {'menu': ['LineInvoice', 'sales'], 'bread': [_('LineInvoice'), _('Sales')]}
 
+    def __limitQ__(self, info):
+        limit = {}
+        limit['removed'] = Q(removed=False)
+        return limit
+
 
 class LineInvoiceCreate(GenLineInvoiceUrl, GenCreate):
     model = SalesLineInvoice
@@ -2604,6 +2664,7 @@ class LineInvoiceSubList(GenLineInvoiceUrl, GenList):
         limit = {}
         pk = info.kwargs.get('pk', None)
         limit['file_link'] = Q(invoice__pk=pk)
+        limit['removed'] = Q(removed=False)
         return limit
 
     def get_context_data(self, **kwargs):
@@ -2661,6 +2722,11 @@ class InvoiceRectificationList(GenInvoiceRectificationUrl, GenList):
     show_details = True
     extra_context = {'menu': ['InvoiceRectification', 'sales'], 'bread': [_('InvoiceRectification'), _('Sales')]}
     default_ordering = "-created"
+
+    def __limitQ__(self, info):
+        limit = {}
+        limit['removed'] = Q(removed=False)
+        return limit
 
 
 class InvoiceRectificationCreate(GenInvoiceRectificationUrl, GenCreate):
@@ -2776,6 +2842,11 @@ class LineInvoiceRectificationList(GenLineInvoiceRectificationUrl, GenList):
     model = SalesLineInvoiceRectification
     extra_context = {'menu': ['LineInvoiceRectification', 'sales'], 'bread': [_('LineInvoiceRectification'), _('Sales')]}
 
+    def __limitQ__(self, info):
+        limit = {}
+        limit['removed'] = Q(removed=False)
+        return limit
+
 
 class LineInvoiceRectificationCreate(GenLineInvoiceRectificationUrl, GenCreate):
     model = SalesLineInvoiceRectification
@@ -2879,6 +2950,7 @@ class LineInvoiceRectificationSubList(GenLineInvoiceRectificationUrl, GenList):
         limit = {}
         pk = info.kwargs.get('pk', None)
         limit['file_link'] = Q(invoice_rectification__pk=pk)
+        limit['removed'] = Q(removed=False)
         return limit
 
 

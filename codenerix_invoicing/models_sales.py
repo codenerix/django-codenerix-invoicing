@@ -914,6 +914,8 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
                             line_final.tax = line_src.tax
                             # line_final.type_tax = line_src.type_tax
                             line_final.discount = line_src.discount
+                            if 'removed' in src_list_fields and 'removed' in dst_list_fields:
+                                line_final.removed = line_src.removed
                             line_final.save()
 
                             if hasattr(line_src, 'line_basket_option_sales') and line_src.line_basket_option_sales.exists():
