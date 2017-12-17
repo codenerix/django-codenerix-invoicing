@@ -51,7 +51,7 @@ class ShoppingCartProxy(object):
         self.__ws_line = None
         self.__wos_line = None
 
-        if request.user.is_authenticated():
+        if request.user.is_authenticated
             customer = request.user.person.customer
             if customer:
                 self._apply_surcharge = customer.apply_equivalence_surcharge
