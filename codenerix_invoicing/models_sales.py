@@ -20,7 +20,7 @@
 
 import copy
 import datetime
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import models, transaction, IntegrityError
 from django.utils import timezone
 from django.utils.encoding import smart_text
@@ -242,7 +242,7 @@ class Customer(GenRole, CodenerixModel):
 
     currency = models.CharField(_("Currency"), max_length=250, blank=True, null=True)
     # serie de facturacion
-    billing_series = models.ForeignKey(BillingSeries, related_name='billing_series', verbose_name='Billing series')
+    billing_series = models.ForeignKey(BillingSeries, related_name='billing_series', verbose_name='Billing series', on_delete=models.CASCADE)
     # datos de facturación
     # saldo final
     final_balance = models.CharField(_("Balance"), max_length=250, blank=True, null=True)
@@ -251,7 +251,7 @@ class Customer(GenRole, CodenerixModel):
     # Aplicar recargo de equivalencia
     apply_equivalence_surcharge = models.BooleanField(_("Apply equivalence surcharge"), blank=False, default=False)
     # Tipo de iva
-    type_tax = models.ForeignKey(TypeTax, related_name='customers', verbose_name=_("Type tax"), null=True)
+    type_tax = models.ForeignKey(TypeTax, related_name='customers', verbose_name=_("Type tax"), null=True, on_delete=models.CASCADE)
     default_customer = models.BooleanField(_("Default customer"), blank=False, default=False)
 
     @staticmethod
@@ -407,8 +407,8 @@ class GenAddressInvoice(GenAddress):  # META: Abstract class
 
 # documentos de clientes
 class CustomerDocument(CodenerixModel, GenDocumentFile):
-    customer = models.ForeignKey(Customer, related_name='customer_documents', verbose_name=_("Customer"))
-    type_document = models.ForeignKey('TypeDocument', related_name='customer_documents', verbose_name=_("Type document"), null=True)
+    customer = models.ForeignKey(Customer, related_name='customer_documents', verbose_name=_("Customer"), on_delete=models.CASCADE)
+    type_document = models.ForeignKey('TypeDocument', related_name='customer_documents', verbose_name=_("Type document"), null=True, on_delete=models.CASCADE)
 
     def __str__(self):
         return u"{}".format(smart_text(self.customer))
@@ -1171,8 +1171,8 @@ class GenInvoiceRectification(GenVersion):  # META: Abstract class
 
 # reserva de productos
 class SalesReservedProduct(CodenerixModel):
-    customer = models.ForeignKey(Customer, related_name='reservedproduct_sales', verbose_name=_("Customer"))
-    product = models.ForeignKey(ProductFinal, related_name='reservedproduct_sales', verbose_name=_("Product"))
+    customer = models.ForeignKey(Customer, related_name='reservedproduct_sales', verbose_name=_("Customer"), on_delete=models.CASCADE)
+    product = models.ForeignKey(ProductFinal, related_name='reservedproduct_sales', verbose_name=_("Product"), on_delete=models.CASCADE)
     quantity = models.FloatField(_("Quantity"), blank=False, null=False)
 
     def __str__(self):
@@ -1192,18 +1192,18 @@ class SalesReservedProduct(CodenerixModel):
 
 # nueva cesta de la compra
 class SalesBasket(GenVersion):
-    customer = models.ForeignKey(Customer, related_name='basket_sales', verbose_name=_("Customer"))
-    pos_slot = models.ForeignKey(POSSlot, related_name='basket_sales', verbose_name=_("Point of Sales"), null=True)
+    customer = models.ForeignKey(Customer, related_name='basket_sales', verbose_name=_("Customer"), on_delete=models.CASCADE)
+    pos_slot = models.ForeignKey(POSSlot, related_name='basket_sales', verbose_name=_("Point of Sales"), null=True, on_delete=models.CASCADE)
     role = models.CharField(_("Role basket"), max_length=2, choices=ROLE_BASKET, blank=False, null=False, default=ROLE_BASKET_SHOPPINGCART)
     signed = models.BooleanField(_("Signed"), blank=False, default=False)
     public = models.BooleanField(_("Public"), blank=False, default=False)
     payment = models.ManyToManyField(PaymentRequest, verbose_name=_(u"Payment Request"), blank=True, related_name='basket_sales')
     name = models.CharField(_("Name"), max_length=250, blank=False, null=False)
-    address_delivery = models.ForeignKey(Address, related_name='order_sales_delivery', verbose_name=_("Address delivery"), blank=True, null=True)
-    address_invoice = models.ForeignKey(Address, related_name='order_sales_invoice', verbose_name=_("Address invoice"), blank=True, null=True)
+    address_delivery = models.ForeignKey(Address, related_name='order_sales_delivery', verbose_name=_("Address delivery"), blank=True, null=True, on_delete=models.CASCADE)
+    address_invoice = models.ForeignKey(Address, related_name='order_sales_invoice', verbose_name=_("Address invoice"), blank=True, null=True, on_delete=models.CASCADE)
     expiration_date = models.DateTimeField(_("Expiration date"), blank=True, null=True, editable=False)
-    haulier = models.ForeignKey(Haulier, related_name='basket_sales', verbose_name=_("Haulier"), blank=True, null=True)
-    billing_series = models.ForeignKey(BillingSeries, related_name='basket_sales', verbose_name='Billing series', blank=False, null=False)
+    haulier = models.ForeignKey(Haulier, related_name='basket_sales', verbose_name=_("Haulier"), blank=True, null=True, on_delete=models.CASCADE)
+    billing_series = models.ForeignKey(BillingSeries, related_name='basket_sales', verbose_name='Billing series', blank=False, null=False, on_delete=models.CASCADE)
 
     def __str__(self):
         return u"Order-{}".format(smart_text(self.code))
@@ -1334,8 +1334,8 @@ class SalesBasket(GenVersion):
 
 # nueva linea de la cesta de la compra
 class SalesLineBasket(GenLineProduct):
-    basket = models.ForeignKey(SalesBasket, related_name='line_basket_sales', verbose_name=_("Basket"))
-    product = models.ForeignKey(ProductFinal, related_name='line_basket_sales', verbose_name=_("Product"))
+    basket = models.ForeignKey(SalesBasket, related_name='line_basket_sales', verbose_name=_("Basket"), on_delete=models.CASCADE)
+    product = models.ForeignKey(ProductFinal, related_name='line_basket_sales', verbose_name=_("Product"), on_delete=models.CASCADE)
 
     def __fields__(self, info):
         fields = super(SalesLineBasket, self).__fields__(info)
@@ -1411,9 +1411,9 @@ class SalesLineBasket(GenLineProduct):
 
 
 class SalesLineBasketOption(CodenerixModel):
-    line_budget = models.ForeignKey(SalesLineBasket, related_name='line_basket_option_sales', verbose_name=_("Line budget"))
-    product_option = models.ForeignKey(ProductFinalOption, related_name='line_basket_option_sales', verbose_name=_("Option"))
-    product_final = models.ForeignKey(ProductFinal, related_name='line_basket_option_sales', verbose_name=_("Product"))
+    line_budget = models.ForeignKey(SalesLineBasket, related_name='line_basket_option_sales', verbose_name=_("Line budget"), on_delete=models.CASCADE)
+    product_option = models.ForeignKey(ProductFinalOption, related_name='line_basket_option_sales', verbose_name=_("Option"), on_delete=models.CASCADE)
+    product_final = models.ForeignKey(ProductFinal, related_name='line_basket_option_sales', verbose_name=_("Product"), on_delete=models.CASCADE)
     quantity = models.FloatField(_("Quantity"), blank=False, null=False)
 
     def __str__(self):
@@ -1433,15 +1433,15 @@ class SalesLineBasketOption(CodenerixModel):
 
 # pedidos
 class SalesOrder(GenVersion):
-    budget = models.OneToOneField(SalesBasket, related_name='order_sales', verbose_name=_("Budget"), null=True, blank=True)
-    customer = models.ForeignKey(Customer, related_name='order_sales', verbose_name=_("Customer"))
-    storage = models.ForeignKey(Storage, related_name='order_sales', verbose_name=_("Storage"), blank=True, null=True)
-    payment = models.ForeignKey(PaymentRequest, related_name='order_sales', verbose_name=_(u"Payment Request"), blank=True, null=True)
+    budget = models.OneToOneField(SalesBasket, related_name='order_sales', verbose_name=_("Budget"), null=True, blank=True, on_delete=models.CASCADE)
+    customer = models.ForeignKey(Customer, related_name='order_sales', verbose_name=_("Customer"), on_delete=models.CASCADE)
+    storage = models.ForeignKey(Storage, related_name='order_sales', verbose_name=_("Storage"), blank=True, null=True, on_delete=models.CASCADE)
+    payment = models.ForeignKey(PaymentRequest, related_name='order_sales', verbose_name=_(u"Payment Request"), blank=True, null=True, on_delete=models.CASCADE)
     number_tracking = models.CharField(_("Number of tracking"), max_length=128, blank=True, null=True)
     status_order = models.CharField(_("Status"), max_length=2, choices=STATUS_ORDER, blank=False, null=False, default='PE')
     payment_detail = models.CharField(_("Payment detail"), max_length=3, choices=PAYMENT_DETAILS, blank=True, null=True)
     source = models.CharField(_("Source of purchase"), max_length=250, blank=True, null=True)
-    billing_series = models.ForeignKey(BillingSeries, related_name='order_sales', verbose_name='Billing series', blank=False, null=False)
+    billing_series = models.ForeignKey(BillingSeries, related_name='order_sales', verbose_name='Billing series', blank=False, null=False, on_delete=models.CASCADE)
 
     def __str__(self):
         return u"{}".format(smart_text(self.code))
@@ -1505,9 +1505,9 @@ class SalesOrder(GenVersion):
 
 # lineas de pedidos
 class SalesLineOrder(GenLineProduct):
-    order = models.ForeignKey(SalesOrder, related_name='line_order_sales', verbose_name=_("Sales order"))
-    line_budget = models.OneToOneField(SalesLineBasket, related_name='line_order_sales', verbose_name=_("Line budget"), null=True)
-    product = models.ForeignKey(ProductFinal, related_name='line_order_sales', verbose_name=_("Product"))
+    order = models.ForeignKey(SalesOrder, related_name='line_order_sales', verbose_name=_("Sales order"), on_delete=models.CASCADE)
+    line_budget = models.OneToOneField(SalesLineBasket, related_name='line_order_sales', verbose_name=_("Line budget"), null=True, on_delete=models.CASCADE)
+    product = models.ForeignKey(ProductFinal, related_name='line_order_sales', verbose_name=_("Product"), on_delete=models.CASCADE)
 
     def __fields__(self, info):
         fields = super(SalesLineOrder, self).__fields__(info)
@@ -1536,9 +1536,9 @@ class SalesLineOrder(GenLineProduct):
 
 
 class SalesLineOrderOption(CodenerixModel):
-    line_order = models.ForeignKey(SalesLineOrder, related_name='line_order_option_sales', verbose_name=_("Line Order"))
-    product_option = models.ForeignKey(ProductFinalOption, related_name='line_order_option_sales', verbose_name=_("Option"))
-    product_final = models.ForeignKey(ProductFinal, related_name='line_order_option_sales', verbose_name=_("Product"))
+    line_order = models.ForeignKey(SalesLineOrder, related_name='line_order_option_sales', verbose_name=_("Line Order"), on_delete=models.CASCADE)
+    product_option = models.ForeignKey(ProductFinalOption, related_name='line_order_option_sales', verbose_name=_("Option"), on_delete=models.CASCADE)
+    product_final = models.ForeignKey(ProductFinal, related_name='line_order_option_sales', verbose_name=_("Product"), on_delete=models.CASCADE)
     quantity = models.FloatField(_("Quantity"), blank=False, null=False)
 
     def __str__(self):
@@ -1558,8 +1558,8 @@ class SalesLineOrderOption(CodenerixModel):
 
 # documentos de pedidos
 class SalesOrderDocument(CodenerixModel, GenDocumentFile):
-    order = models.ForeignKey(SalesOrder, related_name='order_document_sales', verbose_name=_("Sales order"))
-    kind = models.ForeignKey(TypeDocument, related_name='order_document_sales', verbose_name=_('Document type'), blank=False, null=False)
+    order = models.ForeignKey(SalesOrder, related_name='order_document_sales', verbose_name=_("Sales order"), on_delete=models.CASCADE)
+    kind = models.ForeignKey(TypeDocument, related_name='order_document_sales', verbose_name=_('Document type'), blank=False, null=False, on_delete=models.CASCADE)
     notes = models.TextField(_("Notes"), max_length=256, blank=True, null=True)
 
     def __str__(self):
@@ -1578,7 +1578,7 @@ class SalesOrderDocument(CodenerixModel, GenDocumentFile):
 # albaranes
 class SalesAlbaran(GenVersion):
     summary_delivery = models.TextField(_("Address delivery"), max_length=256, blank=True, null=True)
-    billing_series = models.ForeignKey(BillingSeries, related_name='albaran_sales', verbose_name='Billing series', blank=False, null=False)
+    billing_series = models.ForeignKey(BillingSeries, related_name='albaran_sales', verbose_name='Billing series', blank=False, null=False, on_delete=models.CASCADE)
 
     def __str__(self):
         return u"{}".format(smart_text(self.code))
@@ -1618,8 +1618,8 @@ class SalesAlbaran(GenVersion):
 
 # lineas de albaranes
 class SalesLineAlbaran(GenLineProductBasic):
-    albaran = models.ForeignKey(SalesAlbaran, related_name='line_albaran_sales', verbose_name=_("Albaran"))
-    line_order = models.ForeignKey(SalesLineOrder, related_name='line_albaran_sales', verbose_name=_("Line orders"), null=True)
+    albaran = models.ForeignKey(SalesAlbaran, related_name='line_albaran_sales', verbose_name=_("Albaran"), on_delete=models.CASCADE)
+    line_order = models.ForeignKey(SalesLineOrder, related_name='line_albaran_sales', verbose_name=_("Line orders"), null=True, on_delete=models.CASCADE)
     invoiced = models.BooleanField(_("Invoiced"), blank=False, default=False)
 
     def __str__(self):
@@ -1671,8 +1671,8 @@ class SalesLineAlbaran(GenLineProductBasic):
 
 # ticket y facturas son lo mismo con un check de "tengo datos del customere"
 class SalesTicket(GenVersion):
-    customer = models.ForeignKey(Customer, related_name='ticket_sales', verbose_name=_("Customer"))
-    billing_series = models.ForeignKey(BillingSeries, related_name='ticket_sales', verbose_name='Billing series', blank=False, null=False)
+    customer = models.ForeignKey(Customer, related_name='ticket_sales', verbose_name=_("Customer"), on_delete=models.CASCADE)
+    billing_series = models.ForeignKey(BillingSeries, related_name='ticket_sales', verbose_name='Billing series', blank=False, null=False, on_delete=models.CASCADE)
     # user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='order_sales', verbose_name=_("User"))
 
     def save(self, *args, **kwargs):
@@ -1718,8 +1718,8 @@ class SalesTicket(GenVersion):
 
 
 class SalesLineTicket(GenLineProduct):
-    ticket = models.ForeignKey(SalesTicket, related_name='line_ticket_sales', verbose_name=_("Ticket"))
-    line_order = models.ForeignKey(SalesLineOrder, related_name='line_ticket_sales', verbose_name=_("Line order"), null=True)
+    ticket = models.ForeignKey(SalesTicket, related_name='line_ticket_sales', verbose_name=_("Ticket"), on_delete=models.CASCADE)
+    line_order = models.ForeignKey(SalesLineOrder, related_name='line_ticket_sales', verbose_name=_("Line order"), null=True, on_delete=models.CASCADE)
 
     def __fields__(self, info):
         fields = super(SalesLineTicket, self).__fields__(info)
@@ -1750,8 +1750,8 @@ class SalesLineTicket(GenLineProduct):
 # puede haber facturas o tickets rectificativos
 # factura rectificativa
 class SalesTicketRectification(GenInvoiceRectification):
-    ticket = models.ForeignKey(SalesTicket, related_name='ticketrectification_sales', verbose_name=_("Ticket"), null=True)
-    billing_series = models.ForeignKey(BillingSeries, related_name='ticketrectification_sales', verbose_name='Billing series', blank=False, null=False)
+    ticket = models.ForeignKey(SalesTicket, related_name='ticketrectification_sales', verbose_name=_("Ticket"), null=True, on_delete=models.CASCADE)
+    billing_series = models.ForeignKey(BillingSeries, related_name='ticketrectification_sales', verbose_name='Billing series', blank=False, null=False, on_delete=models.CASCADE)
 
     def __fields__(self, info):
         fields = super(SalesTicketRectification, self).__fields__(info)
@@ -1782,8 +1782,8 @@ class SalesTicketRectification(GenInvoiceRectification):
 
 
 class SalesLineTicketRectification(GenLineProductBasic):
-    ticket_rectification = models.ForeignKey(SalesTicketRectification, related_name='line_ticketrectification_sales', verbose_name=_("Ticket rectification"))
-    line_ticket = models.ForeignKey(SalesLineTicket, related_name='line_ticketrectification_sales', verbose_name=_("Line ticket"))
+    ticket_rectification = models.ForeignKey(SalesTicketRectification, related_name='line_ticketrectification_sales', verbose_name=_("Ticket rectification"), on_delete=models.CASCADE)
+    line_ticket = models.ForeignKey(SalesLineTicket, related_name='line_ticketrectification_sales', verbose_name=_("Line ticket"), on_delete=models.CASCADE)
 
     def __fields__(self, info):
         fields = []
@@ -1828,9 +1828,9 @@ class SalesLineTicketRectification(GenLineProductBasic):
 # facturas
 # una factura puede contener varios ticket o albaranes
 class SalesInvoice(GenVersion):
-    customer = models.ForeignKey(Customer, related_name='invoice_sales', verbose_name=_("Customer"))
+    customer = models.ForeignKey(Customer, related_name='invoice_sales', verbose_name=_("Customer"), on_delete=models.CASCADE)
     summary_invoice = models.TextField(_("Address invoice"), max_length=256, blank=True, null=True)
-    billing_series = models.ForeignKey(BillingSeries, related_name='invoice_sales', verbose_name='Billing series')
+    billing_series = models.ForeignKey(BillingSeries, related_name='invoice_sales', verbose_name='Billing series', on_delete=models.CASCADE)
 
     def __str__(self):
         return u"{}".format(smart_text(self.code))
@@ -1874,8 +1874,8 @@ class SalesInvoice(GenVersion):
 
 
 class SalesLineInvoice(GenLineProduct):
-    invoice = models.ForeignKey(SalesInvoice, related_name='line_invoice_sales', verbose_name=_("Invoice"))
-    line_order = models.ForeignKey(SalesLineOrder, related_name='line_invoice_sales', verbose_name=_("Line order"), null=True)
+    invoice = models.ForeignKey(SalesInvoice, related_name='line_invoice_sales', verbose_name=_("Invoice"), on_delete=models.CASCADE)
+    line_order = models.ForeignKey(SalesLineOrder, related_name='line_invoice_sales', verbose_name=_("Line order"), null=True, on_delete=models.CASCADE)
 
     def __fields__(self, info):
         fields = super(SalesLineInvoice, self).__fields__(info)
@@ -1902,8 +1902,8 @@ class SalesLineInvoice(GenLineProduct):
 
 # factura rectificativa
 class SalesInvoiceRectification(GenInvoiceRectification):
-    invoice = models.ForeignKey(SalesInvoice, related_name='invoicerectification_sales', verbose_name=_("Invoice"), null=True)
-    billing_series = models.ForeignKey(BillingSeries, related_name='invoicerectification_sales', verbose_name='Billing series', blank=False, null=False)
+    invoice = models.ForeignKey(SalesInvoice, related_name='invoicerectification_sales', verbose_name=_("Invoice"), null=True, on_delete=models.CASCADE)
+    billing_series = models.ForeignKey(BillingSeries, related_name='invoicerectification_sales', verbose_name='Billing series', blank=False, null=False, on_delete=models.CASCADE)
 
     def __fields__(self, info):
         fields = super(SalesInvoiceRectification, self).__fields__(info)
@@ -1934,8 +1934,8 @@ class SalesInvoiceRectification(GenInvoiceRectification):
 
 
 class SalesLineInvoiceRectification(GenLineProductBasic):
-    invoice_rectification = models.ForeignKey(SalesInvoiceRectification, related_name='line_invoicerectification_sales', verbose_name=_("Invoice rectification"))
-    line_invoice = models.ForeignKey(SalesLineInvoice, related_name='line_invoicerectification_sales', verbose_name=_("Line invoice"))
+    invoice_rectification = models.ForeignKey(SalesInvoiceRectification, related_name='line_invoicerectification_sales', verbose_name=_("Invoice rectification"), on_delete=models.CASCADE)
+    line_invoice = models.ForeignKey(SalesLineInvoice, related_name='line_invoicerectification_sales', verbose_name=_("Line invoice"), on_delete=models.CASCADE)
 
     def __fields__(self, info):
         fields = []
@@ -2026,45 +2026,45 @@ class ReasonModificationLine(CodenerixModel):  # META: Abstract class
 
 
 class ReasonModificationLineBasket(ReasonModificationLine):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_basket', verbose_name=_("User"))
-    reason = models.ForeignKey(ReasonModification, related_name='reason_line_basket', verbose_name=_("Reason"))
-    line = models.ForeignKey(SalesLineBasket, related_name='reason_line_basket', verbose_name=_("Line"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_basket', verbose_name=_("User"), on_delete=models.CASCADE)
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_basket', verbose_name=_("Reason"), on_delete=models.CASCADE)
+    line = models.ForeignKey(SalesLineBasket, related_name='reason_line_basket', verbose_name=_("Line"), on_delete=models.CASCADE)
 
 
 class ReasonModificationLineOrder(ReasonModificationLine):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_order', verbose_name=_("User"))
-    reason = models.ForeignKey(ReasonModification, related_name='reason_line_order', verbose_name=_("Reason"))
-    line = models.ForeignKey(SalesLineOrder, related_name='reason_line_order', verbose_name=_("Line"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_order', verbose_name=_("User"), on_delete=models.CASCADE)
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_order', verbose_name=_("Reason"), on_delete=models.CASCADE)
+    line = models.ForeignKey(SalesLineOrder, related_name='reason_line_order', verbose_name=_("Line"), on_delete=models.CASCADE)
 
 
 class ReasonModificationLineAlbaran(ReasonModificationLine):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_albaran', verbose_name=_("User"))
-    reason = models.ForeignKey(ReasonModification, related_name='reason_line_albaran', verbose_name=_("Reason"))
-    line = models.ForeignKey(SalesLineAlbaran, related_name='reason_line_albaran', verbose_name=_("Line"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_albaran', verbose_name=_("User"), on_delete=models.CASCADE)
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_albaran', verbose_name=_("Reason"), on_delete=models.CASCADE)
+    line = models.ForeignKey(SalesLineAlbaran, related_name='reason_line_albaran', verbose_name=_("Line"), on_delete=models.CASCADE)
 
 
 class ReasonModificationLineTicket(ReasonModificationLine):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_ticket', verbose_name=_("User"))
-    reason = models.ForeignKey(ReasonModification, related_name='reason_line_ticket', verbose_name=_("Reason"))
-    line = models.ForeignKey(SalesLineTicket, related_name='reason_line_ticket', verbose_name=_("Line"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_ticket', verbose_name=_("User"), on_delete=models.CASCADE)
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_ticket', verbose_name=_("Reason"), on_delete=models.CASCADE)
+    line = models.ForeignKey(SalesLineTicket, related_name='reason_line_ticket', verbose_name=_("Line"), on_delete=models.CASCADE)
 
 
 class ReasonModificationLineTicketRectification(ReasonModificationLine):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_ticket_rectification', verbose_name=_("User"))
-    reason = models.ForeignKey(ReasonModification, related_name='reason_line_ticket_rectification', verbose_name=_("Reason"))
-    line = models.ForeignKey(SalesLineTicketRectification, related_name='reason_line_ticket_rectification', verbose_name=_("Line"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_ticket_rectification', verbose_name=_("User"), on_delete=models.CASCADE)
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_ticket_rectification', verbose_name=_("Reason"), on_delete=models.CASCADE)
+    line = models.ForeignKey(SalesLineTicketRectification, related_name='reason_line_ticket_rectification', verbose_name=_("Line"), on_delete=models.CASCADE)
 
 
 class ReasonModificationLineInvoice(ReasonModificationLine):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_invoice', verbose_name=_("User"))
-    reason = models.ForeignKey(ReasonModification, related_name='reason_line_invoice', verbose_name=_("Reason"))
-    line = models.ForeignKey(SalesLineInvoice, related_name='reason_line_invoice', verbose_name=_("Line"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_invoice', verbose_name=_("User"), on_delete=models.CASCADE)
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_invoice', verbose_name=_("Reason"), on_delete=models.CASCADE)
+    line = models.ForeignKey(SalesLineInvoice, related_name='reason_line_invoice', verbose_name=_("Line"), on_delete=models.CASCADE)
 
 
 class ReasonModificationLineInvoiceRectification(ReasonModificationLine):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_invoice_rectification', verbose_name=_("User"))
-    reason = models.ForeignKey(ReasonModification, related_name='reason_line_invoice_rectification', verbose_name=_("Reason"))
-    line = models.ForeignKey(SalesLineInvoiceRectification, related_name='reason_line_invoice_rectification', verbose_name=_("Line"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_invoice_rectification', verbose_name=_("User"), on_delete=models.CASCADE)
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_invoice_rectification', verbose_name=_("Reason"), on_delete=models.CASCADE)
+    line = models.ForeignKey(SalesLineInvoiceRectification, related_name='reason_line_invoice_rectification', verbose_name=_("Line"), on_delete=models.CASCADE)
 
 
 # Print counter per document
@@ -2090,35 +2090,35 @@ class PrintCounterDocument(CodenerixModel):  # META: Abstract class
 
 
 class PrintCounterDocumentBasket(PrintCounterDocument):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_basket', verbose_name=_("User"))
-    basket = models.ForeignKey(SalesBasket, related_name='print_counter_document_basket', verbose_name=_("Document"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_basket', verbose_name=_("User"), on_delete=models.CASCADE)
+    basket = models.ForeignKey(SalesBasket, related_name='print_counter_document_basket', verbose_name=_("Document"), on_delete=models.CASCADE)
 
 
 class PrintCounterDocumentOrder(PrintCounterDocument):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_order', verbose_name=_("User"))
-    order = models.ForeignKey(SalesOrder, related_name='print_counter_document_order', verbose_name=_("Document"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_order', verbose_name=_("User"), on_delete=models.CASCADE)
+    order = models.ForeignKey(SalesOrder, related_name='print_counter_document_order', verbose_name=_("Document"), on_delete=models.CASCADE)
 
 
 class PrintCounterDocumentAlbaran(PrintCounterDocument):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_albaran', verbose_name=_("User"))
-    albaran = models.ForeignKey(SalesAlbaran, related_name='print_counter_document_albaran', verbose_name=_("Document"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_albaran', verbose_name=_("User"), on_delete=models.CASCADE)
+    albaran = models.ForeignKey(SalesAlbaran, related_name='print_counter_document_albaran', verbose_name=_("Document"), on_delete=models.CASCADE)
 
 
 class PrintCounterDocumentTicket(PrintCounterDocument):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_ticket', verbose_name=_("User"))
-    ticket = models.ForeignKey(SalesTicket, related_name='print_counter_document_ticket', verbose_name=_("Document"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_ticket', verbose_name=_("User"), on_delete=models.CASCADE)
+    ticket = models.ForeignKey(SalesTicket, related_name='print_counter_document_ticket', verbose_name=_("Document"), on_delete=models.CASCADE)
 
 
 class PrintCounterDocumentTicketRectification(PrintCounterDocument):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_ticket_rectification', verbose_name=_("User"))
-    ticket_rectification = models.ForeignKey(SalesTicketRectification, related_name='print_counter_document_ticket_rectification', verbose_name=_("Document"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_ticket_rectification', verbose_name=_("User"), on_delete=models.CASCADE)
+    ticket_rectification = models.ForeignKey(SalesTicketRectification, related_name='print_counter_document_ticket_rectification', verbose_name=_("Document"), on_delete=models.CASCADE)
 
 
 class PrintCounterDocumentInvoice(PrintCounterDocument):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_invoice', verbose_name=_("User"))
-    invoice = models.ForeignKey(SalesInvoice, related_name='print_counter_document_invoice', verbose_name=_("Document"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_invoice', verbose_name=_("User"), on_delete=models.CASCADE)
+    invoice = models.ForeignKey(SalesInvoice, related_name='print_counter_document_invoice', verbose_name=_("Document"), on_delete=models.CASCADE)
 
 
 class PrintCounterDocumentInvoiceRectification(PrintCounterDocument):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_invoice_rectification', verbose_name=_("User"))
-    invoice_rectification = models.ForeignKey(SalesInvoiceRectification, related_name='print_counter_document_invoice_rectification', verbose_name=_("Document"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_invoice_rectification', verbose_name=_("User"), on_delete=models.CASCADE)
+    invoice_rectification = models.ForeignKey(SalesInvoiceRectification, related_name='print_counter_document_invoice_rectification', verbose_name=_("Document"), on_delete=models.CASCADE)

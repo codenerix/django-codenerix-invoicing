@@ -32,8 +32,8 @@ from codenerix_pos.models import POS, POSSlot
 
 
 class CashDiary(CodenerixModel):
-    pos = models.ForeignKey(POS, related_name='cash_movements', verbose_name=_("Point of Sales"), null=True)
-    opened_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='opened_cash_diarys', verbose_name=_("User"))
+    pos = models.ForeignKey(POS, related_name='cash_movements', verbose_name=_("Point of Sales"), null=True, on_delete=models.CASCADE)
+    opened_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='opened_cash_diarys', verbose_name=_("User"), on_delete=models.CASCADE)
     opened_date = models.DateTimeField(_("Opened Date"), blank=False, null=False)
     opened_cash = models.FloatField(_("Opened Cash"), blank=False, null=False)
     opened_cash_extra = models.FloatField(_("Opened Cash Deviation"), blank=True, null=True, default=None)
@@ -41,7 +41,7 @@ class CashDiary(CodenerixModel):
     opened_cards = models.FloatField(_("Opened Cards"), blank=False, null=False)
     opened_cards_extra = models.FloatField(_("Opened Cards Deviation"), blank=True, null=True, default=None)
     opened_cards_notes = models.TextField(_("Opened Cards Notes"), blank=True, null=False, default="")
-    closed_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='closed_cash_diarys', verbose_name=_("User"), blank=True, null=True)
+    closed_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='closed_cash_diarys', verbose_name=_("User"), blank=True, null=True, on_delete=models.CASCADE)
     closed_date = models.DateTimeField(_("Closed Date"), blank=True, null=True)
     closed_cash = models.FloatField(_("Closed Cash"), blank=True, null=True)
     closed_cash_extra = models.FloatField(_("Closed Cash Deviation"), blank=True, null=True, default=None)
@@ -181,11 +181,11 @@ class CashDiary(CodenerixModel):
 
 
 class CashMovement(CodenerixModel):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='cash_movements', verbose_name=_("User"))
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='cash_movements', verbose_name=_("User"), on_delete=models.CASCADE)
 
     order = models.ManyToManyField(SalesOrder, related_name='cash_movements', verbose_name=_("Sales orders"), symmetrical=False, blank=False)
-    cash_diary = models.ForeignKey(CashDiary, related_name='cash_movements', verbose_name=_("Cash diary"), null=False)
-    pos_slot = models.ForeignKey(POSSlot, related_name='cash_movements', verbose_name=_("Slot"), null=True)
+    cash_diary = models.ForeignKey(CashDiary, related_name='cash_movements', verbose_name=_("Cash diary"), null=False, on_delete=models.CASCADE)
+    pos_slot = models.ForeignKey(POSSlot, related_name='cash_movements', verbose_name=_("Slot"), null=True, on_delete=models.CASCADE)
     kind = models.CharField(_("Kind"), max_length=3, choices=PAYMENT_DETAILS, blank=False, null=False)
     kind_card = models.CharField(_("Kind Card"), max_length=3, choices=KIND_CARD, blank=True, null=True)
     date_movement = models.DateTimeField(_("Date of movement"), blank=False, null=False)

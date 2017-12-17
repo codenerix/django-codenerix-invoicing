@@ -144,15 +144,15 @@ for info in MODELS:
     model = info[1]
     for lang_code in settings.LANGUAGES_DATABASES:
         query = "class {}Text{}(TypeDocumentText):\n".format(model, lang_code)
-        query += "  {} = models.OneToOneField({}, blank=False, null=False, related_name='{}')\n".format(field, model, lang_code.lower())
+        query += "  {} = models.OneToOneField({}, on_delete=models.CASCADE, blank=False, null=False, related_name='{}')\n".format(field, model, lang_code.lower())
         exec(query)
 
 
 # relación almacen-producto-cantidad
 class ProductStock(CodenerixModel):
-    line_albaran = models.ForeignKey(PurchasesLineAlbaran, related_name='product_stocks', verbose_name=_("Line albaran"), null=False, blank=False)
+    line_albaran = models.ForeignKey(PurchasesLineAlbaran, on_delete=models.CASCADE, related_name='product_stocks', verbose_name=_("Line albaran"), null=False, blank=False)
     batch = models.ForeignKey(StorageBatch, related_name='product_stocks', verbose_name=_("Batch"), null=False, blank=False, on_delete=models.PROTECT)
-    product_final = models.ForeignKey(ProductFinal, related_name='product_stocks', verbose_name=_("Product"), null=False, blank=False)
+    product_final = models.ForeignKey(ProductFinal, on_delete=models.CASCADE, related_name='product_stocks', verbose_name=_("Product"), null=False, blank=False)
     quantity = models.FloatField(_("Quantity"), null=False, blank=False)
 
     def __fields__(self, info):
@@ -190,8 +190,8 @@ class StockMovement(CodenerixModel):
 
 
 class StockMovementProduct(CodenerixModel):
-    stock_movement = models.ForeignKey(StockMovement, related_name='stock_movement_products', verbose_name=_("Stock movement"), null=False, blank=False)
-    product_final = models.ForeignKey(ProductFinal, related_name='stock_movement_products', verbose_name=_("Product"), null=False, blank=False)
+    stock_movement = models.ForeignKey(StockMovement, on_delete=models.CASCADE, related_name='stock_movement_products', verbose_name=_("Stock movement"), null=False, blank=False)
+    product_final = models.ForeignKey(ProductFinal, on_delete=models.CASCADE, related_name='stock_movement_products', verbose_name=_("Product"), null=False, blank=False)
     quantity = models.FloatField(_("Quantity"), null=False, blank=False)
 
     def __fields__(self, info):

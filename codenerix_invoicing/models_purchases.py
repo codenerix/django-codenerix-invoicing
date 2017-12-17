@@ -176,8 +176,8 @@ class Provider(GenRole, CodenerixModel):
     balance = models.CharField(_("Balance"), max_length=250, blank=True, null=True)
     # credito o riesgo maximo autorizado
     credit = models.CharField(_("Credit"), max_length=250, blank=True, null=True)
-    billing_series = models.ForeignKey("BillingSeries", related_name='providers', verbose_name='Billing series', blank=True, null=True)
-    type_tax = models.ForeignKey(TypeTax, related_name='providers', verbose_name=_("Type tax"), null=True)
+    billing_series = models.ForeignKey("BillingSeries", on_delete=models.CASCADE, related_name='providers', verbose_name='Billing series', blank=True, null=True)
+    type_tax = models.ForeignKey(TypeTax, on_delete=models.CASCADE, related_name='providers', verbose_name=_("Type tax"), null=True)
     shipping_tax = models.FloatField(_("Impuesto de gastos de envio"), blank=True, null=True)
     finance_surcharge = models.CharField(_("Finance surcharge"), max_length=1, choices=FINANCE_SURCHARGE_STATUS_CHOICE, blank=True, null=True)
     payment_methods = models.CharField(_("Payment methods"), max_length=3, choices=PAYMENT_DETAILS, blank=True, null=True)
@@ -222,13 +222,13 @@ class GenProvider(GenInterface, ABSTRACT_GenProvider):  # META: Abstract class
 
 # presupuestos
 class PurchasesBudget(GenPurchase):
-    provider = models.ForeignKey(Provider, related_name='budget_purchases', verbose_name=_("Provider"))
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='budget_purchases', verbose_name=_("Provider"))
 
 
 # lineas de presupuestos
 class PurchasesLineBudget(GenLineProduct):
-    budget = models.ForeignKey(PurchasesBudget, related_name='line_budget_purchases', verbose_name=_("Budget"))
-    product = models.ForeignKey(ProductFinal, related_name='line_budget_purchases', verbose_name=_("Product"), null=True)
+    budget = models.ForeignKey(PurchasesBudget, on_delete=models.CASCADE, related_name='line_budget_purchases', verbose_name=_("Budget"))
+    product = models.ForeignKey(ProductFinal, on_delete=models.CASCADE, related_name='line_budget_purchases', verbose_name=_("Product"), null=True)
 
     def __fields__(self, info):
         fields = super(PurchasesLineBudget, self).__fields__(info)
@@ -238,7 +238,7 @@ class PurchasesLineBudget(GenLineProduct):
 
 # documentos asociados a los presupuestos
 class PurchasesBudgetDocument(GenBillingDocument):
-    budget = models.ForeignKey(PurchasesBudget, related_name='budgetdocument_purchases', verbose_name=_("Budget"))
+    budget = models.ForeignKey(PurchasesBudget, on_delete=models.CASCADE, related_name='budgetdocument_purchases', verbose_name=_("Budget"))
 
     def __fields__(self, info):
         fields = super(PurchasesBudgetDocument, self).__fields__(info)
@@ -248,8 +248,8 @@ class PurchasesBudgetDocument(GenBillingDocument):
 
 # pedidos
 class PurchasesOrder(GenPurchase):
-    provider = models.ForeignKey(Provider, related_name='order_purchases', verbose_name=_("Provider"))
-    budget = models.ForeignKey(PurchasesBudget, related_name='order_purchases', verbose_name=_("Budget"), null=True, blank=True)
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='order_purchases', verbose_name=_("Provider"))
+    budget = models.ForeignKey(PurchasesBudget, on_delete=models.CASCADE, related_name='order_purchases', verbose_name=_("Budget"), null=True, blank=True)
 
     def __fields__(self, info):
         fields = []
@@ -263,9 +263,9 @@ class PurchasesOrder(GenPurchase):
 
 # lineas de pedidos
 class PurchasesLineOrder(GenLineProduct):
-    order = models.ForeignKey(PurchasesOrder, related_name='line_order_purchases', verbose_name=_("Purchase order"))
-    line_budget = models.ForeignKey(PurchasesLineBudget, related_name='line_order_purchases', verbose_name=_("Line budget"), null=True, blank=True)
-    product = models.ForeignKey(ProductFinal, related_name='line_order_purchases', verbose_name=_("Product"), null=True, blank=True)
+    order = models.ForeignKey(PurchasesOrder, on_delete=models.CASCADE, related_name='line_order_purchases', verbose_name=_("Purchase order"))
+    line_budget = models.ForeignKey(PurchasesLineBudget, on_delete=models.CASCADE, related_name='line_order_purchases', verbose_name=_("Line budget"), null=True, blank=True)
+    product = models.ForeignKey(ProductFinal, on_delete=models.CASCADE, related_name='line_order_purchases', verbose_name=_("Product"), null=True, blank=True)
 
     def __fields__(self, info):
         fields = super(PurchasesLineOrder, self).__fields__(info)
@@ -276,7 +276,7 @@ class PurchasesLineOrder(GenLineProduct):
 
 # documentos asociados a los pedidos
 class PurchasesOrderDocument(GenBillingDocument):
-    order = models.ForeignKey(PurchasesOrder, related_name='orderdocument_purchases', verbose_name=_("Purchases order"))
+    order = models.ForeignKey(PurchasesOrder, on_delete=models.CASCADE, related_name='orderdocument_purchases', verbose_name=_("Purchases order"))
 
     def __fields__(self, info):
         fields = super(PurchasesOrderDocument, self).__fields__(info)
@@ -286,14 +286,14 @@ class PurchasesOrderDocument(GenBillingDocument):
 
 # albaranes
 class PurchasesAlbaran(GenPurchase):
-    provider = models.ForeignKey(Provider, related_name='albaran_purchases', verbose_name=_("Provider"))
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='albaran_purchases', verbose_name=_("Provider"))
 
 
 # lineas de albaranes
 class PurchasesLineAlbaran(GenLineProduct):
-    albaran = models.ForeignKey(PurchasesAlbaran, related_name='line_albaran_purchases', verbose_name=_("Albaran"))
-    line_order = models.ForeignKey(PurchasesLineOrder, related_name='line_albaran_purchases', verbose_name=_("Line orders"), blank=True, null=True)
-    product = models.ForeignKey(ProductFinal, related_name='line_albaran_purchases', verbose_name=_("Product"))
+    albaran = models.ForeignKey(PurchasesAlbaran, on_delete=models.CASCADE, related_name='line_albaran_purchases', verbose_name=_("Albaran"))
+    line_order = models.ForeignKey(PurchasesLineOrder, on_delete=models.CASCADE, related_name='line_albaran_purchases', verbose_name=_("Line orders"), blank=True, null=True)
+    product = models.ForeignKey(ProductFinal, on_delete=models.CASCADE, related_name='line_albaran_purchases', verbose_name=_("Product"))
     status = models.CharField(_("Status"), max_length=2, choices=PURCHASE_ALBARAN_LINE_STATUS, blank=True, null=True, default='PR')
     # facturado
     invoiced = models.BooleanField(_("Invoiced"), blank=False, default=False)
@@ -311,7 +311,7 @@ class PurchasesLineAlbaran(GenLineProduct):
 
 # documentos asociados a los albaranes
 class PurchasesAlbaranDocument(GenBillingDocument):
-    albaran = models.ForeignKey(PurchasesAlbaran, related_name='albarandocument_purchases', verbose_name=_("Albaran"))
+    albaran = models.ForeignKey(PurchasesAlbaran, on_delete=models.CASCADE, related_name='albarandocument_purchases', verbose_name=_("Albaran"))
 
     def __fields__(self, info):
         fields = super(PurchasesAlbaranDocument, self).__fields__(info)
@@ -321,13 +321,13 @@ class PurchasesAlbaranDocument(GenBillingDocument):
 
 # ticket y facturas son lo mismo con un check de "tengo datos del customere"
 class PurchasesTicket(GenPurchase):
-    provider = models.ForeignKey(Provider, related_name='ticket_purchases', verbose_name=_("Provider"))
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='ticket_purchases', verbose_name=_("Provider"))
 
 
 class PurchasesLineTicket(GenLineProduct):
-    ticket = models.ForeignKey(PurchasesTicket, related_name='line_ticket_purchases', verbose_name=_("Ticket"))
-    line_albaran = models.ForeignKey(PurchasesLineAlbaran, related_name='line_ticket_purchases', verbose_name=_("Line albaran"), null=True)
-    product = models.ForeignKey(ProductFinal, related_name='line_ticket_purchases', verbose_name=_("Product"), null=True)
+    ticket = models.ForeignKey(PurchasesTicket, on_delete=models.CASCADE, related_name='line_ticket_purchases', verbose_name=_("Ticket"))
+    line_albaran = models.ForeignKey(PurchasesLineAlbaran, on_delete=models.CASCADE, related_name='line_ticket_purchases', verbose_name=_("Line albaran"), null=True)
+    product = models.ForeignKey(ProductFinal, on_delete=models.CASCADE, related_name='line_ticket_purchases', verbose_name=_("Product"), null=True)
 
     def __fields__(self, info):
         fields = super(PurchasesLineTicket, self).__fields__(info)
@@ -338,7 +338,7 @@ class PurchasesLineTicket(GenLineProduct):
 
 # documentos asociados a los tickets
 class PurchasesTicketDocument(GenBillingDocument):
-    ticket = models.ForeignKey(PurchasesTicket, related_name='ticketdocument_purchases', verbose_name=_("Ticket"))
+    ticket = models.ForeignKey(PurchasesTicket, on_delete=models.CASCADE, related_name='ticketdocument_purchases', verbose_name=_("Ticket"))
 
     def __fields__(self, info):
         fields = super(PurchasesTicketDocument, self).__fields__(info)
@@ -358,9 +358,9 @@ class PurchasesTicketRectification(GenPurchase):
 
 
 class PurchasesLineTicketRectification(GenLineProduct):
-    ticket_rectification = models.ForeignKey(PurchasesTicketRectification, related_name='line_ticketrectification_purchases', verbose_name=_("Ticket rectification"))
-    line_ticket = models.ForeignKey(PurchasesLineTicket, related_name='line_ticketrectification_purchases', verbose_name=_("Line ticket"))
-    product = models.ForeignKey(ProductFinal, related_name='line_ticketrectification_purchases', verbose_name=_("Product"))
+    ticket_rectification = models.ForeignKey(PurchasesTicketRectification, on_delete=models.CASCADE, related_name='line_ticketrectification_purchases', verbose_name=_("Ticket rectification"))
+    line_ticket = models.ForeignKey(PurchasesLineTicket, on_delete=models.CASCADE, related_name='line_ticketrectification_purchases', verbose_name=_("Line ticket"))
+    product = models.ForeignKey(ProductFinal, on_delete=models.CASCADE, related_name='line_ticketrectification_purchases', verbose_name=_("Product"))
 
     def __fields__(self, info):
         fields = super(PurchasesLineTicketRectification, self).__fields__(info)
@@ -371,7 +371,7 @@ class PurchasesLineTicketRectification(GenLineProduct):
 
 # documentos asociados a los tickets rectificativos
 class PurchasesTicketRectificationDocument(GenBillingDocument):
-    ticket_rectification = models.ForeignKey(PurchasesTicketRectification, related_name='ticketrectificationdocument_purchases', verbose_name=_("Ticket rectification"))
+    ticket_rectification = models.ForeignKey(PurchasesTicketRectification, on_delete=models.CASCADE, related_name='ticketrectificationdocument_purchases', verbose_name=_("Ticket rectification"))
 
     def __fields__(self, info):
         fields = super(PurchasesTicketRectificationDocument, self).__fields__(info)
@@ -382,13 +382,13 @@ class PurchasesTicketRectificationDocument(GenBillingDocument):
 # facturas
 # una factura puede contener varios ticket o albaranes
 class PurchasesInvoice(GenPurchase):
-    provider = models.ForeignKey(Provider, related_name='invoice_purchases', verbose_name=_("Provider"))
+    provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='invoice_purchases', verbose_name=_("Provider"))
 
 
 class PurchasesLineInvoice(GenLineProduct):
-    invoice = models.ForeignKey(PurchasesInvoice, related_name='line_invoice_purchases', verbose_name=_("Invoice"))
-    line_albaran = models.ForeignKey(PurchasesLineAlbaran, related_name='line_invoice_purchases', verbose_name=_("Line albaran"), blank=True, null=True)
-    product = models.ForeignKey(ProductFinal, related_name='line_invoice_purchases', verbose_name=_("Product"))
+    invoice = models.ForeignKey(PurchasesInvoice, on_delete=models.CASCADE, related_name='line_invoice_purchases', verbose_name=_("Invoice"))
+    line_albaran = models.ForeignKey(PurchasesLineAlbaran, on_delete=models.CASCADE, related_name='line_invoice_purchases', verbose_name=_("Line albaran"), blank=True, null=True)
+    product = models.ForeignKey(ProductFinal, on_delete=models.CASCADE, related_name='line_invoice_purchases', verbose_name=_("Product"))
     feature_special_value = models.TextField(_("Feature special values"), blank=True, null=True)
 
     def __fields__(self, info):
@@ -401,7 +401,7 @@ class PurchasesLineInvoice(GenLineProduct):
 
 # documentos asociados a las facturas
 class PurchasesInvoiceDocument(GenBillingDocument):
-    invoice = models.ForeignKey(PurchasesInvoice, related_name='invoicedocument_purchases', verbose_name=_("Invoice"))
+    invoice = models.ForeignKey(PurchasesInvoice, on_delete=models.CASCADE, related_name='invoicedocument_purchases', verbose_name=_("Invoice"))
 
     def __fields__(self, info):
         fields = super(PurchasesInvoiceDocument, self).__fields__(info)
@@ -420,9 +420,9 @@ class PurchasesInvoiceRectification(GenPurchase):
 
 
 class PurchasesLineInvoiceRectification(GenLineProduct):
-    invoice_rectification = models.ForeignKey(PurchasesInvoiceRectification, related_name='line_invoicerectification_purchases', verbose_name=_("Invoice rectification"))
-    line_invoice = models.ForeignKey(PurchasesLineInvoice, related_name='line_invoicerectification_purchases', verbose_name=_("Line invoice"))
-    product = models.ForeignKey(ProductFinal, related_name='line_invoicerectification_purchases', verbose_name=_("Product"))
+    invoice_rectification = models.ForeignKey(PurchasesInvoiceRectification, on_delete=models.CASCADE, related_name='line_invoicerectification_purchases', verbose_name=_("Invoice rectification"))
+    line_invoice = models.ForeignKey(PurchasesLineInvoice, on_delete=models.CASCADE, related_name='line_invoicerectification_purchases', verbose_name=_("Line invoice"))
+    product = models.ForeignKey(ProductFinal, on_delete=models.CASCADE, related_name='line_invoicerectification_purchases', verbose_name=_("Product"))
 
     def __fields__(self, info):
         fields = super(PurchasesLineInvoiceRectification, self).__fields__(info)
@@ -433,7 +433,7 @@ class PurchasesLineInvoiceRectification(GenLineProduct):
 
 # documentos asociados a las facturas rectificativas
 class PurchasesInvoiceRectificationDocument(GenBillingDocument):
-    invoice_rectification = models.ForeignKey(PurchasesInvoiceRectification, related_name='invoicerectificationdocument_purchases', verbose_name=_("Invoice rectification"))
+    invoice_rectification = models.ForeignKey(PurchasesInvoiceRectification, on_delete=models.CASCADE, related_name='invoicerectificationdocument_purchases', verbose_name=_("Invoice rectification"))
 
     def __fields__(self, info):
         fields = super(PurchasesInvoiceRectificationDocument, self).__fields__(info)

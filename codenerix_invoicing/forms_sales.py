@@ -1017,7 +1017,7 @@ class ReasonModificationForm(GenModelForm):
 
 class ReasonModificationLineForm(GenModelForm):
     doc = forms.FloatField(label=_('Document'), widget=forms.NumberInput(attrs={"disabled": 'disabled'}))
-    
+
     class Meta:
         exclude = ['user', ]
 
