@@ -23,7 +23,7 @@ from django.db import transaction, IntegrityError
 from django.db.models import Q, Sum, Value
 from django.db.models.functions import Concat
 from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.forms.utils import ErrorList
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404

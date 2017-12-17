@@ -20,7 +20,7 @@
 
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db.models import F, Sum
 from django.utils.translation import ugettext as _
 

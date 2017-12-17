@@ -18,7 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.db import IntegrityError
 from django.db.models import Q, Sum
 from django.db.models.functions import TruncDate

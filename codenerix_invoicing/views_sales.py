@@ -25,7 +25,7 @@ import json
 from django.db import transaction
 from django.db.models import Q, Sum, F
 from django.contrib.auth.decorators import login_required
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.forms.utils import ErrorList
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.utils.decorators import method_decorator
@@ -1032,7 +1032,7 @@ class OrderPrint(PrinterHelper, GenOrderUrl, GenDetail):
             }
         else:
             context['address_invoice'] = {}
-            
+
         context['line_order_sales'] = lines
         context['total_order'] = order.calculate_price_doc_complete(details=True)
         context['send_address'] = send_address
