@@ -39,40 +39,42 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name='printcounterdocumentticketrectification',
             name='quantity',
-        ),
+        ),]
+
+    operations = [
         migrations.AddField(
             model_name='printcounterdocumentalbaran',
             name='status_document',
-            field=models.CharField(choices=[(b'TM', 'Temporary'), (b'DF', 'Definitive')], default=b'TM', max_length=2, verbose_name='Status document'),
+            field=models.CharField(choices=[('TM', 'Temporary'), ('DF', 'Definitive')], default='TM', max_length=2, verbose_name='Status document'),
         ),
         migrations.AddField(
             model_name='printcounterdocumentbasket',
             name='status_document',
-            field=models.CharField(choices=[(b'TM', 'Temporary'), (b'DF', 'Definitive')], default=b'TM', max_length=2, verbose_name='Status document'),
+            field=models.CharField(choices=[('TM', 'Temporary'), ('DF', 'Definitive')], default='TM', max_length=2, verbose_name='Status document'),
         ),
         migrations.AddField(
             model_name='printcounterdocumentinvoice',
             name='status_document',
-            field=models.CharField(choices=[(b'TM', 'Temporary'), (b'DF', 'Definitive')], default=b'TM', max_length=2, verbose_name='Status document'),
+            field=models.CharField(choices=[('TM', 'Temporary'), ('DF', 'Definitive')], default='TM', max_length=2, verbose_name='Status document'),
         ),
         migrations.AddField(
             model_name='printcounterdocumentinvoicerectification',
             name='status_document',
-            field=models.CharField(choices=[(b'TM', 'Temporary'), (b'DF', 'Definitive')], default=b'TM', max_length=2, verbose_name='Status document'),
+            field=models.CharField(choices=[('TM', 'Temporary'), ('DF', 'Definitive')], default='TM', max_length=2, verbose_name='Status document'),
         ),
         migrations.AddField(
             model_name='printcounterdocumentorder',
             name='status_document',
-            field=models.CharField(choices=[(b'TM', 'Temporary'), (b'DF', 'Definitive')], default=b'TM', max_length=2, verbose_name='Status document'),
+            field=models.CharField(choices=[('TM', 'Temporary'), ('DF', 'Definitive')], default='TM', max_length=2, verbose_name='Status document'),
         ),
         migrations.AddField(
             model_name='printcounterdocumentticket',
             name='status_document',
-            field=models.CharField(choices=[(b'TM', 'Temporary'), (b'DF', 'Definitive')], default=b'TM', max_length=2, verbose_name='Status document'),
+            field=models.CharField(choices=[('TM', 'Temporary'), ('DF', 'Definitive')], default='TM', max_length=2, verbose_name='Status document'),
         ),
         migrations.AddField(
             model_name='printcounterdocumentticketrectification',
             name='status_document',
-            field=models.CharField(choices=[(b'TM', 'Temporary'), (b'DF', 'Definitive')], default=b'TM', max_length=2, verbose_name='Status document'),
+            field=models.CharField(choices=[('TM', 'Temporary'), ('DF', 'Definitive')], default='TM', max_length=2, verbose_name='Status document'),
         ),
     ]
