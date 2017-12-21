@@ -39,6 +39,7 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name='printcounterdocumentticketrectification',
             name='quantity',
+        ),
         migrations.AddField(
             model_name='printcounterdocumentalbaran',
             name='status_document',
