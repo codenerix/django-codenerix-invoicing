@@ -218,6 +218,7 @@ class ShoppingCartProxy(object):
                     'pk': final_product.pk,
                     'name': final_product.name,
                     'code': code,
+                    'code_product': final_product.code_product,
                     'description': final_product.description,
                     'url': url_reverse,
                     'thumbnail': thumbnail,
