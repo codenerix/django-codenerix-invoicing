@@ -44,6 +44,8 @@ from codenerix_products.models import ProductFinal, TypeTax, ProductFinalOption,
 # from codenerix_storages.models import Storage
 from codenerix_payments.models import PaymentRequest
 
+CURRENCY_MAX_DIGITS = getattr(settings, 'CDNX_INVOICING_CURRENCY_MAX_DIGITS', 10)
+CURRENCY_DECIMAL_PLACES = getattr(settings, 'CDNX_INVOICING_CURRENCY_DECIMAL_PLACES', 2)
 
 ROLE_BASKET_SHOPPINGCART = 'SC'
 ROLE_BASKET_BUDGET = 'BU'
@@ -446,11 +448,11 @@ class GenVersion(CodenerixModel):  # META: Abstract class
     si al guardar una linea asociada a un documento bloqueado (lock==True), duplicar el documento en una nueva versión
     """
     # additional information
-    subtotal = models.FloatField(_("Subtotal"), blank=False, null=False, default=0, editable=False)
-    discounts = models.FloatField(_("Discounts"), blank=False, null=False, default=0, editable=False)
+    subtotal = models.DecimalField(_("Subtotal"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    discounts = models.DecimalField(_("Discounts"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     taxes = models.FloatField(_("Taxes"), blank=False, null=False, default=0, editable=False)
     equivalence_surcharges = models.FloatField(_("Equivalence surcharge"), blank=False, null=False, default=0, editable=False)
-    total = models.FloatField(_("Total"), blank=False, null=False, default=0, editable=False)
+    total = models.DecimalField(_("Total"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     # logical deletion
     removed = models.BooleanField(_("Removed"), blank=False, default=False, editable=False)
 
@@ -688,11 +690,11 @@ class GenLineProductBasic(CodenerixModel):  # META: Abstract class
     quantity = models.FloatField(_("Quantity"), blank=False, null=False)
     notes = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
     # additional information
-    subtotal = models.FloatField(_("Subtotal"), blank=False, null=False, default=0, editable=False)
-    discounts = models.FloatField(_("Discounts"), blank=False, null=False, default=0, editable=False)
+    subtotal = models.DecimalField(_("Subtotal"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    discounts = models.DecimalField(_("Discounts"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     taxes = models.FloatField(_("Taxes"), blank=False, null=False, default=0, editable=False)
     equivalence_surcharges = models.FloatField(_("Equivalence surcharge"), blank=True, null=True, default=0)
-    total = models.FloatField(_("Total"), blank=False, null=False, default=0, editable=False)
+    total = models.DecimalField(_("Total"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     # logical deletion
     removed = models.BooleanField(_("Removed"), blank=False, default=False, editable=False)
 
@@ -750,7 +752,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
     class Meta(GenLineProductBasic.Meta):
         abstract = True
 
-    price_recommended = models.FloatField(_("Recomended price base"), blank=False, null=False)
+    price_recommended = models.DecimalField(_("Recomended price base"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
     # valores aplicados
     """
     desde el formulario se podrá modificar el precio y la descripcion del producto
@@ -758,8 +760,8 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
     """
     code = models.CharField(_("Code"), max_length=250, blank=True, null=True, default=None)
     description = models.CharField(_("Description"), max_length=256, blank=True, null=True)
-    discount = models.FloatField(_("Discount (%)"), blank=False, null=False, default=0)
-    price_base = models.FloatField(_("Price base"), blank=False, null=False)
+    discount = models.DecimalField(_("Discount (%)"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0)
+    price_base = models.DecimalField(_("Price base"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
     tax = models.FloatField(_("Tax (%)"), blank=True, null=True, default=0)
     equivalence_surcharge = models.FloatField(_("Equivalence surcharge (%)"), blank=True, null=True, default=0)
     tax_label = models.CharField(_("Tax Name"), max_length=250, blank=True, null=True)

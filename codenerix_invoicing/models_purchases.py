@@ -22,6 +22,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import smart_text
+from django.conf import settings
 
 from codenerix.models import GenInterface, CodenerixModel
 from codenerix.models_people import GenRole
@@ -31,6 +32,9 @@ from codenerix_extensions.files.models import GenDocumentFile
 from codenerix_products.models import ProductFinal, TypeTax, Category, ProductUnique
 
 from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
+
+CURRENCY_MAX_DIGITS = getattr(settings, 'CDNX_INVOICING_CURRENCY_MAX_DIGITS', 10)
+CURRENCY_DECIMAL_PLACES = getattr(settings, 'CDNX_INVOICING_CURRENCY_DECIMAL_PLACES', 2)
 
 KIND_CARD_VISA = 'VIS'
 KIND_CARD_MASTER = 'MAS'
@@ -89,7 +93,7 @@ class GenLineProduct(CodenerixModel):  # META: Abstract class
         abstract = True
 
     quantity = models.FloatField(_("Quantity"), blank=False, null=False)
-    price = models.FloatField(_("Price"), blank=False, null=False)
+    price = models.DecimalField(_("Price"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
     tax = models.FloatField(_("Tax"), blank=True, null=True, default=0)
     description = models.TextField(_("description"), blank=True, null=True)
 
