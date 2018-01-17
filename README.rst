@@ -58,6 +58,9 @@ Quickstart
     CDNX_INVOICING_CODE_FORMAT_INVOICE = 'I{year}{day}{month}-{hour}{minute}-{serial}-{pk}'
     CDNX_INVOICING_CODE_FORMAT_INVOICERECTIFCATION = 'IT{year}{day}{month}-{hour}{minute}-{serial}-{pk}'
 
+    CDNX_INVOICING_CURRENCY_MAX_DIGITS = 10  # 99.999.999,?
+    CDNX_INVOICING_CURRENCY_DECIMAL_PLACES = 2  # ?,99
+
 4. Since Codenerix Invoicing is a library, you only need to import its parts into your project and use them.
 
 *************
