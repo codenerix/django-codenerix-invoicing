@@ -35,16 +35,16 @@ from django.conf import settings
 from codenerix_extensions.views import GenCreateBridge, GenUpdateBridge
 from codenerix.views import GenList, GenCreate, GenCreateModal, GenUpdate, GenUpdateModal, GenDelete, GenDetail, GenDetailModal
 
-from codenerix_invoicing.models_purchases import Provider, \
-    PurchasesBudget, PurchasesLineBudget, PurchasesOrder, PurchasesLineOrder, PurchasesAlbaran, PurchasesLineAlbaran, \
-    PurchasesTicket, PurchasesLineTicket, PurchasesTicketRectification, PurchasesLineTicketRectification, PurchasesInvoice, \
-    PurchasesLineInvoice, PurchasesInvoiceRectification, PurchasesLineInvoiceRectification, PurchasesBudgetDocument, \
-    PurchasesOrderDocument, PurchasesAlbaranDocument, PurchasesTicketDocument, PurchasesTicketRectificationDocument, \
-    PurchasesInvoiceDocument, PurchasesInvoiceRectificationDocument
-from .models_purchases import PURCHASE_ALBARAN_LINE_STATUS_REJECTED
+from codenerix_invoicing.models_purchases import Provider
+from codenerix_invoicing.models_purchases import PurchasesBudget, PurchasesLineBudget, PurchasesOrder, PurchasesLineOrder, PurchasesAlbaran, PurchasesLineAlbaran
+from codenerix_invoicing.models_purchases import PurchasesTicket, PurchasesLineTicket, PurchasesTicketRectification, PurchasesLineTicketRectification, PurchasesInvoice
+from codenerix_invoicing.models_purchases import PurchasesLineInvoice, PurchasesInvoiceRectification, PurchasesLineInvoiceRectification, PurchasesBudgetDocument
+from codenerix_invoicing.models_purchases import PurchasesOrderDocument, PurchasesAlbaranDocument, PurchasesTicketDocument, PurchasesTicketRectificationDocument
+from codenerix_invoicing.models_purchases import PurchasesInvoiceDocument, PurchasesInvoiceRectificationDocument
+# from .models_purchases import PURCHASE_ALBARAN_LINE_STATUS_REJECTED
 
-from codenerix_invoicing.models import ProductStock
-from codenerix_storages.models import StorageBatch
+# from codenerix_invoicing.models import ProductStock
+# from codenerix_storages.models import StorageBatch
 
 from codenerix_invoicing.forms_purchases import ProviderForm, \
     BudgetForm, LineBudgetForm, OrderForm, LineOrderForm, AlbaranForm, LineAlbaranForm, TicketForm, LineTicketForm, TicketRectificationForm, LineTicketRectificationForm, InvoiceForm, LineInvoiceForm, InvoiceRectificationForm, LineInvoiceRectificationForm, \
@@ -653,11 +653,14 @@ class LineAlbaranCreate(GenLineAlbaranUrl, GenCreate):
             self.request.albaran = obj
             form.instance.albaran = obj
 
+        raise Exception("revisar StorageBatch")
+        """
         batch = StorageBatch.objects.filter(pk=form.data['batch']).first()
         if not batch:
             errors = form._errors.setdefault("batch", ErrorList())
             errors.append(_("Batch invalid"))
             return super(LineAlbaranCreate, self).form_invalid(form)
+        """
 
         # comprueba si el producto comprado requiere un valor de atributo especial
         product_final = ProductFinal.objects.filter(pk=form.data['product']).first()
@@ -702,6 +705,8 @@ class LineAlbaranCreate(GenLineAlbaranUrl, GenCreate):
                 # save line albaran
                 result = super(LineAlbaranCreate, self).form_valid(form)
 
+                raise Exception("Cambiar ProductStock por ProductUnique")
+                """
                 if self.object.status != PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
                     # prepare stock
                     ps = ProductStock()
@@ -746,6 +751,7 @@ class LineAlbaranCreate(GenLineAlbaranUrl, GenCreate):
                         else:
                             pfs.stock_real += self.object.quantity
                         pfs.save()
+                """
                 return result
         except IntegrityError as e:
             errors = form._errors.setdefault("product", ErrorList())
@@ -769,24 +775,29 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
     def get_form(self, form_class=None):
         form = super(LineAlbaranUpdate, self).get_form(form_class)
 
+        raise Exception("Cambiar ProductStock por ProductUnique")
+        """
         ps = ProductStock.objects.filter(line_albaran=self.object).first()
         if ps:
             # initial field
             form.fields['storage'].initial = ps.batch.zone.storage
             form.fields['zone'].initial = ps.batch.zone
             form.fields['batch'].initial = ps.batch
+        """
         return form
 
     def form_valid(self, form):
         with transaction.atomic():
             old = PurchasesLineAlbaran.objects.get(pk=self.object.pk)
 
+            raise Exception("revisar StorageBatch")
+            """
             batch = StorageBatch.objects.filter(pk=form.data['batch']).first()
             if batch is None:
                 errors = form._errors.setdefault("batch", ErrorList())
                 errors.append(_("Batch not selected"))
                 return super(LineAlbaranUpdate, self).form_invalid(form)
-
+            """
             status = form.data['status']
 
             try:
@@ -868,6 +879,9 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                                 return super(LineAlbaranUpdate, self).form_invalid(form)
                         # guardar, borrar antiguo y dar de alta los nuevos
                         result = super(LineAlbaranUpdate, self).form_valid(form)
+                        
+                        raise Exception("Cambiar ProductStock por ProductUnique")
+                        """
                         ProductStock.objects.filter(
                             line_albaran=self.object,
                             product_final=old.product,
@@ -919,6 +933,7 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                             ).first()
                             product_unique_old.stock_real -= old.quantity
                             product_unique_old.save()
+                        """
                     else:
                         # cuando el producto final anterior no tiene una caracteristica especial
                         """
@@ -936,6 +951,8 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                         else:
                             # guardar, borrar antiguo y dar de alta los nuevos
                             result = super(LineAlbaranUpdate, self).form_valid(form)
+                            raise Exception("Cambiar ProductStock por ProductUnique")
+                            """
                             ProductStock.objects.filter(
                                 Q(line_albaran=self.object, product_final=old.product)
                             ).delete()
@@ -975,12 +992,15 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                                     pu.value = feature_special_value[0]
                                     pu.stock_real += self.object.quantity
                                     pu.save()
+                            """
                 # FIN if product_final.product.feature_special
 
                 if old.product.product.feature_special:
                     """
                     si el nuevo producto no necesita de una caracteristicas especial y el antiguo si
                     comprobamos que el stock sea el mismo para poder eliminarlo
+                    """
+                    raise Exception("Cambiar ProductStock por ProductUnique")
                     """
                     if ProductStock.objects.filter(
                         line_albaran=self.object,
@@ -1017,7 +1037,7 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                             feature_special=old.product.product.feature_special,
                             value__in=list(set(filter(None, old.feature_special_value.split('\n'))))
                         ).delete()
-
+                    """
                 if product_final.product.feature_special is None and old.product.product.feature_special is None:
                     """
                     comprobamos que las cantidades que fueron introducidas en el albaran son las mismas que hay disponible
@@ -1035,6 +1055,8 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
 
                     if status != old.status and status == PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
                         # quitar los productos de stock
+                        raise Exception("Cambiar ProductStock por ProductUnique")
+                        """
                         ProductStock.objects.filter(
                             Q(line_albaran=self.object, product_final=old.product)
                         ).update(
@@ -1042,16 +1064,22 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                             product=product_final,
                             quantity=0
                         )
+                        """
                     elif status != old.status and old.status == PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
                         # crear los productos en stock
+                        raise Exception("Cambiar ProductStock por ProductUnique")
+                        """
                         ps = ProductStock()
                         ps.product_final = product_final
                         ps.line_albaran = self.object
                         ps.batch = batch
                         ps.quantity = quantity
                         ps.save()
+                        """
                     else:
                         # actualizar stock
+                        raise Exception("Cambiar ProductStock por ProductUnique")
+                        """
                         ProductStock.objects.filter(
                             Q(line_albaran=self.object, product_final=old.product)
                         ).update(
@@ -1059,6 +1087,7 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                             product=product_final,
                             quantity=quantity
                         )
+                        """
                     # actualizamos/creamos el nuevo registro
                     product_unique = ProductUnique.objects.filter(
                         product_final=product_final, value=None
@@ -1170,6 +1199,8 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                     """
                     una vez que se guarde, eliminar o poner a 0 el ProductStock asociado y el ProductUnique
                     """
+                    raise Exception("Cambiar ProductStock por ProductUnique")
+                    """
                     ProductStock.objects.filter(
                         line_albaran=self.object,
                         product_final=self.object.product,
@@ -1179,13 +1210,15 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                     ProductUnique.objects.filter(
                         product_final=self.object.product,
                         value__in=items_remove).delete()
-
+                    """
                 # solo entrara si la caracteristica es unica
                 if items_new:
                     """
                     buscar si hay elementos nuevos y darlos de alta en ProductStock y ProductUnique
                     """
                     # prepare stock
+                    raise Exception("Cambiar ProductStock por ProductUnique")
+                    """
                     ps = ProductStock()
                     ps.product_final = product_final
                     ps.line_albaran = self.object
@@ -1203,10 +1236,12 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                         ps.value = fs
                         ps.quantity = 1
                         ps.save()
-
+                    """
             else:
                 """
                 comprobamos que las nuevas cantidades esten aun en stock
+                """
+                raise Exception("Cambiar ProductStock por ProductUnique")
                 """
                 if quantity < old.quantity:
                     if ProductStock.objects.filter(
@@ -1217,9 +1252,11 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                         errors = form._errors.setdefault("quantity", ErrorList())
                         errors.append(_("Quantity invalid, no stock"))
                         return super(LineAlbaranUpdate, self).form_invalid(form)
-
+                """
                 result = super(LineAlbaranUpdate, self).form_valid(form)
 
+                raise Exception("Cambiar ProductStock por ProductUnique")
+                """
                 if status != old.status and status == PURCHASE_ALBARAN_LINE_STATUS_REJECTED:
                     # quitar los productos de stock
                     ProductStock.objects.filter(
@@ -1240,7 +1277,7 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                         batch=batch,
                         line_albaran=self.object,
                         product_final=self.object.product).update(quantity=quantity)
-
+                """
             return result
 
 

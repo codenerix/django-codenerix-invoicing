@@ -19,6 +19,7 @@
 # limitations under the License.
 
 from django.db import models
+from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import smart_text
 
@@ -27,7 +28,7 @@ from codenerix.models_people import GenRole
 
 from codenerix_extensions.helpers import get_external_method
 from codenerix_extensions.files.models import GenDocumentFile
-from codenerix_products.models import ProductFinal, TypeTax, Category
+from codenerix_products.models import ProductFinal, TypeTax, Category, ProductUnique
 
 from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
 
@@ -43,7 +44,7 @@ KIND_CARD = (
     (KIND_CARD_OTHER, _('Other')),
 )
 
-PAYMENT_DETAILS_AMAZON = 'AMA'
+# PAYMENT_DETAILS_AMAZON = 'AMA'
 PAYMENT_DETAILS_TRANSFER = 'TRA'
 PAYMENT_DETAILS_CARD = 'CAR'
 PAYMENT_DETAILS_CASH = 'CAS'
@@ -54,7 +55,7 @@ PAYMENT_DETAILS_60CREDIT = '60C'
 PAYMENT_DETAILS_90CREDIT = '90C'
 
 PAYMENT_DETAILS = (
-    (PAYMENT_DETAILS_AMAZON, _('Amazon')),
+    # (PAYMENT_DETAILS_AMAZON, _('Amazon')),
     (PAYMENT_DETAILS_TRANSFER, _('Wire transfer')),
     (PAYMENT_DETAILS_CARD, _('Card')),
     (PAYMENT_DETAILS_CASH, _('Cash')),
@@ -69,7 +70,7 @@ FINANCE_SURCHARGE_STATUS_CHOICE = (
     ('I', _('Taxable base')),
     ('F', _('Total bill')),
 )
-
+"""
 PURCHASE_ALBARAN_LINE_STATUS_PENDING = 'PR'
 PURCHASE_ALBARAN_LINE_STATUS_REVIEWED = 'RV'
 PURCHASE_ALBARAN_LINE_STATUS_REJECTED = 'RC'
@@ -79,7 +80,7 @@ PURCHASE_ALBARAN_LINE_STATUS = (
     (PURCHASE_ALBARAN_LINE_STATUS_REVIEWED, _('Reviewed')),
     (PURCHASE_ALBARAN_LINE_STATUS_REJECTED, _('Rejected')),
 )
-
+"""
 
 # #### CLASES ABSTRACTAS #############################
 # lineas de productos
@@ -293,18 +294,14 @@ class PurchasesAlbaran(GenPurchase):
 class PurchasesLineAlbaran(GenLineProduct):
     albaran = models.ForeignKey(PurchasesAlbaran, on_delete=models.CASCADE, related_name='line_albaran_purchases', verbose_name=_("Albaran"))
     line_order = models.ForeignKey(PurchasesLineOrder, on_delete=models.CASCADE, related_name='line_albaran_purchases', verbose_name=_("Line orders"), blank=True, null=True)
-    product = models.ForeignKey(ProductFinal, on_delete=models.CASCADE, related_name='line_albaran_purchases', verbose_name=_("Product"))
-    status = models.CharField(_("Status"), max_length=2, choices=PURCHASE_ALBARAN_LINE_STATUS, blank=True, null=True, default='PR')
-    # facturado
-    invoiced = models.BooleanField(_("Invoiced"), blank=False, default=False)
-    feature_special_value = models.TextField(_("Feature special values"), blank=True, null=True)
+    product_unique = models.ForeignKey(ProductUnique, on_delete=models.CASCADE, related_name='line_albaran_purchases', verbose_name=_("Product"))
+    validator_user = models.ForeignKey(User, related_name='line_albaran_purchases', verbose_name=_("Validator user"), blank=False, null=False, on_delete=models.CASCADE)
 
     def __fields__(self, info):
         fields = super(PurchasesLineAlbaran, self).__fields__(info)
         fields.insert(0, ('albaran', _("Albaran")))
         fields.append(('line_order', _("Line orders")))
-        fields.append(('invoiced', _("Invoiced")))
-        fields.append(('feature_special_value', _("Feature special values")))
+        fields.append(('product_unique', _("Product")))
         fields.append(('get_status_display', _("Status")))
         return fields
 

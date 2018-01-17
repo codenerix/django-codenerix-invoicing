@@ -21,7 +21,7 @@
 from django.contrib import admin
 from django.conf import settings
 
-from .models import BillingSeries, LegalNote, TypeDocument, ProductStock, StockMovement, StockMovementProduct, MODELS
+from .models import BillingSeries, LegalNote, TypeDocument, MODELS  # , StockMovement, StockMovementProduct
 from .models_purchases import Provider, PurchasesBudget, PurchasesLineBudget, PurchasesBudgetDocument, PurchasesOrder, PurchasesLineOrder, PurchasesOrderDocument, PurchasesAlbaran, PurchasesLineAlbaran, PurchasesAlbaranDocument, PurchasesTicket, PurchasesLineTicket, PurchasesTicketDocument, PurchasesTicketRectification, PurchasesLineTicketRectification, PurchasesTicketRectificationDocument, PurchasesInvoice, PurchasesLineInvoice, PurchasesInvoiceDocument, PurchasesInvoiceRectification, PurchasesLineInvoiceRectification, PurchasesInvoiceRectificationDocument
 from .models_sales import Address, Customer, CustomerDocument, SalesReservedProduct, SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, SalesLineInvoiceRectification, SalesBasket, SalesLineBasket
 from .models_sales import SalesLineBasketOption
@@ -54,9 +54,8 @@ admin.site.register(PurchasesInvoiceRectificationDocument)
 admin.site.register(BillingSeries)
 admin.site.register(LegalNote)
 admin.site.register(TypeDocument)
-admin.site.register(ProductStock)
-admin.site.register(StockMovement)
-admin.site.register(StockMovementProduct)
+# admin.site.register(StockMovement)
+# admin.site.register(StockMovementProduct)
 
 admin.site.register(Address)
 admin.site.register(Customer)

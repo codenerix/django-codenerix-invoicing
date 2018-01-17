@@ -40,8 +40,8 @@ from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
 
 from codenerix_pos.models import POSSlot
 
-from codenerix_products.models import ProductFinal, TypeTax, ProductFinalOption
-from codenerix_storages.models import Storage
+from codenerix_products.models import ProductFinal, TypeTax, ProductFinalOption, ProductUnique
+# from codenerix_storages.models import Storage
 from codenerix_payments.models import PaymentRequest
 
 
@@ -1435,7 +1435,7 @@ class SalesLineBasketOption(CodenerixModel):
 class SalesOrder(GenVersion):
     budget = models.OneToOneField(SalesBasket, related_name='order_sales', verbose_name=_("Budget"), null=True, blank=True, on_delete=models.CASCADE)
     customer = models.ForeignKey(Customer, related_name='order_sales', verbose_name=_("Customer"), on_delete=models.CASCADE)
-    storage = models.ForeignKey(Storage, related_name='order_sales', verbose_name=_("Storage"), blank=True, null=True, on_delete=models.CASCADE)
+    # storage = models.ForeignKey(Storage, related_name='order_sales', verbose_name=_("Storage"), blank=True, null=True, on_delete=models.CASCADE)
     payment = models.ForeignKey(PaymentRequest, related_name='order_sales', verbose_name=_(u"Payment Request"), blank=True, null=True, on_delete=models.CASCADE)
     number_tracking = models.CharField(_("Number of tracking"), max_length=128, blank=True, null=True)
     status_order = models.CharField(_("Status"), max_length=2, choices=STATUS_ORDER, blank=False, null=False, default='PE')
@@ -1454,7 +1454,7 @@ class SalesOrder(GenVersion):
         fields.append(('customer', _('Customer')))
         fields.append(('code', _('Code')))
         fields.append(('date', _('Date')))
-        fields.append(('storage', _('Storage')))
+        # fields.append(('storage', _('Storage')))
         fields.append(('status_order', None))
         fields.append(('get_status_order_display', _('Status')))
         fields.append(('get_payment_detail_display', _('Payment detail')))
@@ -1620,7 +1620,8 @@ class SalesAlbaran(GenVersion):
 class SalesLineAlbaran(GenLineProductBasic):
     albaran = models.ForeignKey(SalesAlbaran, related_name='line_albaran_sales', verbose_name=_("Albaran"), on_delete=models.CASCADE)
     line_order = models.ForeignKey(SalesLineOrder, related_name='line_albaran_sales', verbose_name=_("Line orders"), null=True, on_delete=models.CASCADE)
-    invoiced = models.BooleanField(_("Invoiced"), blank=False, default=False)
+    product_unique = models.ForeignKey(ProductUnique, related_name='line_albaran_sales', verbose_name=_("Product"), null=True, on_delete=models.CASCADE)
+    # invoiced = models.BooleanField(_("Invoiced"), blank=False, default=False)
 
     def __str__(self):
         return u"{} - {}".format(smart_text(self.line_order.product), smart_text(self.quantity))
@@ -1633,7 +1634,7 @@ class SalesLineAlbaran(GenLineProductBasic):
         fields.append(('line_order__order', _("Sales order")))
         fields.append(('line_order__product', _("Product")))
         fields.append(('quantity', _("Quantity")))
-        fields.append(('invoiced', _("Invoiced")))
+        # fields.append(('invoiced', _("Invoiced")))
         return fields
 
     def update_total(self, force_save=True):

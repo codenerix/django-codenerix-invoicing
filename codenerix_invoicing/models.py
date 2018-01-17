@@ -28,13 +28,11 @@ from django.conf import settings
 
 from codenerix_extensions.files.models import GenImageFileNull
 
-from codenerix_products.models import ProductFinal
+# from codenerix_products.models import ProductFinal
+# from codenerix_storages.models import StorageBatch
+# from codenerix_invoicing.models_purchases import PurchasesLineAlbaran
 
-from codenerix_storages.models import StorageBatch
-
-from codenerix_invoicing.models_purchases import PurchasesLineAlbaran
-
-
+"""
 STATUS_MOVEMENT_REQUESTED = 'R'
 STATUS_MOVEMENT_SENT = 'S'
 STATUS_MOVEMENT_DELIVERED = 'D'
@@ -44,6 +42,7 @@ STATUS_MOVEMENTS = (
     (STATUS_MOVEMENT_SENT, _('Sent')),
     (STATUS_MOVEMENT_DELIVERED, _('Delivered')),
 )
+"""
 
 
 # #####################################
@@ -148,6 +147,7 @@ for info in MODELS:
         exec(query)
 
 
+"""
 # relación almacen-producto-cantidad
 class ProductStock(CodenerixModel):
     line_albaran = models.ForeignKey(PurchasesLineAlbaran, on_delete=models.CASCADE, related_name='product_stocks', verbose_name=_("Line albaran"), null=False, blank=False)
@@ -167,8 +167,9 @@ class ProductStock(CodenerixModel):
 
     def __str__(self):
         return self.__unicode__()
+"""
 
-
+"""
 # movimiento de stock entre de almacenes
 class StockMovement(CodenerixModel):
     batch_source = models.ForeignKey(StorageBatch, related_name='stock_movements_src', verbose_name=_("Batch source"), null=False, blank=False, on_delete=models.PROTECT)
@@ -205,6 +206,7 @@ class StockMovementProduct(CodenerixModel):
 
     def __str__(self):
         return self.__unicode__()
+"""
 
 
 # transportista

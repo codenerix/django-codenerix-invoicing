@@ -21,11 +21,11 @@
 from django.conf.urls import url
 from codenerix_invoicing.views import BillingSeriesCreate, BillingSeriesCreateModal, BillingSeriesDelete, BillingSeriesList, BillingSeriesUpdate, BillingSeriesUpdateModal
 from codenerix_invoicing.views import LegalNoteList, LegalNoteCreate, LegalNoteCreateModal, LegalNoteUpdate, LegalNoteUpdateModal, LegalNoteDelete
-from codenerix_invoicing.views import ProductStockList, ProductStockCreate, ProductStockCreateModal, ProductStockUpdate, ProductStockUpdateModal, ProductStockDelete, ProductStockDetailModal
-from codenerix_invoicing.views import ProductStockSubList, ProductStockOwnCreateModal, ProductStockOwnUpdateModal
+# from codenerix_invoicing.views import ProductStockList, ProductStockCreate, ProductStockCreateModal, ProductStockUpdate, ProductStockUpdateModal, ProductStockDelete, ProductStockDetailModal
+# from codenerix_invoicing.views import ProductStockSubList, ProductStockOwnCreateModal, ProductStockOwnUpdateModal
 from codenerix_invoicing.views import TypeDocumentList, TypeDocumentCreate, TypeDocumentCreateModal, TypeDocumentUpdate, TypeDocumentUpdateModal, TypeDocumentDelete
-from codenerix_invoicing.views import StockMovementList, StockMovementCreate, StockMovementCreateModal, StockMovementUpdate, StockMovementDelete, StockMovementDetails, StockMovementPrint
-from codenerix_invoicing.views import StockMovementProductCreateModal, StockMovementProductUpdateModal, StockMovementProductDelete, StockMovementProductSubList, StockMovementProductDetailModal
+# from codenerix_invoicing.views import StockMovementList, StockMovementCreate, StockMovementCreateModal, StockMovementUpdate, StockMovementDelete, StockMovementDetails, StockMovementPrint
+# from codenerix_invoicing.views import StockMovementProductCreateModal, StockMovementProductUpdateModal, StockMovementProductDelete, StockMovementProductSubList, StockMovementProductDetailModal
 from codenerix_invoicing.views import HaulierList, HaulierCreate, HaulierCreateModal, HaulierUpdate, HaulierUpdateModal, HaulierDelete
 
 from codenerix_invoicing.urls_sales import urlpatterns as url_sales
@@ -55,6 +55,17 @@ urlpatterns = [
     url(r'^typedocuments/(?P<pk>\w+)/editmodal$', TypeDocumentUpdateModal.as_view(), name='CDNX_invoicing_typedocuments_editmodal'),
     url(r'^typedocuments/(?P<pk>\w+)/delete$', TypeDocumentDelete.as_view(), name='CDNX_invoicing_typedocuments_delete'),
 
+
+    url(r'^hauliers$', HaulierList.as_view(), name='CDNX_invoicing_hauliers_list'),
+    url(r'^hauliers/add$', HaulierCreate.as_view(), name='CDNX_invoicing_hauliers_add'),
+    url(r'^hauliers/addmodal$', HaulierCreateModal.as_view(), name='CDNX_invoicing_hauliers_addmodal'),
+    url(r'^hauliers/(?P<pk>\w+)/edit$', HaulierUpdate.as_view(), name='CDNX_invoicing_hauliers_edit'),
+    url(r'^hauliers/(?P<pk>\w+)/editmodal$', HaulierUpdateModal.as_view(), name='CDNX_invoicing_hauliers_editmodal'),
+    url(r'^hauliers/(?P<pk>\w+)/delete$', HaulierDelete.as_view(), name='CDNX_invoicing_hauliers_delete'),
+
+
+] + url_sales + url_purchases + url_cash
+"""    
     # ProductStock
     url(r'^productstocks$', ProductStockList.as_view(), name='CDNX_invoicing_productstocks_list'),
     url(r'^productstocks/add$', ProductStockCreate.as_view(), name='CDNX_invoicing_productstocks_add'),
@@ -87,13 +98,4 @@ urlpatterns = [
     url(r'^stockmovementproducts/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', StockMovementProductDetailModal.as_view(), name='CDNX_invoicing_stockmovementproducts_sublist_details'),
     url(r'^stockmovementproducts/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', StockMovementProductUpdateModal.as_view(), name='CDNX_invoicing_stockmovementproducts_sublist_editmodal'),
     url(r'^stockmovementproducts/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', StockMovementProductDelete.as_view(), name='CDNX_invoicing_stockmovementproducts_sublist_delete'),
-
-    url(r'^hauliers$', HaulierList.as_view(), name='CDNX_invoicing_hauliers_list'),
-    url(r'^hauliers/add$', HaulierCreate.as_view(), name='CDNX_invoicing_hauliers_add'),
-    url(r'^hauliers/addmodal$', HaulierCreateModal.as_view(), name='CDNX_invoicing_hauliers_addmodal'),
-    url(r'^hauliers/(?P<pk>\w+)/edit$', HaulierUpdate.as_view(), name='CDNX_invoicing_hauliers_edit'),
-    url(r'^hauliers/(?P<pk>\w+)/editmodal$', HaulierUpdateModal.as_view(), name='CDNX_invoicing_hauliers_editmodal'),
-    url(r'^hauliers/(?P<pk>\w+)/delete$', HaulierDelete.as_view(), name='CDNX_invoicing_hauliers_delete'),
-
-
-] + url_sales + url_purchases + url_cash
+"""

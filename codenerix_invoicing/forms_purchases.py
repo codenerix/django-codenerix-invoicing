@@ -31,7 +31,7 @@ from codenerix_invoicing.models_purchases import Provider, \
     PurchasesOrderDocument, PurchasesAlbaranDocument, PurchasesTicketDocument, PurchasesTicketRectificationDocument, \
     PurchasesInvoiceDocument, PurchasesInvoiceRectificationDocument
 
-from codenerix_storages.models import Storage, StorageZone, StorageBatch
+from codenerix_storages.models import Storage, StorageZone  # , StorageBatch
 from codenerix_products.models import Category
 
 
@@ -264,7 +264,7 @@ class AlbaranForm(GenModelForm):
 class LineAlbaranForm(GenModelForm):
     storage = forms.ModelChoiceField(label=_('Storage'), queryset=Storage.objects.all())
     zone = forms.ModelChoiceField(label=_('Zone'), queryset=StorageZone.objects.all())
-    batch = forms.ModelChoiceField(label=_('Batch'), queryset=StorageBatch.objects.all())
+    # batch = forms.ModelChoiceField(label=_('Batch'), queryset=StorageBatch.objects.all())
 
     class Meta:
         model = PurchasesLineAlbaran
@@ -276,7 +276,7 @@ class LineAlbaranForm(GenModelForm):
                 _('Storage'), 12,
                 ['storage', 4],
                 ['zone', 4],
-                ['batch', 4],
+                # ['batch', 4],
             ),
             (
                 _('Details'), 12,

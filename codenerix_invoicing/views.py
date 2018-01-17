@@ -37,14 +37,16 @@ import xhtml2pdf.pisa as pisa
 from codenerix.multiforms import MultiForm
 from codenerix.views import GenList, GenCreate, GenCreateModal, GenUpdate, GenUpdateModal, GenDelete, GenDetail, GenDetailModal
 
-from codenerix_invoicing.models import BillingSeries, LegalNote, TypeDocument, MODELS, ProductStock
-from codenerix_invoicing.forms import BillingSeriesForm, LegalNoteForm, TypeDocumentForm, ProductStockForm, ProductStockOwnForm
+from codenerix_invoicing.models import BillingSeries, LegalNote, TypeDocument, MODELS  # , ProductStock
+from codenerix_invoicing.forms import BillingSeriesForm, LegalNoteForm, TypeDocumentForm  # , ProductStockForm, ProductStockOwnForm
 
-from codenerix_invoicing.models import StockMovement, StockMovementProduct, Haulier
-from codenerix_invoicing.forms import StockMovementForm, StockMovementProductForm, HaulierForm
+# from codenerix_invoicing.models import StockMovement, StockMovementProduct, 
+# from codenerix_invoicing.forms import StockMovementForm, StockMovementProductForm
+from codenerix_invoicing.models import Haulier
+from codenerix_invoicing.forms import HaulierForm
 
-from codenerix_storages.models import StorageBatch
-from codenerix_corporate.models import CorporateImage
+# from codenerix_storages.models import StorageBatch
+# from codenerix_corporate.models import CorporateImage
 from codenerix_extensions.files.views import ImageFileView
 
 
@@ -201,7 +203,7 @@ class TypeDocumentUpdateModal(GenUpdateModal, TypeDocumentUpdate):
 class TypeDocumentDelete(GenDelete):
     model = TypeDocument
 
-
+"""
 # ###########################################
 class GenProductStockUrl(object):
     ws_entry_point = '{}/productstocks'.format(settings.CDNX_INVOICING_URL_COMMON)
@@ -401,7 +403,7 @@ class StockMovementProductDetails(GenDetail):
 class StockMovementProductDetailModal(GenDetailModal, StockMovementProductDetails):
     pass
 
-
+"""
 # ###########################################
 class GenHaulierUrl(object):
     ws_entry_point = '{}/hauliers'.format(settings.CDNX_INVOICING_URL_COMMON)

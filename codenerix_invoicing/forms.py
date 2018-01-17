@@ -24,7 +24,7 @@ from django.conf import settings
 from codenerix.forms import GenModelForm
 from codenerix.widgets import WysiwygAngularInput
 
-from codenerix_invoicing.models import BillingSeries, LegalNote, TypeDocument, MODELS, ProductStock, StockMovement, StockMovementProduct, Haulier
+from codenerix_invoicing.models import BillingSeries, LegalNote, TypeDocument, MODELS, Haulier  # , ProductStock, StockMovement, StockMovementProduct
 
 
 class BillingSeriesForm(GenModelForm):
@@ -106,7 +106,7 @@ class {model}TextForm{lang}(GenModelForm):\n
 
         exec(query.format(model=model, lang=lang_code, languages="'{}'".format("','".join(settings.LANGUAGES_DATABASES))))
 
-
+"""
 class ProductStockForm(GenModelForm):
     class Meta:
         model = ProductStock
@@ -192,7 +192,7 @@ class StockMovementProductForm(GenModelForm):
                 ['quantity', 6],)
         ]
         return g
-
+"""
 
 class HaulierForm(GenModelForm):
     class Meta:
