@@ -8,6 +8,12 @@ Codenerix Invoicing is a module that enables `CODENERIX.com <http://www.codeneri
     :target: http://www.codenerix.com
     :alt: Try our demo with Centrologic Cloud
 
+*********
+Changelog
+*********
+
+2018-01-17 - Codenerix Invoicing v1.x is incompatible with v2.x, `what has changed and how to migrate to v2.x? <https://github.com/centrologic/django-codenerix-invoicing/wiki/Codenerix-Invoicing-version-1.x-is-icompatible-with-2.x>`_.
+
 ****
 Demo
 ****
@@ -51,6 +57,9 @@ Quickstart
     CDNX_INVOICING_CODE_FORMAT_TICKETRECTIFICATION = 'TR{year}{day}{month}-{hour}{minute}-{serial}-{pk}'
     CDNX_INVOICING_CODE_FORMAT_INVOICE = 'I{year}{day}{month}-{hour}{minute}-{serial}-{pk}'
     CDNX_INVOICING_CODE_FORMAT_INVOICERECTIFCATION = 'IT{year}{day}{month}-{hour}{minute}-{serial}-{pk}'
+
+    CDNX_INVOICING_CURRENCY_MAX_DIGITS = 10  # 99.999.999,?
+    CDNX_INVOICING_CURRENCY_DECIMAL_PLACES = 2  # ?,99
 
 4. Since Codenerix Invoicing is a library, you only need to import its parts into your project and use them.
 
