@@ -8,6 +8,12 @@ Codenerix Invoicing is a module that enables `CODENERIX.com <http://www.codeneri
     :target: http://www.codenerix.com
     :alt: Try our demo with Centrologic Cloud
 
+*********
+Changelog
+*********
+
+2018-01-17 - Codenerix Invoicing v1.x is incompatible with v2.x, `what has changed and how to migrate to v2.x? <https://github.com/centrologic/django-codenerix-invoicing/wiki/Codenerix-Invoicing-version-1.x-is-icompatible-with-2.x>`_.
+
 ****
 Demo
 ****
