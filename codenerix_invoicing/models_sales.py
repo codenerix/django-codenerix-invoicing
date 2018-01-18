@@ -637,7 +637,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
                 if hasattr(line, 'tax'):
                     if line.tax not in tax:
                         if not details:
-                            tax[line.tax] = 0.0
+                            tax[line.tax] = Decimal("0")
                         else:
                             tax[line.tax] = {
                                 'label': line.tax_label,
@@ -748,11 +748,11 @@ class GenLineProductBasic(CodenerixModel):  # META: Abstract class
         # returns the product associated with the line
         raise Exception(_("Method 'get_product()' don't implemented. ({})".format(self._meta.model_name)))
 
-    def __update_total(self, obj, force_save=True):
+    def gen_update_total(self, obj, force_save=True):
         self.subtotal = obj.price_base * Decimal(self.quantity)
         self.taxes = self.subtotal * Decimal(obj.tax / 100.0)
         self.equivalence_surcharges = self.subtotal * Decimal(obj.equivalence_surcharge / 100.0)
-        self.discounts = self.subtotal * Decimal(obj.discount / 100.0)
+        self.discounts = self.subtotal * obj.discount / 100
         self.total = self.subtotal - self.discounts + self.taxes + self.equivalence_surcharges
         if force_save:
             self.save()
@@ -810,7 +810,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
 
     def update_total(self, force_save=True):
         # calculate totals
-        self.__update_total(self, force_save)
+        self.gen_update_total(self, force_save)
 
     def save(self, *args, **kwargs):
         if self.pk is None:
@@ -1645,7 +1645,7 @@ class SalesLineAlbaran(GenLineProductBasic):
         return fields
 
     def update_total(self, force_save=True):
-        self.__update_total(getattr(self, 'line_order'), force_save)
+        self.gen_update_total(getattr(self, 'line_order'), force_save)
 
     def get_customer(self):
         return self.line_order.get_customer()
@@ -1795,7 +1795,7 @@ class SalesLineTicketRectification(GenLineProductBasic):
         return fields
 
     def update_total(self, force_save=True):
-        self.__update_total(getattr(self, 'line_ticket'), force_save)
+        self.gen_update_total(getattr(self, 'line_ticket'), force_save)
 
     def get_customer(self):
         return self.line_ticket.get_customer()
@@ -1941,7 +1941,7 @@ class SalesLineInvoiceRectification(GenLineProductBasic):
         return fields
 
     def update_total(self, force_save=True):
-        self.__update_total(getattr(self, 'line_invoice'), force_save)
+        self.gen_update_total(getattr(self, 'line_invoice'), force_save)
 
     def save(self, *args, **kwargs):
         force = kwargs.get('force_save', False)

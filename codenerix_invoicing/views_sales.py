@@ -534,6 +534,8 @@ class BasketPassToOrder(View):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
         context = SalesLineBasket.create_order_from_budget(pk, list_lines)
+        if 'error' in context:
+            context['error'] = str(context['error'])
         try:
             context['obj_final'] = None
             json_answer = json.dumps(context)

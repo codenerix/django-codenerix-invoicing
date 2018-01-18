@@ -49,7 +49,6 @@ angular.module('codenerixSalesControllers', [])
                             if (answer.url == undefined){
                                 alert(answer.error);
                             }else{
-                                alert(answer.url);
                                 $window.location.href = answer.url;
                             }
                         } else {
@@ -136,7 +135,6 @@ angular.module('codenerixSalesControllers', [])
                             if (answer.url == undefined){
                                 alert(answer.error);
                             }else{
-                                alert(answer.url);
                                 $window.location.href = answer.url;
                             }
                         } else {
@@ -179,7 +177,6 @@ angular.module('codenerixSalesControllers', [])
                             if (answer.url == undefined){
                                 alert(answer.error);
                             }else{
-                                alert(answer.url);
                                 $window.location.href = answer.url;
                             }
                         } else {
