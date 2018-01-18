@@ -20,6 +20,8 @@
 
 import copy
 import datetime
+from decimal import Decimal
+
 from django.urls import reverse
 from django.db import models, transaction, IntegrityError
 from django.utils import timezone
@@ -624,50 +626,50 @@ class GenVersion(CodenerixModel):  # META: Abstract class
     def calculate_price_doc_complete(self, queryset=None, details=False):
         # calculate totals with details
         if queryset:
-            subtotal = 0
+            subtotal = Decimal("0")
             tax = {}
             discount = {}
             equivalence_surcharges = {}
-            total = 0
+            total = Decimal("0")
             for line in queryset:
                 subtotal += line.subtotal
 
                 if hasattr(line, 'tax'):
                     if line.tax not in tax:
                         if not details:
-                            tax[line.tax] = 0
+                            tax[line.tax] = 0.0
                         else:
                             tax[line.tax] = {
                                 'label': line.tax_label,
-                                'amount': 0
+                                'amount': Decimal("0")
                             }
-                    price_tax = line.taxes
+                    price_tax = Decimal(line.taxes)
                     if not details:
                         tax[line.tax] += price_tax
                     else:
                         tax[line.tax]['amount'] += price_tax
                 else:
-                    price_tax = 0
+                    price_tax = Decimal("0")
 
                 if hasattr(line, 'equivalence_surcharge'):
                     if line.equivalence_surcharge:
                         if line.equivalence_surcharge not in equivalence_surcharges:
-                            equivalence_surcharges[line.equivalence_surcharge] = 0
+                            equivalence_surcharges[line.equivalence_surcharge] = Decimal("0")
 
-                        equivalence_surcharge = line.subtotal * self.equivalence_surcharge / 100.0
+                        equivalence_surcharge = line.subtotal * Decimal(self.equivalence_surcharge / 100.0)
                         equivalence_surcharges[line.equivalence_surcharge] = equivalence_surcharge
                     else:
-                        equivalence_surcharge = 0
+                        equivalence_surcharge = Decimal("0")
                 else:
-                    equivalence_surcharge = 0
+                    equivalence_surcharge = Decimal("0")
 
                 if hasattr(line, 'discount'):
                     if line.discount not in discount:
-                        discount[line.discount] = 0
-                    price_discount = line.discounts
+                        discount[line.discount] = Decimal("0")
+                    price_discount = Decimal(line.discounts)
                     discount[line.discount] += price_discount
                 else:
-                    price_discount = 0
+                    price_discount = Decimal("0")
 
                 total += line.subtotal - price_discount + price_tax + equivalence_surcharge
 
