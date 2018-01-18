@@ -449,7 +449,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
     """
     # additional information
     subtotal = models.DecimalField(_("Subtotal"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
-    discounts = models.DecimalField(_("Discounts"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    discounts = models.FloatField(_("Discounts"), blank=False, null=False, default=0, editable=False)
     taxes = models.FloatField(_("Taxes"), blank=False, null=False, default=0, editable=False)
     equivalence_surcharges = models.FloatField(_("Equivalence surcharge"), blank=False, null=False, default=0, editable=False)
     total = models.DecimalField(_("Total"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
@@ -692,8 +692,8 @@ class GenLineProductBasic(CodenerixModel):  # META: Abstract class
     # additional information
     subtotal = models.DecimalField(_("Subtotal"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     discounts = models.DecimalField(_("Discounts"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
-    taxes = models.FloatField(_("Taxes"), blank=False, null=False, default=0, editable=False)
-    equivalence_surcharges = models.FloatField(_("Equivalence surcharge"), blank=True, null=True, default=0)
+    taxes = models.DecimalField(_("Taxes"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    equivalence_surcharges = models.DecimalField(_("Equivalence surcharge"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0)
     total = models.DecimalField(_("Total"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     # logical deletion
     removed = models.BooleanField(_("Removed"), blank=False, default=False, editable=False)
@@ -745,6 +745,15 @@ class GenLineProductBasic(CodenerixModel):  # META: Abstract class
     def get_product(self):
         # returns the product associated with the line
         raise Exception(_("Method 'get_product()' don't implemented. ({})".format(self._meta.model_name)))
+
+    def __update_total(self, obj, force_save=True):
+        self.subtotal = obj.price_base * Decimal(self.quantity)
+        self.taxes = self.subtotal * Decimal(obj.tax / 100.0)
+        self.equivalence_surcharges = self.subtotal * Decimal(obj.equivalence_surcharge / 100.0)
+        self.discounts = self.subtotal * Decimal(obj.discount / 100.0)
+        self.total = self.subtotal - self.discounts + self.taxes + self.equivalence_surcharges
+        if force_save:
+            self.save()
 
 
 # lineas de productos
@@ -799,13 +808,7 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
 
     def update_total(self, force_save=True):
         # calculate totals
-        self.subtotal = self.price_base * self.quantity
-        self.taxes = (self.subtotal * self.tax / 100.0)
-        self.equivalence_surcharges = (self.subtotal * self.equivalence_surcharge / 100.0)
-        self.discounts = (self.subtotal * self.discount / 100.0)
-        self.total = self.subtotal - self.discounts + self.taxes + self.equivalence_surcharges
-        if force_save:
-            self.save()
+        self.__update_total(self, force_save)
 
     def save(self, *args, **kwargs):
         if self.pk is None:
@@ -1640,13 +1643,7 @@ class SalesLineAlbaran(GenLineProductBasic):
         return fields
 
     def update_total(self, force_save=True):
-        self.subtotal = self.line_order.price_base * self.quantity
-        self.taxes = (self.subtotal * self.line_order.tax / 100.0)
-        self.equivalence_surcharges = (self.subtotal * self.line_order.equivalence_surcharge / 100.0)
-        self.discounts = (self.subtotal * self.line_order.discount / 100.0)
-        self.total = self.subtotal - self.discounts + self.taxes + self.equivalence_surcharges
-        if force_save:
-            self.save()
+        self.__update_total(getattr(self, 'line_order'), force_save)
 
     def get_customer(self):
         return self.line_order.get_customer()
@@ -1796,13 +1793,7 @@ class SalesLineTicketRectification(GenLineProductBasic):
         return fields
 
     def update_total(self, force_save=True):
-        self.subtotal = self.line_ticket.price_base * self.quantity
-        self.taxes = (self.subtotal * self.line_ticket.tax / 100.0)
-        self.equivalence_surcharges = (self.subtotal * self.line_ticket.equivalence_surcharge / 100.0)
-        self.discounts = (self.subtotal * self.line_ticket.discount / 100.0)
-        self.total = self.subtotal - self.discounts + self.taxes + self.equivalence_surcharges
-        if force_save:
-            self.save()
+        self.__update_total(getattr(self, 'line_ticket'), force_save)
 
     def get_customer(self):
         return self.line_ticket.get_customer()
@@ -1948,13 +1939,7 @@ class SalesLineInvoiceRectification(GenLineProductBasic):
         return fields
 
     def update_total(self, force_save=True):
-        self.subtotal = self.line_invoice.price_base * self.quantity
-        self.taxes = (self.subtotal * self.line_invoice.tax / 100.0)
-        self.equivalence_surcharges = (self.subtotal * self.line_invoice.equivalence_surcharge / 100.0)
-        self.discounts = (self.subtotal * self.line_invoice.discount / 100.0)
-        self.total = self.subtotal - self.discounts + self.taxes + self.equivalence_surcharges
-        if force_save:
-            self.save()
+        self.__update_total(getattr(self, 'line_invoice'), force_save)
 
     def save(self, *args, **kwargs):
         force = kwargs.get('force_save', False)
