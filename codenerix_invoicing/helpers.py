@@ -18,6 +18,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from decimal import Decimal
+
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
@@ -169,9 +171,9 @@ class ShoppingCartProxy(object):
 
             self._products = {
                 'count': 0,
-                'subtotal': 0.0,
-                'total': 0.0,
-                'tax': 0.0,
+                'subtotal': Decimal("0"),
+                'total': Decimal("0"),
+                'tax': Decimal("0"),
                 'products': [],
             }
 
@@ -225,13 +227,13 @@ class ShoppingCartProxy(object):
                     'quantity': self._quantities[final_product.pk],
                     'stock_real': final_product.stock_real - stock_locked,
                     'force_stock': int(final_product.force_stock),
-                    'tax': self._quantities[final_product.pk] * price['tax'],
+                    'tax': Decimal(self._quantities[final_product.pk]) * price['tax'],
                     'base_price': price['price_base'],
                     'unit_price': price['price_total'],
                     'weight': weight,
                     # by compatibility
-                    'overcharge': 0,
-                    'total_price': self._quantities[final_product.pk] * price['price_total'],
+                    'overcharge': Decimal("0"),
+                    'total_price': Decimal(self._quantities[final_product.pk]) * price['price_total'],
                     'features': [{
                         'name': feature['name'],
                         'value': feature['value']
@@ -243,8 +245,8 @@ class ShoppingCartProxy(object):
                 })
 
                 self._products['count'] += 1
-                self._products['subtotal'] += self._quantities[final_product.pk] * price['price_base']
-                self._products['total'] += (self._quantities[final_product.pk] * price['price_base'] + self._products['products'][-1]['tax'])
+                self._products['subtotal'] += Decimal(self._quantities[final_product.pk]) * price['price_base']
+                self._products['total'] += Decimal(self._quantities[final_product.pk]) * price['price_base'] + self._products['products'][-1]['tax']
                 self._products['tax'] += self._products['products'][-1]['tax']
 
         return self._products
@@ -264,17 +266,17 @@ class ShoppingCartProxy(object):
 
             self._totals = {
                 'count': 0,
-                'subtotal': 0.0,
-                'total': 0.0,
-                'tax': 0.0,
+                'subtotal': Decimal("0"),
+                'total': Decimal("0"),
+                'tax': Decimal("0"),
             }
 
             for final_product in products:
                 price = final_product.calculate_price()
                 self._totals['count'] += 1
-                self._totals['subtotal'] += self._quantities[final_product.pk] * price['price_base']
-                self._totals['total'] += self._quantities[final_product.pk] * price['price_total']
-                self._totals['tax'] += self._quantities[final_product.pk] * price['tax']
+                self._totals['subtotal'] += Decimal(self._quantities[final_product.pk]) * price['price_base']
+                self._totals['total'] += Decimal(self._quantities[final_product.pk]) * price['price_total']
+                self._totals['tax'] += Decimal(self._quantities[final_product.pk]) * price['tax']
 
         return self._totals
 
@@ -292,7 +294,7 @@ class ShoppingCartProxy(object):
         price = product.calculate_price()
 
         result = self.totals.copy()
-        result['total_price'] = self._quantities[product_pk] * price['price_total']
+        result['total_price'] = Decimal(self._quantities[product_pk]) * price['price_total']
 
         return result
 
@@ -302,21 +304,21 @@ class ShoppingCartProxy(object):
             with_stock = []
             without_stock = []
 
-            price_base = 0
-            price_tax = 0
+            price_base = Decimal("0")
+            price_tax = Decimal("0")
             ws_line = {}
             wos_line = None
 
             for line in self.get_products(onlypublic=onlypublic)['products']:
                 ws_line = {
                     'description': line['name'],
-                    'price': float("{0:.2f}".format(line['unit_price'] * line['quantity'])),
+                    'price': line['unit_price'] * Decimal(line['quantity']),
                     'quantity': line['quantity'],
                 }
                 wos_line = {
                     'description': line['name'],
-                    'price': float("{0:.2f}".format(line['base_price'])),
-                    'quantity': 0
+                    'price': line['base_price'],
+                    'quantity': 0.0
                 }
 
                 if line['force_stock']:
@@ -331,8 +333,8 @@ class ShoppingCartProxy(object):
 
                 if ws_line:
                     with_stock.append(ws_line)
-                    price_base += float("{0:.2f}".format(line['base_price'] * line['quantity']))
-                    price_tax += float("{0:.2f}".format((line['tax'] - line['overcharge'])))
+                    price_base += line['base_price'] * Decimal(line['quantity'])
+                    price_tax += line['tax'] - line['overcharge']
                 if wos_line:
                     without_stock.append(wos_line)
 
@@ -341,17 +343,17 @@ class ShoppingCartProxy(object):
                 with_stock = []
 
             prices = {
-                'price_base': round(float("{0:.2f}".format(price_base)) * 100, 2) / 100,
-                'price_tax': round(float("{0:.2f}".format(price_tax)) * 100, 2) / 100,
-                'price_total': round(float("{0:.2f}".format(price_tax + price_base)) * 100, 2) / 100,
+                'price_base': price_base,
+                'price_tax': price_tax,
+                'price_total': price_tax + price_base,
                 'products_with_stock': with_stock,
                 'products_without_stock': without_stock,
             }
         else:
             prices = {
-                'price_base': round(float("{0:.2f}".format(self.__price_base)) * 100, 2) / 100,
-                'price_tax': round(float("{0:.2f}".format(self.__price_tax)) * 100, 2) / 100,
-                'price_total': round(float("{0:.2f}".format(self.__price_tax + self.__price_base)) * 100, 2) / 100,
+                'price_base': self.__price_base,
+                'price_tax': self.__price_tax,
+                'price_total': self.__price_tax + self.__price_base,
                 'ws_line': self.__ws_line,
                 'wos_line': self.__wos_line,
             }
