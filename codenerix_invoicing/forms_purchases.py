@@ -282,7 +282,7 @@ class LineAlbaranForm(GenModelForm):
             ),
             (
                 _('Details'), 12,
-                ['product', 12],
+                ['product_unique', 12],
                 ['line_order', 4],
                 ['status', 4],
                 ['invoiced', 4],
@@ -301,7 +301,7 @@ class LineAlbaranForm(GenModelForm):
             (_('Details'), 12,
                 ['albaran', 6],
                 ['line_order', 6],
-                ['product', 6],
+                ['product_unique', 6],
                 ['price', 6],
                 ['quantity', 6],
                 ['description', 6],
