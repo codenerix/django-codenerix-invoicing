@@ -1464,6 +1464,7 @@ class GenAlbaranUrl(object):
 class AlbaranList(GenAlbaranUrl, GenList):
     model = SalesAlbaran
     show_details = True
+    linkadd = False
     template_model = "sales/albaran_list.html"
     extra_context = {'menu': ['sales', 'Albaran'], 'bread': [_('Sales'), _('Albaran')]}
     default_ordering = "-created"
@@ -1774,6 +1775,7 @@ class GenTicketUrl(object):
 class TicketList(GenTicketUrl, GenList):
     model = SalesTicket
     show_details = True
+    linkadd = False
     template_model = "sales/ticket_list.html"
     extra_context = {'menu': ['sales', 'Ticket'], 'bread': [_('Sales'), _('Ticket')]}
     default_ordering = "-created"
@@ -2137,6 +2139,7 @@ class GenTicketRectificationUrl(object):
 class TicketRectificationList(GenTicketRectificationUrl, GenList):
     model = SalesTicketRectification
     show_details = True
+    linkadd = False
     extra_context = {'menu': ['sales', 'TicketRectification'], 'bread': [_('Sales'), _('TicketRectification')]}
     default_ordering = "-created"
 
@@ -2401,6 +2404,7 @@ class GenInvoiceUrl(object):
 class InvoiceList(GenInvoiceUrl, GenList):
     model = SalesInvoice
     show_details = True
+    linkadd = False
     template_model = "sales/invoice_list.html"
     extra_context = {'menu': ['sales', 'Invoice'], 'bread': [_('Sales'), _('Invoice')]}
     default_ordering = "-created"
@@ -2739,6 +2743,7 @@ class GenInvoiceRectificationUrl(object):
 class InvoiceRectificationList(GenInvoiceRectificationUrl, GenList):
     model = SalesInvoiceRectification
     show_details = True
+    linkadd = False
     extra_context = {'menu': ['sales', 'InvoiceRectification'], 'bread': [_('Sales'), _('InvoiceRectification')]}
     default_ordering = "-created"
 
