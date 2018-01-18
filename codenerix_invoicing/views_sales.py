@@ -512,7 +512,7 @@ class BasketPassToBudget(View):
                 try:
                     json_answer = json.dumps(context)
                 except TypeError:
-                    raise TypeError("The structure can not be encoded to JSON")
+                    raise TypeError("The structure can not be encoded to JSON: {}".format(context))
                 return HttpResponse(json_answer, content_type='application/json')
             else:
                 context['error'] = _("This is not basket")
@@ -534,13 +534,13 @@ class BasketPassToOrder(View):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
         context = SalesLineBasket.create_order_from_budget(pk, list_lines)
+        context.pop('obj_final')
         if 'error' in context:
             context['error'] = str(context['error'])
         try:
-            context['obj_final'] = None
             json_answer = json.dumps(context)
         except TypeError:
-            raise TypeError("The structure can not be encoded to JSON")
+            raise TypeError("The structure can not be encoded to JSON: {}".format(context))
         # Return the new context
         return HttpResponse(json_answer, content_type='application/json')
 
@@ -583,7 +583,7 @@ class BasketPassToOrder(View):
         try:
             json_answer = json.dumps(context)
         except TypeError:
-            raise TypeError("The structure can not be encoded to JSON")
+            raise TypeError("The structure can not be encoded to JSON: {}".format(context))
         # Return the new context
         return HttpResponse(json_answer, content_type='application/json')
 
@@ -971,15 +971,15 @@ class OrderStatus(View):
         answer = {'changed': False}
         if action in ['next', 'previous']:
             so = SalesOrder.objects.get(pk=pk)
-            first=None
-            last=None
+            first = None
+            last = None
             for (key, label) in STATUS_ORDER:
                 if not first:
-                    first=key
+                    first = key
                 elif so.status_order == last:
                     so.status_order = key
                     so.save()
-                    answer['changed']=True
+                    answer['changed'] = True
                     break
                 last = key
         else:
@@ -1058,12 +1058,14 @@ class OrderCreateAlbaran(View):
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
+        context = SalesLineOrder.create_albaran_from_order(pk, list_lines)
+        context.pop('obj_final')
+        if 'error' in context:
+            context['error'] = str(context['error'])
         try:
-            context = SalesLineOrder.create_albaran_from_order(pk, list_lines)
-            context.pop('obj_final')
             json_answer = json.dumps(context)
         except TypeError:
-            raise TypeError("The structure can not be encoded to JSON")
+            raise TypeError("The structure can not be encoded to JSON: {}".format(context))
         # Return the new context
         return HttpResponse(json_answer, content_type='application/json')
 
@@ -1077,12 +1079,14 @@ class OrderCreateTicket(View):
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
+        context = SalesLineOrder.create_ticket_from_order(pk, list_lines)
+        context.pop('obj_final')
+        if 'error' in context:
+            context['error'] = str(context['error'])
         try:
-            context = SalesLineOrder.create_ticket_from_order(pk, list_lines)
-            context.pop('obj_final')
             json_answer = json.dumps(context)
         except TypeError:
-            raise TypeError("The structure can not be encoded to JSON")
+            raise TypeError("The structure can not be encoded to JSON: {}".format(context))
         # Return the new context
         return HttpResponse(json_answer, content_type='application/json')
 
@@ -1096,12 +1100,14 @@ class OrderCreateInvoice(View):
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
+        context = SalesLineOrder.create_invoice_from_order(pk, list_lines)
+        context.pop('obj_final')
+        if 'error' in context:
+            context['error'] = str(context['error'])
         try:
-            context = SalesLineOrder.create_invoice_from_order(pk, list_lines)
-            context.pop('obj_final')
             json_answer = json.dumps(context)
         except TypeError:
-            raise TypeError("The structure can not be encoded to JSON")
+            raise TypeError("The structure can not be encoded to JSON: {}".format(context))
         # Return the new context
         return HttpResponse(json_answer, content_type='application/json')
 
@@ -1366,7 +1372,7 @@ class LineOrderForeignCustom(GenLineOrderUrl, GenForeignKey):
         try:
             json_answer = json.dumps(answer)
         except TypeError:
-            raise TypeError("The structure can not be encoded to JSON")
+            raise TypeError("The structure can not be encoded to JSON: {}".format(answer))
         # Return the new answer
         return HttpResponse(json_answer, content_type='application/json')
 
@@ -1575,11 +1581,14 @@ class AlbaranCreateTicket(View):
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
-        xxx = SalesLineOrder.create_ticket_from_albaran(pk, list_lines)
+        context = SalesLineOrder.create_ticket_from_albaran(pk, list_lines)
+        context.pop('obj_final')
+        if 'error' in context:
+            context['error'] = str(context['error'])
         try:
-            json_answer = json.dumps(xxx)
+            json_answer = json.dumps(context)
         except TypeError:
-            raise TypeError("The structure can not be encoded to JSON")
+            raise TypeError("The structure can not be encoded to JSON: {}".format(context))
         # Return the new context
         return HttpResponse(json_answer, content_type='application/json')
 
@@ -1593,10 +1602,14 @@ class AlbaranCreateInvoice(View):
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
+        context = SalesLineOrder.create_invoice_from_albaran(pk, list_lines)
+        context.pop('obj_final')
+        if 'error' in context:
+            context['error'] = str(context['error'])
         try:
-            json_answer = json.dumps(SalesLineOrder.create_invoice_from_albaran(pk, list_lines))
+            json_answer = json.dumps(context)
         except TypeError:
-            raise TypeError("The structure can not be encoded to JSON")
+            raise TypeError("The structure can not be encoded to JSON: {}".format(context))
         # Return the new context
         return HttpResponse(json_answer, content_type='application/json')
 
@@ -1875,10 +1888,14 @@ class TicketCreateInvoice(View):
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
+        context = SalesLineOrder.create_invoice_from_ticket(pk, list_lines)
+        context.pop('obj_final')
+        if 'error' in context:
+            context['error'] = str(context['error'])
         try:
-            json_answer = json.dumps(SalesLineOrder.create_invoice_from_ticket(pk, list_lines))
+            json_answer = json.dumps(context)
         except TypeError:
-            raise TypeError("The structure can not be encoded to JSON")
+            raise TypeError("The structure can not be encoded to JSON: {}".format(context))
         # Return the new context
         return HttpResponse(json_answer, content_type='application/json')
 
@@ -1922,7 +1939,7 @@ class TicketCreateRectification(View):
         try:
             json_answer = json.dumps(context)
         except TypeError:
-            raise TypeError("The structure can not be encoded to JSON")
+            raise TypeError("The structure can not be encoded to JSON: {}".format(context))
         # Return the new context
         return HttpResponse(json_answer, content_type='application/json')
 
@@ -2485,7 +2502,7 @@ class InvoiceCreateRectification(View):
         try:
             json_answer = json.dumps(context)
         except TypeError:
-            raise TypeError("The structure can not be encoded to JSON")
+            raise TypeError("The structure can not be encoded to JSON: {}".format(context))
         # Return the new context
         return HttpResponse(json_answer, content_type='application/json')
 
