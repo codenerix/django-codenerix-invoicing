@@ -596,7 +596,7 @@ class GenLineBasketUrl(object):
 # SalesLineBasket
 class LineBasketList(GenList):
     model = SalesLineBasket
-    extra_context = {'menu': ['SalesLineBasket', 'sales'], 'bread': [_('SalesLineBasket'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'SalesLineBasket'], 'bread': [_('Sales'), _('SalesLineBasket')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -852,7 +852,7 @@ class OrderList(GenOrderUrl, GenList):
     template_model = "sales/order_list.html"
     show_details = True
     linkadd = False
-    extra_context = {'menu': ['sales_order', 'sales'], 'bread': [_('Sales orders'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'sales_order'], 'bread': [_('Sales'), _('Sales orders')]}
     ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_order.html"}
     default_ordering = "-created"
     gentrans = {
@@ -1176,7 +1176,7 @@ class GenLineOrderUrl(object):
 # LineOrder
 class LineOrderList(GenLineOrderUrl, GenList):
     model = SalesLineOrder
-    extra_context = {'menu': ['LineOrder', 'sales'], 'bread': [_('LineOrder'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'LineOrder'], 'bread': [_('Sales'), _('LineOrder')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -1379,7 +1379,7 @@ class GenOrderDocumentUrl(object):
 # OrderDocument
 class OrderDocumentList(GenOrderDocumentUrl, GenList):
     model = SalesOrderDocument
-    extra_context = {'menu': ['OrderDocument', 'sales'], 'bread': [_('OrderDocument'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'OrderDocument'], 'bread': [_('Sales'), _('OrderDocument')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -1430,7 +1430,7 @@ class OrderDocumentDelete(GenOrderDocumentUrl, GenDelete):
 
 class OrderDocumentSubList(GenOrderDocumentUrl, GenList):
     model = SalesOrderDocument
-    extra_context = {'menu': ['SalesOrderDocument', 'sales'], 'bread': [_('SalesOrderDocument'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'SalesOrderDocument'], 'bread': [_('Sales'), _('SalesOrderDocument')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -1459,7 +1459,7 @@ class AlbaranList(GenAlbaranUrl, GenList):
     model = SalesAlbaran
     show_details = True
     template_model = "sales/albaran_list.html"
-    extra_context = {'menu': ['Albaran', 'sales'], 'bread': [_('Albaran'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'Albaran'], 'bread': [_('Sales'), _('Albaran')]}
     default_ordering = "-created"
 
     def __limitQ__(self, info):
@@ -1609,7 +1609,7 @@ class GenLineAlbaranUrl(object):
 # LineAlbaran
 class LineAlbaranList(GenLineAlbaranUrl, GenList):
     model = SalesLineAlbaran
-    extra_context = {'menu': ['LineAlbaran', 'sales'], 'bread': [_('LineAlbaran'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'LineAlbaran'], 'bread': [_('Sales'), _('LineAlbaran')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -1762,7 +1762,7 @@ class TicketList(GenTicketUrl, GenList):
     model = SalesTicket
     show_details = True
     template_model = "sales/ticket_list.html"
-    extra_context = {'menu': ['Ticket', 'sales'], 'bread': [_('Ticket'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'Ticket'], 'bread': [_('Sales'), _('Ticket')]}
     default_ordering = "-created"
 
     def __limitQ__(self, info):
@@ -1935,7 +1935,7 @@ class GenLineTicketUrl(object):
 # LineTicket
 class LineTicketList(GenLineTicketUrl, GenList):
     model = SalesLineTicket
-    extra_context = {'menu': ['LineTicket', 'sales'], 'bread': [_('LineTicket'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'LineTicket'], 'bread': [_('Sales'), _('LineTicket')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -2120,7 +2120,7 @@ class GenTicketRectificationUrl(object):
 class TicketRectificationList(GenTicketRectificationUrl, GenList):
     model = SalesTicketRectification
     show_details = True
-    extra_context = {'menu': ['TicketRectification', 'sales'], 'bread': [_('TicketRectification'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'TicketRectification'], 'bread': [_('Sales'), _('TicketRectification')]}
     default_ordering = "-created"
 
     def __limitQ__(self, info):
@@ -2240,7 +2240,7 @@ class GenLineTicketRectificationUrl(object):
 # LineTicketRectification
 class LineTicketRectificationList(GenLineTicketRectificationUrl, GenList):
     model = SalesLineTicketRectification
-    extra_context = {'menu': ['LineTicketRectification', 'sales'], 'bread': [_('LineTicketRectification'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'LineTicketRectification'], 'bread': [_('Sales'), _('LineTicketRectification')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -2385,7 +2385,7 @@ class InvoiceList(GenInvoiceUrl, GenList):
     model = SalesInvoice
     show_details = True
     template_model = "sales/invoice_list.html"
-    extra_context = {'menu': ['Invoice', 'sales'], 'bread': [_('Invoice'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'Invoice'], 'bread': [_('Sales'), _('Invoice')]}
     default_ordering = "-created"
 
     def __limitQ__(self, info):
@@ -2546,7 +2546,7 @@ class GenLineInvoiceUrl(object):
 # LineInvoice
 class LineInvoiceList(GenLineInvoiceUrl, GenList):
     model = SalesLineInvoice
-    extra_context = {'menu': ['LineInvoice', 'sales'], 'bread': [_('LineInvoice'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'LineInvoice'], 'bread': [_('Sales'), _('LineInvoice')]}
 
     def __limitQ__(self, info):
         limit = {}
