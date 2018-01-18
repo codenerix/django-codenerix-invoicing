@@ -653,6 +653,8 @@ class LineAlbaranCreate(GenLineAlbaranUrl, GenCreate):
             self.request.albaran = obj
             form.instance.albaran = obj
 
+        form.instance.validator_user = self.request.user
+
         raise Exception("revisar StorageBatch")
         """
         batch = StorageBatch.objects.filter(pk=form.data['batch']).first()

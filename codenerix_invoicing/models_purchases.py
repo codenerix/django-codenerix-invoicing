@@ -303,7 +303,7 @@ class PurchasesLineAlbaran(GenLineProduct):
     albaran = models.ForeignKey(PurchasesAlbaran, on_delete=models.CASCADE, related_name='line_albaran_purchases', verbose_name=_("Albaran"))
     line_order = models.ForeignKey(PurchasesLineOrder, on_delete=models.CASCADE, related_name='line_albaran_purchases', verbose_name=_("Line orders"), blank=True, null=True)
     product_unique = models.ForeignKey(ProductUnique, on_delete=models.CASCADE, related_name='line_albaran_purchases', verbose_name=_("Product"))
-    validator_user = models.ForeignKey(User, related_name='line_albaran_purchases', verbose_name=_("Validator user"), blank=False, null=False, on_delete=models.CASCADE)
+    validator_user = models.ForeignKey(User, related_name='line_albaran_purchases', verbose_name=_("Validator user"), blank=False, null=False, on_delete=models.CASCADE, editable=False)
 
     def __fields__(self, info):
         fields = super(PurchasesLineAlbaran, self).__fields__(info)

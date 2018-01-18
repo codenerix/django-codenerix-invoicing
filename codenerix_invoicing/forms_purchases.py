@@ -31,7 +31,7 @@ from codenerix_invoicing.models_purchases import Provider, \
     PurchasesOrderDocument, PurchasesAlbaranDocument, PurchasesTicketDocument, PurchasesTicketRectificationDocument, \
     PurchasesInvoiceDocument, PurchasesInvoiceRectificationDocument
 
-from codenerix_storages.models import Storage, StorageZone  # , StorageBatch
+from codenerix_storages.models import Storage, StorageZone, StorageBox
 from codenerix_products.models import Category
 
 
@@ -266,6 +266,7 @@ class AlbaranForm(GenModelForm):
 class LineAlbaranForm(GenModelForm):
     storage = forms.ModelChoiceField(label=_('Storage'), queryset=Storage.objects.all())
     zone = forms.ModelChoiceField(label=_('Zone'), queryset=StorageZone.objects.all())
+    box = forms.ModelChoiceField(label=_('Box'), queryset=StorageBox.objects.all())
     # batch = forms.ModelChoiceField(label=_('Batch'), queryset=StorageBatch.objects.all())
 
     class Meta:
@@ -278,19 +279,16 @@ class LineAlbaranForm(GenModelForm):
                 _('Storage'), 12,
                 ['storage', 4],
                 ['zone', 4],
-                # ['batch', 4],
+                ['box', 4],
             ),
             (
                 _('Details'), 12,
                 ['product_unique', 12],
-                ['line_order', 4],
-                ['status', 4],
-                ['invoiced', 4],
+                ['line_order', 12],
                 ['price', 4],
                 ['quantity', 4],
                 ['tax', 4],
-                ['description', 6],
-                ['feature_special_value', 6],
+                ['description', 12],
             )
         ]
         return g
@@ -298,17 +296,16 @@ class LineAlbaranForm(GenModelForm):
     @staticmethod
     def __groups_details__():
         g = [
-            (_('Details'), 12,
+            (
+                _('Details'), 12,
                 ['albaran', 6],
                 ['line_order', 6],
                 ['product_unique', 6],
                 ['price', 6],
                 ['quantity', 6],
                 ['description', 6],
-                ['feature_special_value', 6],
-                ['invoiced', 6],
                 ['tax', 6],
-                ['status'],)
+            )
         ]
         return g
 
