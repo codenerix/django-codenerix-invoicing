@@ -35,7 +35,7 @@ class BillingSeriesForm(GenModelForm):
             'description': WysiwygAngularInput(),
             'observations': WysiwygAngularInput(),
         }
-        
+
     def __groups__(self):
         g = [
             (_('Details'), 12,
@@ -198,7 +198,7 @@ class HaulierForm(GenModelForm):
     class Meta:
         model = Haulier
         exclude = ['name_file', ]
-        
+
     def __groups__(self):
         g = [
             (_('Details'), 12,

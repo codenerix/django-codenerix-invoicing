@@ -44,7 +44,7 @@ from codenerix_pos.models import POSSlot
 
 from codenerix_products.models import ProductFinal, TypeTax, ProductFinalOption, ProductUnique
 # from codenerix_storages.models import Storage
-from codenerix_payments.models import PaymentRequest
+from codenerix_payments.models import PaymentRequest, Currency
 
 CURRENCY_MAX_DIGITS = getattr(settings, 'CDNX_INVOICING_CURRENCY_MAX_DIGITS', 10)
 CURRENCY_DECIMAL_PLACES = getattr(settings, 'CDNX_INVOICING_CURRENCY_DECIMAL_PLACES', 2)
@@ -244,9 +244,9 @@ class Customer(GenRole, CodenerixModel):
             'info_customer_details': ('CDNX_get_details_info_customer', ),
         }
 
-    currency = models.CharField(_("Currency"), max_length=250, blank=True, null=True)
+    currency = models.ForeignKey(Currency, related_name='customers', verbose_name='Currency', on_delete=models.CASCADE)
     # serie de facturacion
-    billing_series = models.ForeignKey(BillingSeries, related_name='billing_series', verbose_name='Billing series', on_delete=models.CASCADE)
+    billing_series = models.ForeignKey(BillingSeries, related_name='customers', verbose_name='Billing series', on_delete=models.CASCADE)
     # datos de facturación
     # saldo final
     final_balance = models.CharField(_("Balance"), max_length=250, blank=True, null=True)

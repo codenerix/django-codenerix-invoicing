@@ -1226,7 +1226,7 @@ msgstr "Definitivo"
 #: codenerix_invoicing/models_sales.py:243
 #: codenerix_invoicing/models_sales.py:274
 msgid "Currency"
-msgstr "Monea"
+msgstr "Moneda"
 
 #: codenerix_invoicing/models_sales.py:252
 msgid "Apply equivalence surcharge"

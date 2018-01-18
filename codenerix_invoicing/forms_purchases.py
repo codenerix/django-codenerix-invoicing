@@ -62,6 +62,7 @@ class ProviderForm(GenModelForm):
                 ['codenerix_external_field', 4],
                 ['balance', 4],
                 ['billing_series', 4],
+                ['currenty', 4],
                 ['type_tax', 4],
                 ['shipping_tax', 4],
                 ['finance_surcharge', 4],
@@ -71,13 +72,14 @@ class ProviderForm(GenModelForm):
                 ['categories', 8],)
         ]
         return g
-    
+
     @staticmethod
     def __groups_details__():
         g = [
             (_('Details'), 12,
                 ['codenerix_external_field', 6],
                 ['balance', 6],
+                ['currenty', 6],
                 ['billing_series', 6],
                 ['type_tax', 6],
                 ['shipping_tax', 6],

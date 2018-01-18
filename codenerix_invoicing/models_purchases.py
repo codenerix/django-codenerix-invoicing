@@ -33,6 +33,8 @@ from codenerix_products.models import ProductFinal, TypeTax, Category, ProductUn
 
 from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
 
+from codenerix_payments.models import Currency
+
 CURRENCY_MAX_DIGITS = getattr(settings, 'CDNX_INVOICING_CURRENCY_MAX_DIGITS', 10)
 CURRENCY_DECIMAL_PLACES = getattr(settings, 'CDNX_INVOICING_CURRENCY_DECIMAL_PLACES', 2)
 
@@ -85,6 +87,7 @@ PURCHASE_ALBARAN_LINE_STATUS = (
     (PURCHASE_ALBARAN_LINE_STATUS_REJECTED, _('Rejected')),
 )
 """
+
 
 # #### CLASES ABSTRACTAS #############################
 # lineas de productos
@@ -187,7 +190,8 @@ class Provider(GenRole, CodenerixModel):
     finance_surcharge = models.CharField(_("Finance surcharge"), max_length=1, choices=FINANCE_SURCHARGE_STATUS_CHOICE, blank=True, null=True)
     payment_methods = models.CharField(_("Payment methods"), max_length=3, choices=PAYMENT_DETAILS, blank=True, null=True)
     delivery_time = models.SmallIntegerField(_("Delivery time (days)"), blank=False, null=False, default=1)
-    categories = models.ManyToManyField(Category, blank=True, related_name='providercategories', symmetrical=False)
+    categories = models.ManyToManyField(Category, blank=True, related_name='providers', symmetrical=False)
+    currency = models.ForeignKey(Currency, related_name='providers', verbose_name='Currency', on_delete=models.CASCADE)
 
     @staticmethod
     def foreignkey_external():

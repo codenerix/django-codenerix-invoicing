@@ -223,15 +223,15 @@ class GenBasketUrl(object):
 
 
 class GenBasketSHOPPINGCARTUrl(object):
-    ws_entry_point = '{}/nshoppingcarts'.format(settings.CDNX_INVOICING_URL_SALES)
+    ws_entry_point = '{}/shoppingcarts'.format(settings.CDNX_INVOICING_URL_SALES)
 
 
 class GenBasketBUDGETUrl(object):
-    ws_entry_point = '{}/nbudgets'.format(settings.CDNX_INVOICING_URL_SALES)
+    ws_entry_point = '{}/budgets'.format(settings.CDNX_INVOICING_URL_SALES)
 
 
 class GenBasketWISHLISTUrl(object):
-    ws_entry_point = '{}/nwishlists'.format(settings.CDNX_INVOICING_URL_SALES)
+    ws_entry_point = '{}/wishlists'.format(settings.CDNX_INVOICING_URL_SALES)
 
 
 # SalesBasket

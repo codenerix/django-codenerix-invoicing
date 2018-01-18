@@ -216,37 +216,37 @@ urlpatterns = [
 
     url(r'^shoppingcarts/management$', ShoppingCartManagement.as_view(), name='CDNX_invoicing_shoppingcarts_management'),
 
-    url(r'^nshoppingcarts$', BasketListSHOPPINGCART.as_view(), name='CDNX_invoicing_salesbaskets_shoppingcart_list'),
-    url(r'^nbudgets$', BasketListBUDGET.as_view(), name='CDNX_invoicing_salesbaskets_budget_list'),
-    url(r'^nwishlists$', BasketListWISHLIST.as_view(), name='CDNX_invoicing_salesbaskets_wishlist_list'),
+    url(r'^shoppingcarts$', BasketListSHOPPINGCART.as_view(), name='CDNX_invoicing_salesbaskets_shoppingcart_list'),
+    url(r'^budgets$', BasketListBUDGET.as_view(), name='CDNX_invoicing_salesbaskets_budget_list'),
+    url(r'^wishlists$', BasketListWISHLIST.as_view(), name='CDNX_invoicing_salesbaskets_wishlist_list'),
 
-    url(r'^nshoppingcarts/add$', BasketCreateSHOPPINGCART.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_add'),
-    url(r'^nbudgets/add$', BasketCreateBUDGET.as_view(), name='CDNX_invoicing_salesbaskets_BUDGET_add'),
-    url(r'^nwishlists/add$', BasketCreateWISHLIST.as_view(), name='CDNX_invoicing_salesbaskets_WISHLIST_add'),
+    url(r'^shoppingcarts/add$', BasketCreateSHOPPINGCART.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_add'),
+    url(r'^budgets/add$', BasketCreateBUDGET.as_view(), name='CDNX_invoicing_salesbaskets_BUDGET_add'),
+    url(r'^wishlists/add$', BasketCreateWISHLIST.as_view(), name='CDNX_invoicing_salesbaskets_WISHLIST_add'),
 
-    url(r'^nshoppingcarts/(?P<pk>\w+)$', BasketDetailsSHOPPINGCART.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_details'),
-    url(r'^nbudgets/(?P<pk>\w+)$', BasketDetailsBUDGET.as_view(), name='CDNX_invoicing_salesbaskets_BUDGET_details'),
-    url(r'^nwishlists/(?P<pk>\w+)$', BasketDetailsWISHLIST.as_view(), name='CDNX_invoicing_salesbaskets_WISHLIST_details'),
+    url(r'^shoppingcarts/(?P<pk>\w+)$', BasketDetailsSHOPPINGCART.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_details'),
+    url(r'^budgets/(?P<pk>\w+)$', BasketDetailsBUDGET.as_view(), name='CDNX_invoicing_salesbaskets_BUDGET_details'),
+    url(r'^wishlists/(?P<pk>\w+)$', BasketDetailsWISHLIST.as_view(), name='CDNX_invoicing_salesbaskets_WISHLIST_details'),
 
-    url(r'^nshoppingcarts/addmodal$', BasketCreateSHOPPINGCARTModal.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_addmodal'),
-    url(r'^nbudgets/addmodal$', BasketCreateBUDGETModal.as_view(), name='CDNX_invoicing_salesbaskets_BUDGET_addmodal'),
-    url(r'^nwishlists/addmodal$', BasketCreateWISHLISTModal.as_view(), name='CDNX_invoicing_salesbaskets_WISHLIST_addmodal'),
+    url(r'^shoppingcarts/addmodal$', BasketCreateSHOPPINGCARTModal.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_addmodal'),
+    url(r'^budgets/addmodal$', BasketCreateBUDGETModal.as_view(), name='CDNX_invoicing_salesbaskets_BUDGET_addmodal'),
+    url(r'^wishlists/addmodal$', BasketCreateWISHLISTModal.as_view(), name='CDNX_invoicing_salesbaskets_WISHLIST_addmodal'),
 
-    url(r'^nshoppingcarts/(?P<pk>\w+)/edit$', BasketUpdateSHOPPINGCART.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_edit'),
-    url(r'^nbudgets/(?P<pk>\w+)/edit$', BasketUpdateBUDGET.as_view(), name='CDNX_invoicing_salesbaskets_BUDGET_edit'),
-    url(r'^nwishlists/(?P<pk>\w+)/edit$', BasketUpdateWISHLIST.as_view(), name='CDNX_invoicing_salesbaskets_WISHLIST_edit'),
+    url(r'^shoppingcarts/(?P<pk>\w+)/edit$', BasketUpdateSHOPPINGCART.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_edit'),
+    url(r'^budgets/(?P<pk>\w+)/edit$', BasketUpdateBUDGET.as_view(), name='CDNX_invoicing_salesbaskets_BUDGET_edit'),
+    url(r'^wishlists/(?P<pk>\w+)/edit$', BasketUpdateWISHLIST.as_view(), name='CDNX_invoicing_salesbaskets_WISHLIST_edit'),
 
-    url(r'^nshoppingcarts/(?P<pk>\w+)/delete$', BasketDeleteSHOPPINGCART.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_delete'),
-    url(r'^nbudgets/(?P<pk>\w+)/delete$', BasketDeleteBUDGET.as_view(), name='CDNX_invoicing_salesbaskets_BUDGET_delete'),
-    url(r'^nwishlists/(?P<pk>\w+)/delete$', BasketDeleteWISHLIST.as_view(), name='CDNX_invoicing_salesbaskets_WISHLIST_delete'),
+    url(r'^shoppingcarts/(?P<pk>\w+)/delete$', BasketDeleteSHOPPINGCART.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_delete'),
+    url(r'^budgets/(?P<pk>\w+)/delete$', BasketDeleteBUDGET.as_view(), name='CDNX_invoicing_salesbaskets_BUDGET_delete'),
+    url(r'^wishlists/(?P<pk>\w+)/delete$', BasketDeleteWISHLIST.as_view(), name='CDNX_invoicing_salesbaskets_WISHLIST_delete'),
 
-    url(r'^nshoppingcarts/(?P<pk>\w+)/createbudget$', BasketPassToBudget.as_view(), name='CDNX_invoicing_salesbaskets_createbudget'),
-    url(r'^nbudgets/(?P<pk>\w+)/createorder$', BasketPassToOrder.as_view(), name='CDNX_invoicing_salesbaskets_createorder'),
+    url(r'^shoppingcarts/(?P<pk>\w+)/createbudget$', BasketPassToBudget.as_view(), name='CDNX_invoicing_salesbaskets_createbudget'),
+    url(r'^budgets/(?P<pk>\w+)/createorder$', BasketPassToOrder.as_view(), name='CDNX_invoicing_salesbaskets_createorder'),
 
-    url(r'^nshoppingcarts/foreign/(?P<search>[\w\W]+|\*)$', BasketForeignShoppingCart.as_view(), name='CDNX_invoicing_salesbaskets_foreignkey_shoppingcart'),
-    url(r'^nbudgets/foreign/(?P<search>[\w\W]+|\*)$', BasketForeignBudget.as_view(), name='CDNX_invoicing_salesbaskets_foreignkey_budget'),
+    url(r'^shoppingcarts/foreign/(?P<search>[\w\W]+|\*)$', BasketForeignShoppingCart.as_view(), name='CDNX_invoicing_salesbaskets_foreignkey_shoppingcart'),
+    url(r'^budgets/foreign/(?P<search>[\w\W]+|\*)$', BasketForeignBudget.as_view(), name='CDNX_invoicing_salesbaskets_foreignkey_budget'),
 
-    url(r'^nbudgets/(?P<pk>\w+)/print$', BasketPrintBUDGET.as_view(), name='CDNX_invoicing_budgetsaless_print'),
+    url(r'^budgets/(?P<pk>\w+)/print$', BasketPrintBUDGET.as_view(), name='CDNX_invoicing_budgetsaless_print'),
 
     url(r'^linebaskets$', LineBasketList.as_view(), name='CDNX_invoicing_saleslinebaskets_list'),
     url(r'^linebaskets/add$', LineBasketCreate.as_view(), name='CDNX_invoicing_saleslinebaskets_add'),
