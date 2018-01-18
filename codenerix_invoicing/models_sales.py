@@ -1628,7 +1628,7 @@ class SalesLineAlbaran(GenLineProductBasic):
     albaran = models.ForeignKey(SalesAlbaran, related_name='line_albaran_sales', verbose_name=_("Albaran"), on_delete=models.CASCADE)
     line_order = models.ForeignKey(SalesLineOrder, related_name='line_albaran_sales', verbose_name=_("Line orders"), null=True, on_delete=models.CASCADE)
     product_unique = models.ForeignKey(ProductUnique, related_name='line_albaran_sales', verbose_name=_("Product"), null=True, on_delete=models.CASCADE)
-    # invoiced = models.BooleanField(_("Invoiced"), blank=False, default=False)
+    invoiced = models.BooleanField(_("Invoiced"), blank=False, default=False)
 
     def __str__(self):
         return u"{} - {}".format(smart_text(self.line_order.product), smart_text(self.quantity))
@@ -1641,7 +1641,7 @@ class SalesLineAlbaran(GenLineProductBasic):
         fields.append(('line_order__order', _("Sales order")))
         fields.append(('line_order__product', _("Product")))
         fields.append(('quantity', _("Quantity")))
-        # fields.append(('invoiced', _("Invoiced")))
+        fields.append(('invoiced', _("Invoiced")))
         return fields
 
     def update_total(self, force_save=True):

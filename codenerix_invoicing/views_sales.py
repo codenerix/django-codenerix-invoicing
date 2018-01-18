@@ -80,7 +80,7 @@ class GenCustomerUrl(object):
 class CustomerList(GenCustomerUrl, GenList):
     model = Customer
     show_details = True
-    extra_context = {'menu': ['Customer', 'sales'], 'bread': [_('Customer'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'Customer'], 'bread': [_('Sales'), _('Customer')]}
     default_ordering = "-created"
 
 
@@ -237,7 +237,7 @@ class GenBasketWISHLISTUrl(object):
 # SalesBasket
 class BasketList(GenList):
     model = SalesBasket
-    extra_context = {'menu': ['SalesBasket', 'sales'], 'bread': [_('SalesBasket'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'SalesBasket'], 'bread': [_('Sales'), _('SalesBasket')]}
     show_details = True
     template_model = "sales/basket_list.html"
     form_ngcontroller = "codenerixSalesDetailsCtrl"
