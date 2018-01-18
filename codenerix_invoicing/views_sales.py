@@ -2739,7 +2739,7 @@ class GenInvoiceRectificationUrl(object):
 class InvoiceRectificationList(GenInvoiceRectificationUrl, GenList):
     model = SalesInvoiceRectification
     show_details = True
-    extra_context = {'menu': ['InvoiceRectification', 'sales'], 'bread': [_('InvoiceRectification'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'InvoiceRectification'], 'bread': [_('Sales'), _('InvoiceRectification')]}
     default_ordering = "-created"
 
     def __limitQ__(self, info):
@@ -2859,7 +2859,7 @@ class GenLineInvoiceRectificationUrl(object):
 # LineInvoiceRectification
 class LineInvoiceRectificationList(GenLineInvoiceRectificationUrl, GenList):
     model = SalesLineInvoiceRectification
-    extra_context = {'menu': ['LineInvoiceRectification', 'sales'], 'bread': [_('LineInvoiceRectification'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'LineInvoiceRectification'], 'bread': [_('Sales'), _('LineInvoiceRectification')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -3006,7 +3006,7 @@ class GenReservedProduct(object):
 # SalesReservedProduct
 class ReservedProductList(GenReservedProduct, GenList):
     model = SalesReservedProduct
-    extra_context = {'menu': ['SalesReservedProduct', 'sales'], 'bread': [_('SalesReservedProduct'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'SalesReservedProduct'], 'bread': [_('Sales'), _('SalesReservedProduct')]}
     default_ordering = "-created"
 
 
@@ -3111,7 +3111,7 @@ class ReasonModificationDelete(GenDelete):
 
 class ReasonModificationSubList(GenList):
     model = ReasonModification
-    extra_context = {'menu': ['ReasonModification', 'sales'], 'bread': [_('ReasonModification'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'ReasonModification'], 'bread': [_('Sales'), _('ReasonModification')]}
 
 
 class ReasonModificationDetails(GenDetail):
@@ -3188,7 +3188,7 @@ class ReasonModificationLineBasketDelete(GenDelete):
 
 class ReasonModificationLineBasketSubList(GenList):
     model = ReasonModificationLineBasket
-    extra_context = {'menu': ['ReasonModificationLineBasket', 'sales'], 'bread': [_('ReasonModificationLineBasket'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'ReasonModificationLineBasket'], 'bread': [_('Sales'), _('ReasonModificationLineBasket')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -3271,7 +3271,7 @@ class ReasonModificationLineOrderDelete(GenDelete):
 
 class ReasonModificationLineOrderSubList(GenList):
     model = ReasonModificationLineOrder
-    extra_context = {'menu': ['ReasonModificationLineOrder', 'sales'], 'bread': [_('ReasonModificationLineOrder'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'ReasonModificationLineOrder'], 'bread': [_('Sales'), _('ReasonModificationLineOrder')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -3354,7 +3354,7 @@ class ReasonModificationLineAlbaranDelete(GenDelete):
 
 class ReasonModificationLineAlbaranSubList(GenList):
     model = ReasonModificationLineAlbaran
-    extra_context = {'menu': ['ReasonModificationLineAlbaran', 'sales'], 'bread': [_('ReasonModificationLineAlbaran'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'ReasonModificationLineAlbaran'], 'bread': [_('Sales'), _('ReasonModificationLineAlbaran')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -3437,7 +3437,7 @@ class ReasonModificationLineTicketDelete(GenDelete):
 
 class ReasonModificationLineTicketSubList(GenList):
     model = ReasonModificationLineTicket
-    extra_context = {'menu': ['ReasonModificationLineTicket', 'sales'], 'bread': [_('ReasonModificationLineTicket'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'ReasonModificationLineTicket'], 'bread': [_('Sales'), _('ReasonModificationLineTicket')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -3520,7 +3520,7 @@ class ReasonModificationLineTicketRectificationDelete(GenDelete):
 
 class ReasonModificationLineTicketRectificationSubList(GenList):
     model = ReasonModificationLineTicketRectification
-    extra_context = {'menu': ['ReasonModificationLineTicketRectification', 'sales'], 'bread': [_('ReasonModificationLineTicketRectification'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'ReasonModificationLineTicketRectification'], 'bread': [_('Sales'), _('ReasonModificationLineTicketRectification')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -3603,7 +3603,7 @@ class ReasonModificationLineInvoiceDelete(GenDelete):
 
 class ReasonModificationLineInvoiceSubList(GenList):
     model = ReasonModificationLineInvoice
-    extra_context = {'menu': ['ReasonModificationLineInvoice', 'sales'], 'bread': [_('ReasonModificationLineInvoice'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'ReasonModificationLineInvoice'], 'bread': [_('Sales'), _('ReasonModificationLineInvoice')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -3686,7 +3686,7 @@ class ReasonModificationLineInvoiceRectificationDelete(GenDelete):
 
 class ReasonModificationLineInvoiceRectificationSubList(GenList):
     model = ReasonModificationLineInvoiceRectification
-    extra_context = {'menu': ['ReasonModificationLineInvoiceRectification', 'sales'], 'bread': [_('ReasonModificationLineInvoiceRectification'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'ReasonModificationLineInvoiceRectification'], 'bread': [_('Sales'), _('ReasonModificationLineInvoiceRectification')]}
 
     def __limitQ__(self, info):
         limit = {}
@@ -3708,7 +3708,7 @@ class ReasonModificationLineInvoiceRectificationDetailModal(GenDetailModal, Reas
 # PrintCounterDocumentBasket
 class PrintCounterDocumentBasketSublist(GenList):
     model = PrintCounterDocumentBasket
-    extra_context = {'menu': ['ReasonModificationLineInvoiceRectification', 'sales'], 'bread': [_('ReasonModificationLineInvoiceRectification'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'ReasonModificationLineInvoiceRectification'], 'bread': [_('Sales'), _('ReasonModificationLineInvoiceRectification')]}
     linkadd = False
     linkedit = False
     default_ordering = "-date"
@@ -3724,7 +3724,7 @@ class PrintCounterDocumentBasketSublist(GenList):
 # PrintCounterDocumentOrder
 class PrintCounterDocumentOrderSublist(GenList):
     model = PrintCounterDocumentOrder
-    extra_context = {'menu': ['PrintCounterDocumentOrder', 'sales'], 'bread': [_('PrintCounterDocumentOrder'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'PrintCounterDocumentOrder'], 'bread': [_('Sales'), _('PrintCounterDocumentOrder')]}
     linkadd = False
     linkedit = False
     default_ordering = "-date"
@@ -3740,7 +3740,7 @@ class PrintCounterDocumentOrderSublist(GenList):
 # PrintCounterDocumentAlbaran
 class PrintCounterDocumentAlbaranSublist(GenList):
     model = PrintCounterDocumentAlbaran
-    extra_context = {'menu': ['PrintCounterDocumentAlbaran', 'sales'], 'bread': [_('PrintCounterDocumentAlbaran'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'PrintCounterDocumentAlbaran'], 'bread': [_('Sales'), _('PrintCounterDocumentAlbaran')]}
     linkadd = False
     linkedit = False
     default_ordering = "-date"
@@ -3756,7 +3756,7 @@ class PrintCounterDocumentAlbaranSublist(GenList):
 # PrintCounterDocumentTicket
 class PrintCounterDocumentTicketSublist(GenList):
     model = PrintCounterDocumentTicket
-    extra_context = {'menu': ['PrintCounterDocumentTicket', 'sales'], 'bread': [_('PrintCounterDocumentTicket'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'PrintCounterDocumentTicket'], 'bread': [_('Sales'), _('PrintCounterDocumentTicket')]}
     linkadd = False
     linkedit = False
     default_ordering = "-date"
@@ -3772,7 +3772,7 @@ class PrintCounterDocumentTicketSublist(GenList):
 # PrintCounterDocumentTicketRectification
 class PrintCounterDocumentTicketRectificationSublist(GenList):
     model = PrintCounterDocumentTicketRectification
-    extra_context = {'menu': ['PrintCounterDocumentTicketRectification', 'sales'], 'bread': [_('PrintCounterDocumentTicketRectification'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'PrintCounterDocumentTicketRectification'], 'bread': [_('Sales'), _('PrintCounterDocumentTicketRectification')]}
     linkadd = False
     linkedit = False
     default_ordering = "-date"
@@ -3788,7 +3788,7 @@ class PrintCounterDocumentTicketRectificationSublist(GenList):
 # PrintCounterDocumentInvoice
 class PrintCounterDocumentInvoiceSublist(GenList):
     model = PrintCounterDocumentInvoice
-    extra_context = {'menu': ['PrintCounterDocumentInvoice', 'sales'], 'bread': [_('PrintCounterDocumentInvoice'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'PrintCounterDocumentInvoice'], 'bread': [_('Sales'), _('PrintCounterDocumentInvoice')]}
     linkadd = False
     linkedit = False
     default_ordering = "-date"
@@ -3804,7 +3804,7 @@ class PrintCounterDocumentInvoiceSublist(GenList):
 # PrintCounterDocumentInvoiceRectification
 class PrintCounterDocumentInvoiceRectificationSublist(GenList):
     model = PrintCounterDocumentInvoiceRectification
-    extra_context = {'menu': ['PrintCounterDocumentInvoiceRectification', 'sales'], 'bread': [_('PrintCounterDocumentInvoiceRectification'), _('Sales')]}
+    extra_context = {'menu': ['sales', 'PrintCounterDocumentInvoiceRectification'], 'bread': [_('Sales'), _('PrintCounterDocumentInvoiceRectification')]}
     linkadd = False
     linkedit = False
     default_ordering = "-date"
