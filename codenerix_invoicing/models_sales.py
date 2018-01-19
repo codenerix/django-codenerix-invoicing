@@ -665,10 +665,10 @@ class GenVersion(CodenerixModel):  # META: Abstract class
                     equivalence_surcharge = Decimal("0")
 
                 if hasattr(line, 'discount'):
-                    if line.discount not in discount:
-                        discount[line.discount] = Decimal("0")
+                    if str(line.discount) not in discount:
+                        discount[str(line.discount)] = Decimal("0")
                     price_discount = Decimal(line.discounts)
-                    discount[line.discount] += price_discount
+                    discount[str(line.discount)] += price_discount
                 else:
                     price_discount = Decimal("0")
 
