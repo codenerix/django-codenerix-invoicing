@@ -20,6 +20,7 @@
 
 import copy
 import datetime
+import json
 from decimal import Decimal
 
 from django.urls import reverse
@@ -1057,6 +1058,97 @@ class GenLineProduct(GenLineProductBasic):  # META: Abstract class
                                                                msg_error_relation, msg_error_not_found, False)
 
     @staticmethod
+    def create_ticket_from_slot(slot_pk):
+        context = {
+            "error": None,
+            "obj_final": None,
+        }
+        # order line not paid
+        line_orders = SalesLineOrder.objects.filter(
+            order__budget__pos_slot__pk=slot_pk,
+            order__payment__isnull=True,
+            order__cash_movements__isnull=True,
+            order__budget__removed=False,
+            order__removed=False,
+            removed=False
+        )
+        if line_orders:
+            # create o update ticket
+            tickets = []
+            for line in line_orders:
+                if line.line_ticket_sales.filter(removed=False, ticket__removed=False).count() != 0:
+                    tickets += list(line.line_ticket_sales.filter(removed=False, ticket__removed=False).values_list('ticket')[0])
+
+            if len(set(tickets)) != len(tickets) and len(set(tickets)) > 1:
+                context['error'] = _(u'There are orders that are in several different tickets')
+            else:
+                if tickets:
+                    with transaction.atomic():
+                        ticket = SalesTicket.objects.get(pk=tickets[0], removed=False)
+                        # There are already orders associated with a ticket
+                        for line in line_orders:
+                            if line.line_ticket_sales.count() == 0:
+                                # new line
+                                lt = SalesLineTicket()
+                                lt.ticket = ticket
+                                lt.line_order = line
+                                lt.tax = line.tax
+                                lt.discount = line.discount
+                                lt.description = line.description
+                                lt.notes = line.notes
+                                lt.quantity = line.quantity
+                                lt.price_recommended = line.price_recommended
+                                lt.price_base = line.price_base
+                                lt.save()
+                            else:
+                                # update line
+                                lt = line.line_ticket_sales.first()
+                                if lt.quantity != line.quantity:
+                                    lt.quantity = line.quantity
+                                    lt.save()
+                else:
+                    # new ticket
+                    with transaction.atomic():
+                        ticket = SalesTicket()
+                        ticket.billing_series = BillingSeries.objects.filter(default=True).first()
+                        ticket.customer = line_orders[0].order.customer
+                        ticket.save()
+
+                        for line in line_orders:
+                            lt = SalesLineTicket()
+                            lt.ticket = ticket
+                            lt.line_order = line
+                            lt.tax = line.tax
+                            lt.discount = line.discount
+                            lt.description = line.description
+                            lt.notes = line.notes
+                            lt.quantity = line.quantity
+                            lt.price_recommended = line.price_recommended
+                            lt.price_base = line.price_base
+                            lt.save()
+                context['obj_final'] = ticket
+        else:
+            # get ticket
+            line_order = SalesLineOrder.objects.filter(
+                order__budget__pos_slot__pk=slot_pk,
+                order__budget__removed=False,
+                order__removed=False,
+                removed=False,
+            ).last()
+            ticket = SalesTicket.objects.filter(
+                customer=line_order.order.customer,
+                line_ticket_sales__line_order=line_order,
+                line_ticket_sales__line_order__removed=False,
+                line_ticket_sales__removed=False,
+                removed=False
+            ).first()
+            if ticket:
+                context['obj_final'] = ticket
+            else:
+                context['error'] = _("Ticket don't found")
+        return context
+
+    @staticmethod
     def create_invoice_from_order(pk, list_lines):
         MODEL_SOURCE = SalesOrder
         MODEL_FINAL = SalesInvoice
@@ -1338,6 +1430,158 @@ class SalesBasket(GenVersion):
     def get_customer(self):
         return self.customer
 
+    @staticmethod
+    def add_product(kind, product_pk, info_pack, quantity_str, customer, slot):
+        context = {'error': None}
+        product_final = ProductFinal.objects.filter(pk=product_pk).first()
+
+        if not product_final:
+            context['error'] = _('Product invalid')
+        else:
+            is_pack = product_final.is_pack()
+            if is_pack and info_pack is None:
+                context['error'] = _('Pack info invalid')
+            else:
+                try:
+                    info_pack = json.loads(info_pack)
+                except ValueError:
+                    context['error'] = _('Config pack invalid')
+                except TypeError:
+                    context['error'] = _('Config pack invalid')
+
+                if is_pack and not info_pack:
+                    context['error'] = _('There is not info about pack options')
+                elif is_pack and len(info_pack) != product_final.productfinals_option.count():
+                    context['error'] = _('There is not enought info about pack options')
+                else:
+                    if not quantity_str:
+                        context['error'] = _('Quantity invalid')
+                    else:
+                        try:
+                            quantity = float(quantity_str)
+                        except ValueError:
+                            quantity = None
+                        if not quantity:
+                            context['error'] = _('Quantity invalid')
+                        elif product_final.product.force_stock:
+                            if product_final.stock_real < quantity:
+                                context['error'] = _('Insufficient stock')
+                            elif product_final.is_pack():
+                                for opt_pk in info_pack:
+                                    product_final_option = ProductFinal.objects.filter(
+                                        pk=info_pack[opt_pk],
+                                        productfinals_optionpack__product_final=product_final,
+                                        stock_real__lt=quantity
+                                    ).exists()
+                                    if product_final_option:
+                                        context['error'] = _('Insufficient stock in option')
+                                        break
+        if context['error'] is None and product_final.product.force_stock:
+            product_unique = ProductUnique.objects.filter(product_final=product_final).first()
+            if not product_unique:
+                context['error'] = _('Stock invalid')
+        else:
+            product_unique = None
+
+        if context['error'] is None:
+            try:
+                with transaction.atomic():
+                    basket = SalesBasket.objects.filter(
+                        customer=customer,
+                        pos_slot=slot,
+                        lock=False,
+                        role=kind,
+                        removed=False
+                    ).first()
+                    if not basket:
+                        basket = SalesBasket()
+                        basket.billing_series = BillingSeries.objects.filter(default=True).first()
+                        basket.customer = customer
+                        basket.pos_slot = slot
+                        basket.name = slot.name
+                        basket.role = kind
+                        basket.save()
+
+                    line = SalesLineBasket.objects.filter(
+                        basket=basket,
+                        product=product_final,
+                        removed=False
+                    ).first()
+                    is_new = False
+                    if not line:
+                        line = SalesLineBasket()
+                        line.product = product_final
+                        line.basket = basket
+                        line.price_recommended = product_final.price
+                        line.description = product_final.product.code
+                        line.discount = 0
+                        line.price_base = product_final.price_base
+                        line.tax = product_final.product.tax.tax
+                        line.quantity = 0
+                        is_new = True
+
+                    line.quantity += quantity
+                    line.save()
+
+                    if product_unique:
+                        # update stock
+                        product_unique.stock_real -= quantity
+                        product_unique.save()
+
+                    if product_final.is_pack():
+                        for opt_pk in info_pack:
+                            opt = ProductFinalOption.objects.filter(
+                                pk=opt_pk,
+                                product_final=product_final
+                            ).first()
+                            pro = ProductFinal.objects.filter(
+                                pk=info_pack[opt_pk],
+                                productfinals_optionpack__product_final=product_final
+                            ).first()
+
+                            if opt and pro:
+                                if is_new:
+                                    rel = SalesLineBasketOption()
+                                    rel.line_budget = line
+                                    rel.product_option = opt
+                                    rel.product_final = pro
+                                    rel.quantity = quantity
+                                    rel.save()
+                                else:
+                                    rel = SalesLineBasketOption.objects.filter(
+                                        line_budget=line,
+                                        product_option=opt,
+                                        product_final=pro
+                                    ).first()
+                                    if rel:
+                                        rel.quantity += quantity
+                                        rel.save()
+                                    else:
+                                        rel = SalesLineBasketOption()
+                                        rel.line_budget = line
+                                        rel.product_option = opt
+                                        rel.product_final = pro
+                                        rel.quantity = quantity
+                                        rel.save()
+                                # update stock
+                                product_unique = ProductUnique.objects.filter(product_final=pro).first()
+                                if not product_unique:
+                                    raise IntegrityError(_('Stock invalid'))
+                                else:
+                                    product_unique.stock_real -= quantity
+                                    product_unique.save()
+                            else:
+                                context['error'] = _('Option pack invalid')
+                                raise IntegrityError(_('Option pack invalid'))
+
+                    context['basket'] = basket.pk
+                    context['line'] = line.pk
+                    context['price'] = float(line.total)
+            except IntegrityError as e:
+                context['error'] = str(e)
+
+        return context
+
 
 # nueva linea de la cesta de la compra
 class SalesLineBasket(GenLineProduct):
@@ -1416,6 +1660,63 @@ class SalesLineBasket(GenLineProduct):
     def get_product(self):
         return self.product
 
+    @staticmethod
+    def delete_line(line_pk):
+        context = {}
+        with transaction.atomic():
+            line = SalesLineBasket.objects.filter(pk=line_pk, removed=False).first()
+            if line:
+                can_delete = line.lock_delete()
+                if can_delete is None:
+                    basket = line.basket
+                    line.delete()
+                    for lb in basket.line_basket_sales.all():
+                        can_delete = lb.lock_delete()
+                        if can_delete is not None:
+                            context['error'] = can_delete
+                            break
+                    if context['error'] is not None:
+                        basket.delete()
+                        raise IntegrityError(context['error'])
+                else:
+                    context['error'] = can_delete
+                    raise IntegrityError(can_delete)
+        return context
+
+    def update_line(self, quantity, reason):
+        context = {'error': None}
+        product_unique = ProductUnique.objects.filter(product_final=self.product).first()
+        if product_unique:
+            product_unique.stock_real += self.quantity - quantity
+            if product_unique.stock_real < 0:
+                context['error'] = _('Insufficient stock')
+
+            if context['error'] is None:
+                self.quantity = quantity
+                try:
+                    with transaction.atomic():
+                        product_unique.save()
+
+                        self.save()
+
+                        context['quantity'] = self.quantity
+                        mod = ReasonModificationLineBasket()
+                        mod.user = get_current_user()
+                        mod.date = datetime.datetime.now()
+                        mod.line = self
+                        mod.quantity = quantity
+                        mod.reason = reason
+                        mod.save()
+                except IntegrityError as e:
+                    context['error'] = e
+        else:
+            context['error'] = _('Stock invalid')
+
+        if context['error']:
+            context['error'] = str(context['error'])
+
+        return context
+        
 
 class SalesLineBasketOption(CodenerixModel):
     line_budget = models.ForeignKey(SalesLineBasket, related_name='line_basket_option_sales', verbose_name=_("Line budget"), on_delete=models.CASCADE)
