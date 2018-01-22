@@ -18,6 +18,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from decimal import Decimal
+
 from django.db import models, IntegrityError
 from django.db.models import Q, Sum
 from django.utils.encoding import smart_text
@@ -39,7 +41,7 @@ class CashDiary(CodenerixModel):
     opened_user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='opened_cash_diarys', verbose_name=_("User"), on_delete=models.CASCADE)
     opened_date = models.DateTimeField(_("Opened Date"), blank=False, null=False)
     opened_cash = models.DecimalField(_("Opened Cash"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
-    opened_cash_extra = models.DecimalField(_("Opened Cash Deviation"), blank=True, null=True, default=None, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES )
+    opened_cash_extra = models.DecimalField(_("Opened Cash Deviation"), blank=True, null=True, default=None, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
     opened_cash_notes = models.TextField(_("Opened Cash Notes"), blank=True, null=False, default="")
     opened_cards = models.DecimalField(_("Opened Cards"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
     opened_cards_extra = models.DecimalField(_("Opened Cards Deviation"), blank=True, null=True, default=None, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
@@ -54,18 +56,18 @@ class CashDiary(CodenerixModel):
     closed_cards_notes = models.TextField(_("Closed Cards Notes"), blank=True, null=False, default="")
 
     def amount_cash(self):
-        total = self.cash_movements.filter(kind=PAYMENT_DETAILS_CASH).aggregate(total=Sum('amount')).get('total', 0.0)
+        total = self.cash_movements.filter(kind=PAYMENT_DETAILS_CASH).aggregate(total=Sum('amount')).get('total', Decimal('0'))
         if total:
             return total
         else:
-            return 0.0
+            return Decimal('0')
 
     def amount_cards(self):
-        total = self.cash_movements.filter(kind=PAYMENT_DETAILS_CARD).aggregate(total=Sum('amount')).get('total', 0.0)
+        total = self.cash_movements.filter(kind=PAYMENT_DETAILS_CARD).aggregate(total=Sum('amount')).get('total', Decimal('0'))
         if total:
             return total
         else:
-            return 0.0
+            return Decimal('0')
 
     @staticmethod
     def find(pos, user):
@@ -112,6 +114,15 @@ class CashDiary(CodenerixModel):
                     cashdiary.opened_user = user
                     cashdiary.opened_date = timezone.now()
                     cashdiary.save()
+            else:
+                # initial new cashdiary
+                cashdiary = CashDiary()
+                cashdiary.pos = pos
+                cashdiary.opened_cash = Decimal('0')
+                cashdiary.opened_cards = Decimal('0')
+                cashdiary.opened_user = user
+                cashdiary.opened_date = timezone.now()
+                cashdiary.save()
 
         # Return the found CashDiary
         return cashdiary
