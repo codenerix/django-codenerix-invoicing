@@ -1513,7 +1513,10 @@ class SalesBasket(GenVersion):
                         line.product = product_final
                         line.basket = basket
                         line.price_recommended = product_final.price
-                        line.description = product_final.product.code
+                        if product_final.code:
+                            line.description = product_final.code
+                        else:
+                            line.description = product_final.product.code
                         line.discount = 0
                         line.price_base = product_final.price_base
                         line.tax = product_final.product.tax.tax
