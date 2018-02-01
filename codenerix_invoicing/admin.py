@@ -20,11 +20,11 @@
 
 from django.contrib import admin
 from django.conf import settings
-
+"""
 from .models import BillingSeries, LegalNote, TypeDocument, MODELS  # , StockMovement, StockMovementProduct
 from .models_purchases import Provider, PurchasesBudget, PurchasesLineBudget, PurchasesBudgetDocument, PurchasesOrder, PurchasesLineOrder, PurchasesOrderDocument, PurchasesAlbaran, PurchasesLineAlbaran, PurchasesAlbaranDocument, PurchasesTicket, PurchasesLineTicket, PurchasesTicketDocument, PurchasesTicketRectification, PurchasesLineTicketRectification, PurchasesTicketRectificationDocument, PurchasesInvoice, PurchasesLineInvoice, PurchasesInvoiceDocument, PurchasesInvoiceRectification, PurchasesLineInvoiceRectification, PurchasesInvoiceRectificationDocument
-from .models_sales import Address, Customer, CustomerDocument, SalesReservedProduct, SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, SalesLineInvoiceRectification, SalesBasket, SalesLineBasket
-from .models_sales import SalesLineBasketOption
+# from .models_sales import Address, Customer, CustomerDocument, SalesReservedProduct, SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, SalesLineInvoiceRectification, SalesBasket, SalesLineBasket
+# from .models_sales import SalesLineBasketOption
 from .models_sales import ReasonModification, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
 from .models_cash import CashDiary, CashMovement
 
@@ -54,9 +54,10 @@ admin.site.register(PurchasesInvoiceRectificationDocument)
 admin.site.register(BillingSeries)
 admin.site.register(LegalNote)
 admin.site.register(TypeDocument)
+"""
 # admin.site.register(StockMovement)
 # admin.site.register(StockMovementProduct)
-
+"""
 admin.site.register(Address)
 admin.site.register(Customer)
 admin.site.register(CustomerDocument)
@@ -85,7 +86,8 @@ admin.site.register(ReasonModificationLineTicket)
 admin.site.register(ReasonModificationLineTicketRectification)
 admin.site.register(ReasonModificationLineInvoice)
 admin.site.register(ReasonModificationLineInvoiceRectification)
-
+"""
+"""
 admin.site.register(CashDiary)
 admin.site.register(CashMovement)
 
@@ -96,3 +98,4 @@ for info in MODELS:
         query = "from codenerix_invoicing.models import {}Text{}\n".format(model, lang_code)
         query += "admin.site.register({}Text{})\n".format(model, lang_code)
         exec(query)
+"""

@@ -24,7 +24,6 @@ limitations under the License.
 <div>
     <label ng-if="data.meta.role_shoppingcart==true" class="sr-only"  for="submit_create_budget">{{ data.meta.gentranslate.CreateBudget }}</label>
     <button ng-if="data.meta.role_shoppingcart==true" ng-controller="codenerixSalesDetailsCtrl" id="submit_create_budget" ng-click="create_budget(data.meta.gentranslate.Debeseleccionarproducto)" class="btn btn-sm btn-info">{{ data.meta.gentranslate.CreateBudget }}</button>
-    
-    <label ng-if="data.meta.role_budget==true" class="sr-only"  for="submit_create_order">{{ data.meta.gentranslate.CreateOrder }}</label>
-    <button ng-if="data.meta.role_budget==true" ng-controller="codenerixSalesDetailsCtrl" id="submit_create_order" ng-click="create_order(data.meta.gentranslate.Debeseleccionarproducto)" class="btn btn-sm btn-info">{{ data.meta.gentranslate.CreateOrder }}</button>
+    <label ng-if="data.meta.context.order_btn==true && data.meta.role_budget==true" class="sr-only"  for="submit_create_order">{{ data.meta.gentranslate.CreateOrder }}</label>
+    <button ng-if="data.meta.context.order_btn==true && data.meta.role_budget==true" ng-controller="codenerixSalesDetailsCtrl" id="submit_create_order" ng-click="create_order(data.meta.gentranslate.Debeseleccionarproducto)" class="btn btn-sm btn-info">{{ data.meta.gentranslate.CreateOrder }}</button>
 </div>

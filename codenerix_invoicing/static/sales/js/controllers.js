@@ -286,7 +286,11 @@ angular.module('codenerixSalesControllers', [])
     function($scope){
         $scope.update_price = function(){
             var tax = $scope.tax;
-            var price_base = $scope.price_base;
+            var price_base = $scope.price_base_basket;
+            if (isNaN(price_base)){
+                price_base = $scope.price_base_order;
+            }
+
             if (isNaN(price_base)){
                 price_base = 0;
             }

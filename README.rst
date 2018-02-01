@@ -61,6 +61,9 @@ Quickstart
     CDNX_INVOICING_CURRENCY_MAX_DIGITS = 10  # 99.999.999,?
     CDNX_INVOICING_CURRENCY_DECIMAL_PLACES = 2  # ?,99
 
+    # Force stock of products when you create SalesLines
+    CDNX_INVOICING_FORCE_STOCK_IN_BUDGET = True
+
 4. Since Codenerix Invoicing is a library, you only need to import its parts into your project and use them.
 
 *************

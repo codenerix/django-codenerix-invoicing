@@ -20,10 +20,12 @@
 
 import ast
 import datetime
+from decimal import Decimal, ROUND_HALF_UP
 import json
 
-from django.db import transaction
 from django.db.models import Q, Sum, F
+from django.db import transaction, IntegrityError
+from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.forms.utils import ErrorList
@@ -43,32 +45,40 @@ from codenerix_extensions.files.views import DocumentFileView
 from codenerix_extensions.helpers import get_language_database
 from codenerix_products.models import ProductFinal
 
-from codenerix_invoicing.models_sales import Customer, CustomerDocument, \
-    SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, \
-    SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, \
-    SalesLineInvoiceRectification, SalesReservedProduct, SalesBasket, SalesLineBasket
+from codenerix_invoicing.models_sales import Customer, CustomerDocument
+# from codenerix_invoicing.models_sales import SalesReservedProduct
+from codenerix_invoicing.models_sales import SalesBasket, SalesOrder, SalesAlbaran, SalesTicket, SalesTicketRectification, SalesInvoice, SalesInvoiceRectification
+from codenerix_invoicing.models_sales import SalesOrderDocument
+from codenerix_invoicing.models_sales import SalesLines
+
 from codenerix_invoicing.models_sales import ROLE_BASKET_SHOPPINGCART, ROLE_BASKET_BUDGET, ROLE_BASKET_WISHLIST, STATUS_ORDER
-from codenerix_invoicing.models_sales import SalesLineBasketOption, SalesOrderDocument
 
+# from codenerix_invoicing.forms_sales import ReservedProductForm
 from codenerix_invoicing.forms_sales import CustomerForm, CustomerDocumentForm
-from codenerix_invoicing.forms_sales import OrderForm, LineOrderForm, LineOrderFormEdit, OrderFromBudgetForm, OrderFromShoppingCartForm
-from codenerix_invoicing.forms_sales import AlbaranForm, LineAlbaranForm
-from codenerix_invoicing.forms_sales import TicketForm, LineTicketForm
-from codenerix_invoicing.forms_sales import TicketRectificationForm, TicketRectificationUpdateForm, LineTicketRectificationLinkedForm, LineTicketRectificationForm
-from codenerix_invoicing.forms_sales import InvoiceForm, LineInvoiceForm
-from codenerix_invoicing.forms_sales import InvoiceRectificationForm, InvoiceRectificationUpdateForm, LineInvoiceRectificationForm, LineInvoiceRectificationLinkedForm
-from codenerix_invoicing.forms_sales import ReservedProductForm
-from codenerix_invoicing.forms_sales import BasketForm, LineBasketForm, LineBasketFormPack
+from codenerix_invoicing.forms_sales import BasketForm
+from codenerix_invoicing.forms_sales import OrderForm, OrderFromBudgetForm, OrderFromShoppingCartForm
 from codenerix_invoicing.forms_sales import OrderDocumentForm, OrderDocumentSublistForm
-
+from codenerix_invoicing.forms_sales import AlbaranForm
+from codenerix_invoicing.forms_sales import InvoiceForm
+from codenerix_invoicing.forms_sales import InvoiceRectificationForm, InvoiceRectificationUpdateForm
+from codenerix_invoicing.forms_sales import TicketForm
+from codenerix_invoicing.forms_sales import TicketRectificationForm, TicketRectificationUpdateForm
 from codenerix_invoicing.views import PrinterHelper
 
-from .models_sales import ReasonModification, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
-from .forms_sales import ReasonModificationForm, ReasonModificationLineBasketForm, ReasonModificationLineOrderForm, ReasonModificationLineAlbaranForm, ReasonModificationLineTicketForm, ReasonModificationLineTicketRectificationForm, ReasonModificationLineInvoiceForm, ReasonModificationLineInvoiceRectificationForm
+from .models_sales import CURRENCY_DECIMAL_PLACES
 
+from .models_sales import ReasonModification
+from .forms_reason import ReasonModificationForm
+
+from codenerix_invoicing.models_sales import ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineInvoice, ReasonModificationLineTicket, ReasonModificationLineTicketRectification
+# , , , , , , , ReasonModificationLineInvoiceRectification
+# , ReasonModificationLineBasketForm, ReasonModificationLineOrderForm, ReasonModificationLineAlbaranForm, ReasonModificationLineTicketForm, ReasonModificationLineTicketRectificationForm, ReasonModificationLineInvoiceForm, ReasonModificationLineInvoiceRectificationForm
+from .forms_sales import LineOfBasketForm, LineOfBasketFormUpdate, LineOfOrderForm, LineOfAlbaranForm
+from .forms_sales import LineOfInvoiceForm, LineOfInvoiceRectificationForm
 from .models_sales import PrintCounterDocumentBasket, PrintCounterDocumentOrder, PrintCounterDocumentAlbaran, PrintCounterDocumentTicket, PrintCounterDocumentTicketRectification, PrintCounterDocumentInvoice, PrintCounterDocumentInvoiceRectification
 
 from .helpers import ShoppingCartProxy
+from codenerix_pos.helpers import get_POS
 
 
 # ###########################################
@@ -148,7 +158,7 @@ class CustomerForeignBudget(GenCustomerUrl, GenForeignKey):
     label = "{external}"
 
     def get_foreign(self, queryset, search, filters):
-        qs = queryset.exclude(basket_sales__order_sales__isnull=False)
+        qs = queryset.filter(basket_sales__order_sales__isnull=True)
         qs = qs.filter(basket_sales__role=ROLE_BASKET_BUDGET)
 
         return qs.distinct()[:settings.LIMIT_FOREIGNKEY]
@@ -159,10 +169,10 @@ class CustomerForeignShoppingCart(GenCustomerUrl, GenForeignKey):
     label = "{external}"
 
     def get_foreign(self, queryset, search, filters):
-        qs = queryset.exclude(basket_sales__order_sales__isnull=False)
+        qs = queryset.filter(basket_sales__order_sales__isnull=True)
         qs = qs.filter(basket_sales__role=ROLE_BASKET_SHOPPINGCART)
 
-        return qs[:settings.LIMIT_FOREIGNKEY]
+        return qs.distinct()[:settings.LIMIT_FOREIGNKEY]
 
 
 # ###########################################
@@ -274,7 +284,7 @@ class BasketDetails(GenBasketUrl, GenDetail):
     template_model = "sales/basket_details.html"
     exclude_fields = ['parent_pk', 'payment']
     tabs = [
-        {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslinebaskets_sublist', 'rows': 'base'},
+        {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslines_sublist_basket', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlinebaskets_sublist', 'rows': 'base'},
         {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumentbaskets_sublist', 'rows': 'base'},
     ]
@@ -307,6 +317,13 @@ class BasketCreate(GenBasketUrl, GenCreate):
     model = SalesBasket
     form_class = BasketForm
     show_details = True
+
+    def get_form(self, form_class=None):
+        info = get_POS(self.request)
+        form = super(BasketCreate, self).get_form(form_class)
+        initial = form.initial
+        initial['pos'] = getattr(info['POS'], 'pk', None)
+        return form
 
 
 class BasketCreateModal(GenCreateModal, BasketCreate):
@@ -401,10 +418,10 @@ class BasketDeleteWISHLIST(GenBasketWISHLISTUrl, GenDelete):
 
 class BasketForeignBudget(GenBasketBUDGETUrl, GenForeignKey):
     model = SalesBasket
-    label = "{code}"
+    label = "{code} {name}"
 
     def get_foreign(self, queryset, search, filters):
-        qs = queryset.exclude(order_sales__isnull=False)
+        qs = queryset.filter(order_sales__isnull=True)
         qs = qs.filter(role=ROLE_BASKET_BUDGET)
 
         qs.filter(customer=filters.get('customer', None))
@@ -414,7 +431,7 @@ class BasketForeignBudget(GenBasketBUDGETUrl, GenForeignKey):
 
 class BasketForeignShoppingCart(GenBasketSHOPPINGCARTUrl, GenForeignKey):
     model = SalesBasket
-    label = "{code}"
+    label = "{code} {name}"
 
     def get_foreign(self, queryset, search, filters):
         qs = queryset.exclude(order_sales__isnull=False)
@@ -508,7 +525,7 @@ class BasketPassToBudget(View):
             obj = SalesBasket.objects.filter(pk=pk).first()
             if obj:
                 obj_budget = obj.pass_to_budget(list_lines)
-                context['url'] = "{}#/{}".format(reverse("CDNX_invoicing_salesbaskets_budget_list", obj_budget.pk))
+                context['url'] = "{}#/{}".format(reverse("CDNX_invoicing_salesbaskets_budget_list"), obj_budget.pk)
                 try:
                     json_answer = json.dumps(context)
                 except TypeError:
@@ -533,8 +550,9 @@ class BasketPassToOrder(View):
 
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
-        context = SalesLineBasket.create_order_from_budget(pk, list_lines)
-        context.pop('obj_final')
+        context = SalesLines.create_order_from_budget(pk, list_lines)
+        if 'obj_final' in context:
+            context.pop('obj_final')
         if 'error' in context:
             context['error'] = str(context['error'])
         try:
@@ -543,302 +561,6 @@ class BasketPassToOrder(View):
             raise TypeError("The structure can not be encoded to JSON: {}".format(context))
         # Return the new context
         return HttpResponse(json_answer, content_type='application/json')
-
-    def post_orign(self, request, *args, **kwargs):
-        context = {}
-        pk = kwargs.get('pk', None)
-        budget = SalesLineBasket.objects.filter(pk=pk).first()
-        # list_budget = request.POST.get('lines', None)
-        list_budget = ast.literal_eval(request._body.decode())['lines']
-        if list_budget and budget:
-            list_budget = [int(x) for x in list_budget]
-            # raise Exception ([int(x) for x in list_budget])
-            lines_budget = SalesLineOrder.objects.filter(line_budget__pk__in=list_budget)
-            if not lines_budget:
-                order = SalesOrder()
-                order.customer = budget.customer
-                order.date = datetime.datetime.now()
-                with transaction.atomic():
-                    order.save()
-
-                    for lb_pk in list_budget:
-                        lb = SalesLineBasket.objects.filter(pk=lb_pk).first()
-                        lo = SalesLineOrder()
-                        lo.order = order
-                        lo.line_budget = lb
-                        lo.product = lb.product
-                        lo.quantity = lb.quantity
-                        lo.price_base = lb.price_base
-                        lo.tax = lb.tax
-                        lo.save()
-
-                context['msg'] = _("Order create")
-                # context['url'] = reverse('ordersaless_details', kwargs={'pk': order.pk})
-                context['url'] = "{}#/{}".format(reverse('CDNX_invoicing_ordersaless_list'), order.pk)
-            else:
-                context['error'] = _("Hay lineas asignadas a pedidos")
-        else:
-            context['error'] = _('Budget not found')
-
-        try:
-            json_answer = json.dumps(context)
-        except TypeError:
-            raise TypeError("The structure can not be encoded to JSON: {}".format(context))
-        # Return the new context
-        return HttpResponse(json_answer, content_type='application/json')
-
-
-# ###########################################
-class GenLineBasketUrl(object):
-    ws_entry_point = '{}/linebaskets'.format(settings.CDNX_INVOICING_URL_SALES)
-
-
-# SalesLineBasket
-class LineBasketList(GenList):
-    model = SalesLineBasket
-    extra_context = {'menu': ['sales', 'SalesLineBasket'], 'bread': [_('Sales'), _('SalesLineBasket')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        limit['removed'] = Q(removed=False)
-        return limit
-
-
-class LineBasketCreate(GenLineBasketUrl, GenCreate):
-    model = SalesLineBasket
-    form_class = LineBasketForm
-
-
-class LineBasketCreateModal(GenCreateModal, LineBasketCreate):
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(LineBasketCreateModal, self).dispatch(*args, **kwargs)
-
-    def form_valid(self, form):
-        if self.__pk:
-            obj = SalesBasket.objects.get(pk=self.__pk)
-            self.request.basket = obj
-            form.instance.basket = obj
-        return super(LineBasketCreateModal, self).form_valid(form)
-
-
-class LineBasketCreateModalPack(GenCreateModal, LineBasketCreate):
-    form_class = LineBasketFormPack
-
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(LineBasketCreateModalPack, self).dispatch(*args, **kwargs)
-
-    def form_valid(self, form):
-        product_pk = self.request.POST.get("product", None)
-        quantity = self.request.POST.get("quantity", None)
-        product = ProductFinal.objects.filter(pk=product_pk).first()
-        if product and quantity:
-            if product.is_pack():
-                options = product.productfinals_option.filter(active=True)
-                options_pack = []
-                for option in options:
-                    field = 'packs[{}]'.format(option.pk)
-                    opt = self.request.POST.get(field, None)
-                    if opt:
-                        opt_product = ProductFinal.objects.filter(pk=opt).first()
-                        if opt_product:
-                            options_pack.append({
-                                'product_option': option,
-                                'product_final': opt_product,
-                                'quantity': quantity
-                            })
-                        else:
-                            errors = form._errors.setdefault(field, ErrorList())
-                            errors.append(_("Product Option invalid"))
-                            return super(LineBasketCreateModalPack, self).form_invalid(form)
-                    else:
-                        errors = form._errors.setdefault(field, ErrorList())
-                        errors.append(_("Option invalid"))
-                        return super(LineBasketCreateModalPack, self).form_invalid(form)
-            else:
-                errors = form._errors.setdefault("product", ErrorList())
-                errors.append(_("The product does not pack"))
-                return super(LineBasketCreateModalPack, self).form_invalid(form)
-        else:
-            errors = form._errors.setdefault("product", ErrorList())
-            errors.append(_("Product invalid"))
-            return super(LineBasketCreateModalPack, self).form_invalid(form)
-
-        if self.__pk:
-            obj = SalesBasket.objects.get(pk=self.__pk)
-            self.request.basket = obj
-            form.instance.basket = obj
-        ret = super(LineBasketCreateModalPack, self).form_valid(form)
-        # raise Exception(ret)
-        # raise Exception(self.object, type(self.object), isinstance(self.object, SalesLineBasket), self.object.__dict__)
-        self.object.set_options(options_pack)
-        return ret
-
-
-class LineBasketUpdate(GenLineBasketUrl, GenUpdate):
-    model = SalesLineBasket
-    form_class = LineBasketForm
-
-
-class ZZZ___LineBasketUpdateModal(GenUpdateModal, LineBasketUpdate):
-    pass
-
-
-class LineBasketUpdateModal(GenUpdateModal, LineBasketUpdate):
-    form_class = LineBasketForm
-
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        self.__line_pk = kwargs.get('pk', None)
-        if SalesLineBasketOption.objects.filter(line_budget__pk=self.__line_pk).exists():
-            self.form_class = LineBasketFormPack
-            self.__is_pack = True
-        else:
-            self.__is_pack = False
-        return super(LineBasketUpdateModal, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        # form_kwargs = super(LineBasketUpdateModal, self).get_form_kwargs(*args, **kwargs)
-        form = super(LineBasketUpdateModal, self).get_form(form_class)
-        initial = form.initial
-        initial['type_tax'] = self.object.product.product.tax.pk
-        initial['price'] = self.object.total
-        if self.__is_pack:
-            options = []
-            lang = get_language_database()
-
-            for option in SalesLineBasketOption.objects.filter(line_budget__pk=self.__line_pk):
-                initial['packs[{}]'.format(option.product_option.pk)] = option.product_final.pk
-                a = {
-                    'id': option.product_option.pk,
-                    'label': getattr(option.product_option, lang).name,
-                    'products': list(option.product_option.products_pack.all().values('pk').annotate(name=F('{}__name'.format(lang)))),
-                    'selected': option.product_final.pk,
-                }
-                options.append(a)
-            # compatibility with GenForeignKey
-            initial['packs'] = json.dumps({'__JSON_DATA__': options})
-        return form
-
-    def form_valid(self, form):
-        lb = SalesLineBasket.objects.filter(pk=self.__line_pk).first()
-
-        product_old = lb.product
-        product_pk = self.request.POST.get("product", None)
-        quantity = self.request.POST.get("quantity", None)
-        product = ProductFinal.objects.filter(pk=product_pk).first()
-        if product:
-            is_pack = product.is_pack()
-        else:
-            is_pack = False
-        if product and quantity:
-            if is_pack:
-                options = product.productfinals_option.filter(active=True)
-                options_pack = []
-                for option in options:
-                    field = 'packs[{}]'.format(option.pk)
-                    opt = self.request.POST.get(field, None)
-                    if opt:
-                        opt_product = ProductFinal.objects.filter(pk=opt).first()
-                        if opt_product:
-                            options_pack.append({
-                                'product_option': option,
-                                'product_final': opt_product,
-                                'quantity': quantity
-                            })
-                        else:
-                            errors = form._errors.setdefault(field, ErrorList())
-                            errors.append(_("Product Option invalid"))
-                            return super(LineBasketUpdateModal, self).form_invalid(form)
-                    else:
-                        errors = form._errors.setdefault(field, ErrorList())
-                        errors.append(_("Option invalid"))
-                        return super(LineBasketUpdateModal, self).form_invalid(form)
-        else:
-            errors = form._errors.setdefault("product", ErrorList())
-            errors.append(_("Product invalid"))
-            return super(LineBasketUpdateModal, self).form_invalid(form)
-
-        ret = super(LineBasketUpdateModal, self).form_valid(form)
-        if product_old != self.object.product:
-            self.object.remove_options()
-        if is_pack:
-            self.object.set_options(options_pack)
-        return ret
-
-
-class LineBasketDelete(GenLineBasketUrl, GenDelete):
-    model = SalesLineBasket
-
-
-class LineBasketSubList(GenLineBasketUrl, GenList):
-    model = SalesLineBasket
-    field_delete = False
-    field_check = False
-    ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_linebasket.html"}
-    gentrans = {
-        'CreateBudget': _("Create Budget"),
-        'CreateOrder': _("Create Order"),
-        'Debeseleccionarproducto': ('Debe seleccionar los productos'),
-    }
-    linkadd = False
-    linkedit = False
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        obj = SalesBasket.objects.filter(pk=self.__pk).first()
-        if obj and not obj.lock:
-            self.linkadd = True
-            self.linkedit = True
-            self.field_delete = True
-        return super(LineBasketSubList, self).dispatch(*args, **kwargs)
-
-    def get_context_json(self, context):
-        answer = super(LineBasketSubList, self).get_context_json(context)
-
-        obj = SalesBasket.objects.filter(pk=self.__pk).first()
-        answer['meta']['role_shoppingcart'] = None
-        answer['meta']['role_budget'] = None
-        answer['meta']['role_wishlist'] = None
-        if obj:
-            if obj.role == ROLE_BASKET_SHOPPINGCART:
-                answer['meta']['role_shoppingcart'] = True
-            elif obj.role == ROLE_BASKET_BUDGET:
-                answer['meta']['role_budget'] = True
-        return answer
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['file_link'] = Q(basket__pk=pk)
-        limit['removed'] = Q(removed=False)
-        return limit
-
-
-class LineBasketDetails(GenLineBasketUrl, GenDetail):
-    model = SalesLineBasket
-    groups = LineBasketForm.__groups_details__()
-
-
-class LineBasketDetailModal(GenDetailModal, LineBasketDetails):
-    pass
-
-
-class LineBasketForeign(GenLineBasketUrl, GenForeignKey):
-    model = SalesLineBasket
-    label = "{product}: {quantity}"
-
-    def get_foreign(self, queryset, search, filters):
-        qsobject = Q(description__icontains=search)
-        qs = queryset.filter(qsobject)
-        doc = filters.get('doc', None)
-        if doc:
-            qs = qs.filter(basket__pk=doc)
-
-        return qs
 
 
 # ###########################################
@@ -851,7 +573,7 @@ class OrderList(GenOrderUrl, GenList):
     model = SalesOrder
     template_model = "sales/order_list.html"
     show_details = True
-    linkadd = False
+    # linkadd = False
     extra_context = {'menu': ['sales', 'sales_order'], 'bread': [_('Sales'), _('Sales orders')]}
     ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_order.html"}
     default_ordering = "-created"
@@ -896,7 +618,7 @@ class OrderCreateModalFromBudget(GenCreateModal, OrderCreate):
 
     def form_valid(self, form):
         r = super(OrderCreateModalFromBudget, self).form_valid(form)
-        if SalesLineBasket.create_order_from_budget_all(self.object):
+        if SalesLines.create_order_from_budget_all(self.object):
             return r
         else:
             self.object.delete()
@@ -911,7 +633,7 @@ class OrderCreateModalFromShoppingCart(GenCreateModal, OrderCreate):
 
     def form_valid(self, form):
         r = super(OrderCreateModalFromShoppingCart, self).form_valid(form)
-        if SalesLineBasket.create_order_from_budget_all(self.object):
+        if SalesLines.create_order_from_budget_all(self.object):
             return r
         else:
             self.object.delete()
@@ -940,7 +662,7 @@ class OrderDetails(GenOrderUrl, GenDetail):
     template_model = "sales/order_details.html"
     exclude_fields = ['parent_pk']
     tabs = [
-        {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineordersaless_sublist', 'rows': 'base'},
+        {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslines_sublist_order', 'rows': 'base'},
         {'id': 'documents', 'name': _('Documents'), 'ws': 'CDNX_invoicing_salesorderdocuments_sublist', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlineorders_sublist', 'rows': 'base'},
         {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumentorders_sublist', 'rows': 'base'},
@@ -1011,20 +733,16 @@ class OrderPrint(PrinterHelper, GenOrderUrl, GenDetail):
 
         context["order"] = order
         lines = []
-        total_order = 0
         for line in order.line_order_sales.all():
-            base = (line.price_base * line.quantity)
-            subtotal = base + (base * line.tax / 100.0)
-            total_order += subtotal
             lines.append({
                 'code': line.code,
                 'product': line.product,
                 'price_base': line.price_base,
                 'quantity': line.quantity,
                 'tax': line.tax,
-                'total': subtotal
+                'total': line.subtotal
             })
-        if order.budget.address_invoice:
+        if order.budget and order.budget.address_invoice:
             context['address_invoice'] = {
                 'address': order.budget.address_invoice.external_invoice.get_address(),
                 'zipcode': order.budget.address_invoice.external_invoice.get_zipcode(),
@@ -1058,8 +776,9 @@ class OrderCreateAlbaran(View):
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
-        context = SalesLineOrder.create_albaran_from_order(pk, list_lines)
-        context.pop('obj_final')
+        context = SalesLines.create_albaran_from_order(pk, list_lines)
+        if 'obj_final' in context:
+            context.pop('obj_final')
         if 'error' in context:
             context['error'] = str(context['error'])
         try:
@@ -1079,8 +798,9 @@ class OrderCreateTicket(View):
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
-        context = SalesLineOrder.create_ticket_from_order(pk, list_lines)
-        context.pop('obj_final')
+        context = SalesLines.create_ticket_from_order(pk, list_lines)
+        if 'obj_final' in context:
+            context.pop('obj_final')
         if 'error' in context:
             context['error'] = str(context['error'])
         try:
@@ -1100,8 +820,9 @@ class OrderCreateInvoice(View):
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
-        context = SalesLineOrder.create_invoice_from_order(pk, list_lines)
-        context.pop('obj_final')
+        context = SalesLines.create_invoice_from_order(pk, list_lines)
+        if 'obj_final' in context:
+            context.pop('obj_final')
         if 'error' in context:
             context['error'] = str(context['error'])
         try:
@@ -1148,7 +869,7 @@ class OrderForeign(GenOrderUrl, GenForeignKey):
                     lo_pk.append(lines['line_order'])
             """
             orders_pk = {}
-            for line in SalesLineOrder.objects.all():
+            for line in SalesLines.objects.all():
                 if line.order.pk not in orders_pk:
                     orders_pk[line.order.pk] = {'count': 0, 'complete': []}
                 orders_pk[line.order.pk]['count'] += 1
@@ -1175,220 +896,18 @@ class OrderForeign(GenOrderUrl, GenForeignKey):
 
 
 # ###########################################
-class GenLineOrderUrl(object):
-    ws_entry_point = '{}/lineorders'.format(settings.CDNX_INVOICING_URL_SALES)
-
-
-# LineOrder
-class LineOrderList(GenLineOrderUrl, GenList):
-    model = SalesLineOrder
-    extra_context = {'menu': ['sales', 'LineOrder'], 'bread': [_('Sales'), _('LineOrder')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        limit['removed'] = Q(removed=False)
-        return limit
-
-
-class LineOrderCreate(GenLineOrderUrl, GenCreate):
-    model = SalesLineOrder
-    form_class = LineOrderForm
-
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(LineOrderCreate, self).dispatch(*args, **kwargs)
-
-    def form_valid(self, form):
-        if self.__pk:
-            obj = SalesOrder.objects.get(pk=self.__pk)
-            self.request.order = obj
-            form.instance.order = obj
-
-        return super(LineOrderCreate, self).form_valid(form)
-
-
-class LineOrderCreateModal(GenCreateModal, LineOrderCreate):
-    pass
-
-
-class LineOrderUpdate(GenLineOrderUrl, GenUpdate):
-    model = SalesLineOrder
-    form_class = LineOrderFormEdit
-
-    def form_valid(self, form):
-        reason = form.data['reason']
-        if reason:
-            reason_obj = ReasonModification.objects.filter(pk=reason).first()
-            if reason_obj:
-                try:
-                    with transaction.atomic():
-                        result = super(LineOrderUpdate, self).form_valid(form)
-
-                        reason_order = ReasonModificationLineOrder()
-                        reason_order.reason = reason_obj
-                        reason_order.line = self.object
-                        reason_order.user = get_current_user()
-                        reason_order.quantity = self.object.quantity
-                        reason_order.save()
-                        return result
-                except Exception as e:
-                    errors = form._errors.setdefault("other", ErrorList())
-                    errors.append(e)
-                    return super(LineOrderUpdate, self).form_invalid(form)
-            else:
-                errors = form._errors.setdefault("reason", ErrorList())
-                errors.append(_("Reason of modification invalid"))
-                return super(LineOrderUpdate, self).form_invalid(form)
-        else:
-            errors = form._errors.setdefault("reason", ErrorList())
-            errors.append(_("Reason of modification invalid"))
-            return super(LineOrderUpdate, self).form_invalid(form)
-
-
-class LineOrderUpdateModal(GenUpdateModal, LineOrderUpdate):
-    pass
-
-
-class LineOrderDelete(GenLineOrderUrl, GenDelete):
-    model = SalesLineOrder
-
-
-class LineOrderSubList(GenLineOrderUrl, GenList):
-    model = SalesLineOrder
-    field_delete = False
-    field_check = False
-    ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_lineorder.html"}
-    gentrans = {
-        'CreateAlbaran': _("Create Albaran"),
-        'CreateTicket': _("Create Ticket"),
-        'CreateInvoice': _("Create Invoice"),
-    }
-    linkadd = False
-    linkedit = False
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        obj = SalesOrder.objects.filter(pk=self.__pk).first()
-        if obj and not obj.lock:
-            self.linkadd = True
-            self.linkedit = True
-            self.field_delete = True
-        return super(LineOrderSubList, self).dispatch(*args, **kwargs)
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['file_link'] = Q(order__pk=pk)
-        limit['removed'] = Q(removed=False)
-        return limit
-
-    def get_context_data(self, **kwargs):
-        context = super(LineOrderSubList, self).get_context_data(**kwargs)
-        order_pk = self.kwargs.get('pk', None)
-        if order_pk:
-            order = SalesOrder.objects.get(pk=order_pk)
-            context['total'] = order.calculate_price_doc()
-        else:
-            context['total'] = 0
-        return context
-
-
-class LineOrderDetails(GenLineOrderUrl, GenDetail):
-    model = SalesLineOrder
-    groups = LineOrderForm.__groups_details__()
-
-
-class LineOrderDetailsModal(GenDetailModal, LineOrderDetails):
-    pass
-
-
-class LineOrderForeign(GenLineOrderUrl, GenForeignKey):
-    model = SalesLineOrder
-    label = "{product} - {quantity}"
-
-    def get_foreign(self, queryset, search, filters):
-        # Filter with search string
-        qsobject = Q(product__product__code__icontains=search)
-        qsobject |= Q(product__product__family__code__icontains=search)
-        qsobject |= Q(product__product__family__name__icontains=search)
-        qsobject |= Q(product__product__category__code__icontains=search)
-        qsobject |= Q(product__product__category__name__icontains=search)
-        qs = queryset.filter(qsobject)
-
-        order_pk = filters.get('order', None)
-        if order_pk:
-            qs = qs.filter(order__pk=order_pk)
-
-        order_pk = filters.get('doc', None)
-        if order_pk:
-            qs = qs.filter(order__pk=order_pk)
-        return qs[:settings.LIMIT_FOREIGNKEY]
-
-
-class LineOrderForeignCustom(GenLineOrderUrl, GenForeignKey):
-    model = SalesLineOrder
-    label = "{product} - {quantity}"
-
-    def get(self, request, *args, **kwargs):
-        search = kwargs.get('search', None)
-
-        filterstxt = self.request.GET.get('filter', '{}')
-        filters = json.loads(filterstxt.decode('utf-8'))
-
-        queryset = SalesLineOrder.objects.all()
-        if search != '*':
-            qsobject = Q(product__product__code__icontains=search)
-            qsobject |= Q(product__product__family__code__icontains=search)
-            qsobject |= Q(product__product__family__name__icontains=search)
-            qsobject |= Q(product__product__category__code__icontains=search)
-            qsobject |= Q(product__product__category__name__icontains=search)
-            queryset = queryset.filter(qsobject)
-
-        order_pk = filters.get('order', None)
-        if order_pk:
-            queryset = queryset.filter(order__pk=order_pk)
-
-        answer = {}
-        answer['rows'] = []
-        answer['clear'] = ['price_base', 'discount']
-        answer['readonly'] = ['price_base', 'discount']
-        answer['rows'].append({
-            'price_base': 0,
-            'description': "",
-            'discount': 0,
-            'label': "---------",
-            'id': None,
-        })
-        for product in queryset[:settings.LIMIT_FOREIGNKEY]:
-            answer['rows'].append({
-                'price_base': product.price_base,
-                'description': product.__unicode__(),
-                'discount': product.discount,
-                'label': product.__unicode__(),
-                'id': product.pk,
-            })
-
-        try:
-            json_answer = json.dumps(answer)
-        except TypeError:
-            raise TypeError("The structure can not be encoded to JSON: {}".format(answer))
-        # Return the new answer
-        return HttpResponse(json_answer, content_type='application/json')
-
-
-# ###########################################
 class GenOrderDocumentUrl(object):
     ws_entry_point = '{}/orderdocuments'.format(settings.CDNX_INVOICING_URL_SALES)
 
 
-# OrderDocument
-class OrderDocumentList(GenOrderDocumentUrl, GenList):
+class OrderDocumentSubList(GenOrderDocumentUrl, GenList):
     model = SalesOrderDocument
-    extra_context = {'menu': ['sales', 'OrderDocument'], 'bread': [_('Sales'), _('OrderDocument')]}
+    extra_context = {'menu': ['sales', 'SalesOrderDocument'], 'bread': [_('Sales'), _('SalesOrderDocument')]}
 
     def __limitQ__(self, info):
         limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['link'] = Q(order__pk=pk)
         limit['removed'] = Q(order__removed=False)
         return limit
 
@@ -1432,27 +951,6 @@ class OrderDocumentUpdateModal(GenUpdateModal, OrderDocumentUpdate):
 
 class OrderDocumentDelete(GenOrderDocumentUrl, GenDelete):
     model = SalesOrderDocument
-
-
-class OrderDocumentSubList(GenOrderDocumentUrl, GenList):
-    model = SalesOrderDocument
-    extra_context = {'menu': ['sales', 'SalesOrderDocument'], 'bread': [_('Sales'), _('SalesOrderDocument')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['link'] = Q(order__pk=pk)
-        limit['removed'] = Q(order__removed=False)
-        return limit
-
-
-class OrderDocumentDetails(GenDetail):
-    model = SalesOrderDocument
-    groups = OrderDocumentForm.__groups_details__()
-
-
-class OrderDocumentDetailModal(GenDetailModal, OrderDocumentDetails):
-    pass
 
 
 # ###########################################
@@ -1504,7 +1002,7 @@ class AlbaranDetails(GenAlbaranUrl, GenDetail):
     groups = AlbaranForm.__groups_details__()
     template_model = "sales/albaran_details.html"
     tabs = [
-        {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_linealbaransaless_sublist', 'rows': 'base'},
+        {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslines_sublist_albaran', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlinealbarans_sublist', 'rows': 'base'},
         {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumentalbarans_sublist', 'rows': 'base'},
     ]
@@ -1582,8 +1080,9 @@ class AlbaranCreateTicket(View):
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
-        context = SalesLineOrder.create_ticket_from_albaran(pk, list_lines)
-        context.pop('obj_final')
+        context = SalesLines.create_ticket_from_albaran(pk, list_lines)
+        if 'obj_final' in context:
+            context.pop('obj_final')
         if 'error' in context:
             context['error'] = str(context['error'])
         try:
@@ -1603,8 +1102,9 @@ class AlbaranCreateInvoice(View):
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
-        context = SalesLineOrder.create_invoice_from_albaran(pk, list_lines)
-        context.pop('obj_final')
+        context = SalesLines.create_invoice_from_albaran(pk, list_lines)
+        if 'obj_final' in context:
+            context.pop('obj_final')
         if 'error' in context:
             context['error'] = str(context['error'])
         try:
@@ -1613,157 +1113,6 @@ class AlbaranCreateInvoice(View):
             raise TypeError("The structure can not be encoded to JSON: {}".format(context))
         # Return the new context
         return HttpResponse(json_answer, content_type='application/json')
-
-
-# ###########################################
-class GenLineAlbaranUrl(object):
-    ws_entry_point = '{}/linealbarans'.format(settings.CDNX_INVOICING_URL_SALES)
-
-
-# LineAlbaran
-class LineAlbaranList(GenLineAlbaranUrl, GenList):
-    model = SalesLineAlbaran
-    extra_context = {'menu': ['sales', 'LineAlbaran'], 'bread': [_('Sales'), _('LineAlbaran')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        limit['removed'] = Q(removed=False)
-        return limit
-
-
-class LineAlbaranCreate(GenLineAlbaranUrl, GenCreate):
-    model = SalesLineAlbaran
-    form_class = LineAlbaranForm
-    hide_foreignkey_button = True
-
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(LineAlbaranCreate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(LineAlbaranCreate, self).get_form(form_class)
-        if self.__pk:
-            form.fields['albaran_pk'].initial = self.__pk
-
-        return form
-
-    def form_valid(self, form):
-        # validate quantity
-        line_order = form.instance.line_order
-        quantity = form.instance.quantity
-        quantity_bd = SalesLineAlbaran.objects.filter(line_order=line_order).aggregate(q=Sum('quantity'))
-        units_pending = line_order.quantity
-        if quantity_bd['q']:
-            quantity += quantity_bd['q']
-            units_pending -= quantity_bd['q']
-
-        if line_order.quantity < quantity:
-            errors = form._errors.setdefault("quantity", ErrorList())
-            errors.append(_("La cantidad seleccionada es excesiva. Quedan pendiente {} unidades por albaranar".format(units_pending)))
-            return super(LineAlbaranCreate, self).form_invalid(form)
-
-        # initial albaran
-        if self.__pk:
-            obj = SalesAlbaran.objects.get(pk=self.__pk)
-            self.request.albaran = obj
-            form.instance.albaran = obj
-
-        return super(LineAlbaranCreate, self).form_valid(form)
-
-
-class LineAlbaranCreateModal(GenCreateModal, LineAlbaranCreate):
-    pass
-
-
-class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
-    model = SalesLineAlbaran
-    form_class = LineAlbaranForm
-    hide_foreignkey_button = True
-
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(LineAlbaranUpdate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(LineAlbaranUpdate, self).get_form(form_class)
-        form.fields['order'].initial = form.instance.line_order.order
-        if self.__pk:
-            form.fields['albaran_pk'].initial = self.__pk
-
-        return form
-
-
-class LineAlbaranUpdateModal(GenUpdateModal, LineAlbaranUpdate):
-    pass
-
-
-class LineAlbaranDelete(GenLineAlbaranUrl, GenDelete):
-    model = SalesLineAlbaran
-
-
-class LineAlbaranSubList(GenLineAlbaranUrl, GenList):
-    model = SalesLineAlbaran
-    field_delete = False
-    field_check = False
-    ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_linealbaran.html"}
-    gentrans = {
-        'CreateTicket': _("Create Ticket"),
-        'CreateInvoice': _("Create Invoice"),
-    }
-    linkadd = False
-    linkedit = False
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        obj = SalesAlbaran.objects.filter(pk=self.__pk).first()
-        if obj and not obj.lock:
-            self.linkadd = True
-            self.linkedit = True
-            self.field_delete = True
-        return super(LineAlbaranSubList, self).dispatch(*args, **kwargs)
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['file_link'] = Q(albaran__pk=pk)
-        limit['removed'] = Q(removed=False)
-        return limit
-
-    def get_context_data(self, **kwargs):
-        context = super(LineAlbaranSubList, self).get_context_data(**kwargs)
-        obj_pk = self.kwargs.get('pk', None)
-        if obj_pk:
-            obj = SalesAlbaran.objects.get(pk=obj_pk)
-            context['total'] = obj.calculate_price_doc()
-        else:
-            context['total'] = 0
-        return context
-
-
-class LineAlbaranDetails(GenLineAlbaranUrl, GenDetail):
-    model = SalesLineAlbaran
-    groups = LineAlbaranForm.__groups_details__()
-
-
-class LineAlbaranDetailsModal(GenDetailModal, LineAlbaranDetails):
-    pass
-
-
-class LineAlbaranForeign(GenLineAlbaranUrl, GenForeignKey):
-    model = SalesLineAlbaran
-    label = "{product} - {quantity}"
-
-    def get_foreign(self, queryset, search, filters):
-        # Filter with search string
-        qsobject = Q(description__icontains=search)
-        qs = queryset.filter(qsobject)
-
-        order_pk = filters.get('doc', None)
-        if order_pk:
-            qs = qs.filter(albaran__pk=order_pk)
-        return qs
 
 
 # ###########################################
@@ -1815,7 +1164,7 @@ class TicketDetails(GenTicketUrl, GenDetail):
     groups = TicketForm.__groups_details__()
     template_model = "sales/ticket_details.html"
     tabs = [
-        {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineticketsaless_sublist', 'rows': 'base'},
+        {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslines_sublist_ticket', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlinetickets_sublist', 'rows': 'base'},
         {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumenttickets_sublist', 'rows': 'base'},
     ]
@@ -1890,8 +1239,9 @@ class TicketCreateInvoice(View):
     def post(self, request, *args, **kwargs):
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
-        context = SalesLineOrder.create_invoice_from_ticket(pk, list_lines)
-        context.pop('obj_final')
+        context = SalesLines.create_invoice_from_ticket(pk, list_lines)
+        if 'obj_final' in context:
+            context.pop('obj_final')
         if 'error' in context:
             context['error'] = str(context['error'])
         try:
@@ -1920,21 +1270,23 @@ class TicketCreateRectification(View):
             tr.date = datetime.datetime.now()
             tr.ticket = ticket
             tr.billing_series = ticket.billing_series
-            with transaction.atomic():
-                tr.save()
+            try:
+                with transaction.atomic():
+                    tr.save()
 
-                for line_pk in list_lines:
-                    li = SalesLineTicket.objects.filter(pk=line_pk).first()
-                    if li:
-                        lir = SalesLineTicketRectification()
-                        lir.ticket_rectification = tr
-                        lir.line_ticket = li
-                        lir.quantity = li.quantity
-                        lir.save()
+                    for line_pk in list_lines:
+                        li = SalesLines.objects.filter(pk=line_pk).first()
+                        if li:
+                            li.ticket_rectification = tr
+                            li.save()
+                        else:
+                            raise Exception(_('Line not found'))
 
-                ticket.lock = True
-                ticket.save()
-                context['url'] = "{}#/{}".format(reverse("CDNX_invoicing_ticketrectificationsaless_list"), tr.pk)
+                    ticket.lock = True
+                    ticket.save()
+                    context['url'] = "{}#/{}".format(reverse("CDNX_invoicing_ticketrectificationsaless_list"), tr.pk)
+            except Exception as e:
+                context['error'] = e
         else:
             context['error'] = _("No select lines")
 
@@ -1944,190 +1296,6 @@ class TicketCreateRectification(View):
             raise TypeError("The structure can not be encoded to JSON: {}".format(context))
         # Return the new context
         return HttpResponse(json_answer, content_type='application/json')
-
-
-# ###########################################
-class GenLineTicketUrl(object):
-    ws_entry_point = '{}/linetickets'.format(settings.CDNX_INVOICING_URL_SALES)
-
-
-# LineTicket
-class LineTicketList(GenLineTicketUrl, GenList):
-    model = SalesLineTicket
-    extra_context = {'menu': ['sales', 'LineTicket'], 'bread': [_('Sales'), _('LineTicket')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        limit['removed'] = Q(removed=False)
-        return limit
-
-
-class LineTicketCreate(GenLineTicketUrl, GenCreate):
-    model = SalesLineTicket
-    form_class = LineTicketForm
-    hide_foreignkey_button = True
-
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(LineTicketCreate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(LineTicketCreate, self).get_form(form_class)
-        if self.__pk:
-            form.fields['ticket_pk'].initial = self.__pk
-
-        return form
-
-    def form_valid(self, form):
-        # validate quantity
-        line_order = form.instance.line_order
-        quantity = form.instance.quantity
-        quantity_ticket = line_order.line_ticket_sales.annotate(q=Sum('quantity')).values_list('q')
-        quantity_invoice = line_order.line_invoice_sales.annotate(q=Sum('quantity')).values_list('q')
-
-        quantity_bd = 0
-        if quantity_ticket:
-            quantity_bd += quantity_ticket[0][0]
-        if quantity_invoice:
-            quantity_bd += quantity_invoice[0][0]
-
-        units_pending = line_order.quantity - quantity_bd
-
-        if line_order.quantity < quantity:
-            errors = form._errors.setdefault("quantity", ErrorList())
-            errors.append(_("La cantidad seleccionada es excesiva. Quedan pendiente {} unidades por crear ticket o factura".format(units_pending)))
-            return super(LineTicketCreate, self).form_invalid(form)
-
-        # initial ticket
-        if self.__pk:
-            obj = SalesTicket.objects.get(pk=self.__pk)
-            self.request.ticket = obj
-            form.instance.ticket = obj
-
-        return super(LineTicketCreate, self).form_valid(form)
-
-
-class LineTicketCreateModal(GenCreateModal, LineTicketCreate):
-    pass
-
-
-class LineTicketUpdate(GenLineTicketUrl, GenUpdate):
-    model = SalesLineTicket
-    form_class = LineTicketForm
-
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(LineTicketUpdate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(LineTicketUpdate, self).get_form(form_class)
-        if self.__pk:
-            form.fields['ticket_pk'].initial = self.__pk
-        form.fields['order'].initial = SalesOrder.objects.filter(line_order_sales__pk=form.initial['line_order']).first()
-        return form
-
-    def form_valid(self, form):
-        # validate quantity
-        line_order = form.instance.line_order
-        quantity = form.instance.quantity
-        quantity_ticket = line_order.line_ticket_sales.annotate(q=Sum('quantity')).values_list('q')
-        quantity_invoice = line_order.line_invoice_sales.annotate(q=Sum('quantity')).values_list('q')
-
-        quantity_bd = 0
-        if quantity_ticket:
-            quantity_bd += quantity_ticket[0][0]
-        if quantity_invoice:
-            quantity_bd += quantity_invoice[0][0]
-
-        units_pending = line_order.quantity - quantity_bd
-
-        if line_order.quantity < quantity:
-            errors = form._errors.setdefault("quantity", ErrorList())
-            errors.append(_("La cantidad seleccionada es excesiva. Quedan pendiente {} unidades por crear ticket o factura".format(units_pending)))
-            return super(LineTicketUpdate, self).form_invalid(form)
-
-
-class LineTicketUpdateModal(GenUpdateModal, LineTicketUpdate):
-    pass
-
-
-class LineTicketDelete(GenLineTicketUrl, GenDelete):
-    model = SalesLineTicket
-
-
-class LineTicketSubList(GenLineTicketUrl, GenList):
-    model = SalesLineTicket
-    field_delete = False
-    field_check = False
-    ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_lineticket.html"}
-    gentrans = {
-        'CreateInvoice': _("Create Invoice"),
-        'CreateTicketRectification': _("Create Ticket Rectification"),
-    }
-    linkadd = False
-    linkedit = False
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        obj = SalesTicket.objects.filter(pk=self.__pk).first()
-        if obj and not obj.lock:
-            self.linkadd = True
-            self.linkedit = True
-            self.field_delete = True
-        return super(LineTicketSubList, self).dispatch(*args, **kwargs)
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['file_link'] = Q(ticket__pk=pk)
-        limit['removed'] = Q(removed=False)
-        return limit
-
-    def get_context_data(self, **kwargs):
-        context = super(LineTicketSubList, self).get_context_data(**kwargs)
-        obj_pk = self.kwargs.get('pk', None)
-        if obj_pk:
-            obj = SalesTicket.objects.get(pk=obj_pk)
-            context['total'] = obj.calculate_price_doc()
-        else:
-            context['total'] = 0
-        return context
-
-
-class LineTicketDetails(GenLineTicketUrl, GenDetail):
-    model = SalesLineTicket
-    groups = LineTicketForm.__groups_details__()
-
-
-class LineTicketDetailsModal(GenDetailModal, LineTicketDetails):
-    pass
-
-
-class LineTicketForeign(GenLineTicketUrl, GenForeignKey):
-    model = SalesLineTicket
-    label = "{description} - {quantity}"
-
-    def get_foreign(self, queryset, search, filters):
-        # Filter with search string
-        qsobject = Q(description__icontains=search)
-        qs = queryset.filter(qsobject)
-
-        ticket_rectification_pk = filters.get('ticket_rectification_pk', None)
-        if ticket_rectification_pk:
-            # mostramos las lineas del ticket salvo las que ya estan en la propia rectificativa
-            qs = qs.filter(
-                ticket__ticketrectification_sales__pk=ticket_rectification_pk
-            ).exclude(
-                pk__in=[x[0] for x in SalesLineTicketRectification.objects.filter(ticket_rectification__pk=ticket_rectification_pk).values_list('line_ticket__pk')]
-            )
-
-        doc = filters.get('doc', None)
-        if doc:
-            qs = qs.filter(ticket__pk=doc)
-
-        return qs[:settings.LIMIT_FOREIGNKEY]
 
 
 # ###########################################
@@ -2180,7 +1348,7 @@ class TicketRectificationDetails(GenTicketRectificationUrl, GenDetail):
     template_model = "sales/ticketrectification_details.html"
 
     tabs = [
-        {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineticketrectificationsaless_sublist', 'rows': 'base'},
+        {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslines_sublist_ticketrectificaction', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlineticketrectifications_sublist', 'rows': 'base'},
         {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumentticketrectifications_sublist', 'rows': 'base'},
     ]
@@ -2253,149 +1421,6 @@ class TicketRectificationPrint(PrinterHelper, GenTicketRectificationUrl, GenDeta
 
 
 # ###########################################
-class GenLineTicketRectificationUrl(object):
-    ws_entry_point = '{}/lineticketrectifications'.format(settings.CDNX_INVOICING_URL_SALES)
-
-
-# LineTicketRectification
-class LineTicketRectificationList(GenLineTicketRectificationUrl, GenList):
-    model = SalesLineTicketRectification
-    extra_context = {'menu': ['sales', 'LineTicketRectification'], 'bread': [_('Sales'), _('LineTicketRectification')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        limit['removed'] = Q(removed=False)
-        return limit
-
-
-class LineTicketRectificationCreate(GenLineTicketRectificationUrl, GenCreate):
-    model = SalesLineTicketRectification
-    form_class = LineTicketRectificationForm
-
-
-class LineTicketRectificationCreateModal(GenCreateModal, LineTicketRectificationCreate):
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(LineTicketRectificationCreateModal, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(LineTicketRectificationCreateModal, self).get_form(form_class)
-        if self.__pk:
-            form.fields['ticket_rectification_pk'].initial = self.__pk
-
-        return form
-
-    def form_valid(self, form):
-        line_ticket = form.instance.line_ticket
-        # sumatorio de las cantidades ya devueltas de la misma linea
-        quantity_tmp = SalesLineTicketRectification.objects.filter(
-            line_ticket=line_ticket
-        ).annotate(
-            q=Sum('quantity')
-        ).values('q')
-        if quantity_tmp:
-            quantity_bd = line_ticket.quantity - quantity_tmp[0]['q']
-        else:
-            quantity_bd = line_ticket.quantity
-        # comprobamos que la cantidad correcta
-        if quantity_bd < form.instance.quantity:
-            errors = form._errors.setdefault("quantity", ErrorList())
-            errors.append(_("La cantidad seleccionada es excesiva. Las unidades maximas a devolver son {}".format(quantity_bd)))
-            return super(LineTicketRectificationCreateModal, self).form_invalid(form)
-        # initial ticket rectification
-        if self.__pk:
-            ticket_rectification = SalesTicketRectification.objects.get(pk=self.__pk)
-            self.request.ticket_rectification = ticket_rectification
-            form.instance.ticket_rectification = ticket_rectification
-
-        return super(LineTicketRectificationCreateModal, self).form_valid(form)
-
-
-class LineTicketRectificationUpdate(GenLineTicketRectificationUrl, GenUpdate):
-    model = SalesLineTicketRectification
-    form_class = LineTicketRectificationForm
-
-    def form_valid(self, form):
-        line_ticket = form.instance.line_ticket
-        # sumatorio de las cantidades ya devueltas de la misma linea salvo al actual
-        quantity_tmp = SalesLineTicketRectification.objects.filter(
-            line_ticket=line_ticket
-        ).exclude(
-            pk=form.initial.get("id")
-        ).annotate(
-            q=Sum('quantity')
-        ).values('q')
-        if quantity_tmp:
-            quantity_bd = line_ticket.quantity - quantity_tmp[0]['q']
-        else:
-            quantity_bd = line_ticket.quantity
-
-        # comprobamos que la cantidad correcta
-        if quantity_bd < form.instance.quantity:
-            errors = form._errors.setdefault("quantity", ErrorList())
-            errors.append(_("La cantidad seleccionada es excesiva. Las unidades maximas a devolver son {}".format(quantity_bd)))
-            return super(LineTicketRectificationUpdate, self).form_invalid(form)
-
-        return super(LineTicketRectificationUpdate, self).form_valid(form)
-
-
-class LineTicketRectificationUpdateModal(GenUpdateModal, LineTicketRectificationUpdate):
-    form_class = LineTicketRectificationLinkedForm
-
-
-class LineTicketRectificationDelete(GenLineTicketRectificationUrl, GenDelete):
-    model = SalesLineTicketRectification
-
-
-class LineTicketRectificationSubList(GenLineTicketRectificationUrl, GenList):
-    model = SalesLineTicketRectification
-    linkadd = False
-    linkedit = False
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        obj = SalesTicketRectification.objects.filter(pk=self.__pk).first()
-        if obj and not obj.lock:
-            self.linkadd = True
-            self.linkedit = True
-        return super(LineTicketRectificationSubList, self).dispatch(*args, **kwargs)
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['file_link'] = Q(ticket_rectification__pk=pk)
-        limit['removed'] = Q(removed=False)
-        return limit
-
-
-class LineTicketRectificationDetails(GenLineTicketRectificationUrl, GenDetail):
-    model = SalesLineTicketRectification
-    groups = LineTicketRectificationForm.__groups_details__()
-    exclude_fields = []
-
-
-class LineTicketRectificationDetailModal(GenDetailModal, LineTicketRectificationDetails):
-    pass
-
-
-class LineTicketRectificationForeign(GenLineTicketRectificationUrl, GenForeignKey):
-    model = SalesLineTicket
-    label = "{description} - {quantity}"
-
-    def get_foreign(self, queryset, search, filters):
-        # Filter with search string
-        qsobject = Q(description__icontains=search)
-        qs = queryset.filter(qsobject)
-
-        doc = filters.get('doc', None)
-        if doc:
-            qs = qs.filter(ticket_rectification__pk=doc)
-
-        return qs[:settings.LIMIT_FOREIGNKEY]
-
-
-# ###########################################
 class GenInvoiceUrl(object):
     ws_entry_point = '{}/invoices'.format(settings.CDNX_INVOICING_URL_SALES)
 
@@ -2444,7 +1469,7 @@ class InvoiceDetails(GenInvoiceUrl, GenDetail):
     groups = InvoiceForm.__groups_details__()
     template_model = "sales/invoice_details.html"
     tabs = [
-        {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineinvoicesaless_sublist', 'rows': 'base'},
+        {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslines_sublist_invoice', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlineinvoices_sublist', 'rows': 'base'},
         {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumentinvoices_sublist', 'rows': 'base'},
     ]
@@ -2481,25 +1506,26 @@ class InvoiceCreateRectification(View):
             ir.date = datetime.datetime.now()
             ir.invoice = invoice
             ir.billing_series = invoice.billing_series
-            with transaction.atomic():
-                ir.save()
+            try:
+                with transaction.atomic():
+                    ir.save()
 
-                alir = []
-                for line_pk in list_lines:
-                    li = SalesLineInvoice.objects.filter(pk=line_pk).first()
-                    if li:
-                        lir = SalesLineInvoiceRectification()
-                        lir.invoice_rectification = ir
-                        lir.line_invoice = li
-                        lir.quantity = li.quantity
-                        lir.save()
-                        alir.append([line_pk, lir.pk])
+                    alir = []
+                    for line_pk in list_lines:
+                        li = SalesLines.objects.filter(pk=line_pk).first()
+                        if li:
+                            li.invoice_rectification = ir
+                            li.save()
+                        else:
+                            raise Exception(_('Line not found'))
 
-                invoice.lock = True
-                invoice.save()
-                context['alir'] = alir
-                context['lir'] = lir.pk
-                context['url'] = "{}#/{}".format(reverse("CDNX_invoicing_invoicerectificationsaless_list"), ir.pk)
+                    invoice.lock = True
+                    invoice.save()
+                    context['alir'] = alir
+                    context['lir'] = li.pk
+                    context['url'] = "{}#/{}".format(reverse("CDNX_invoicing_invoicerectificationsaless_list"), ir.pk)
+            except Exception as e:
+                context['error'] = e
         else:
             context['error'] = _("No select lines")
 
@@ -2560,181 +1586,6 @@ class InvoicePrint(PrinterHelper, GenInvoiceUrl, GenDetail):
 
 
 # ###########################################
-class GenLineInvoiceUrl(object):
-    ws_entry_point = '{}/lineinvoices'.format(settings.CDNX_INVOICING_URL_SALES)
-
-
-# LineInvoice
-class LineInvoiceList(GenLineInvoiceUrl, GenList):
-    model = SalesLineInvoice
-    extra_context = {'menu': ['sales', 'LineInvoice'], 'bread': [_('Sales'), _('LineInvoice')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        limit['removed'] = Q(removed=False)
-        return limit
-
-
-class LineInvoiceCreate(GenLineInvoiceUrl, GenCreate):
-    model = SalesLineInvoice
-    form_class = LineInvoiceForm
-
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(LineInvoiceCreate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(LineInvoiceCreate, self).get_form(form_class)
-        if self.__pk:
-            form.fields['invoice_pk'].initial = self.__pk
-
-        return form
-
-    def form_valid(self, form):
-        # validate quantity
-        line_order = form.instance.line_order
-        quantity = form.instance.quantity
-        quantity_invoice = line_order.line_invoice_sales.annotate(q=Sum('quantity')).values_list('q')
-
-        quantity_bd = 0
-        if quantity_invoice:
-            quantity_bd += quantity_invoice[0][0]
-
-        units_pending = line_order.quantity - quantity_bd
-
-        if line_order.quantity < quantity:
-            errors = form._errors.setdefault("quantity", ErrorList())
-            errors.append(_("La cantidad seleccionada es excesiva. Quedan pendiente {} unidades por facturar".format(units_pending)))
-            return super(LineInvoiceCreate, self).form_invalid(form)
-
-        # initial invoice
-        if self.__pk:
-            obj = SalesInvoice.objects.get(pk=self.__pk)
-            self.request.invoice = obj
-            form.instance.invoice = obj
-
-        return super(LineInvoiceCreate, self).form_valid(form)
-
-
-class LineInvoiceCreateModal(GenCreateModal, LineInvoiceCreate):
-    pass
-
-
-class LineInvoiceUpdate(GenLineInvoiceUrl, GenUpdate):
-    model = SalesLineInvoice
-    form_class = LineInvoiceForm
-
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(LineInvoiceUpdate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(LineInvoiceUpdate, self).get_form(form_class)
-        if self.__pk:
-            form.fields['invoice_pk'].initial = self.__pk
-        form.fields['order'].initial = SalesOrder.objects.filter(line_order_sales__pk=form.initial['line_order']).first()
-        return form
-
-    def form_valid(self, form):
-        # validate quantity
-        line_order = form.instance.line_order
-        quantity = form.instance.quantity
-        quantity_invoice = line_order.line_invoice_sales.annotate(q=Sum('quantity')).values_list('q')
-
-        quantity_bd = 0
-        if quantity_invoice:
-            quantity_bd += quantity_invoice[0][0]
-
-        units_pending = line_order.quantity - quantity_bd
-
-        if line_order.quantity < quantity:
-            errors = form._errors.setdefault("quantity", ErrorList())
-            errors.append(_("La cantidad seleccionada es excesiva. Quedan pendiente {} unidades por facturar".format(units_pending)))
-            return super(LineInvoiceUpdate, self).form_invalid(form)
-
-        return super(LineInvoiceUpdate, self).form_valid(form)
-
-
-class LineInvoiceUpdateModal(GenUpdateModal, LineInvoiceUpdate):
-    pass
-
-
-class LineInvoiceDelete(GenLineInvoiceUrl, GenDelete):
-    model = SalesLineInvoice
-
-
-class LineInvoiceSubList(GenLineInvoiceUrl, GenList):
-    model = SalesLineInvoice
-    field_check = False
-    ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_lineinvoice.html"}
-    gentrans = {
-        'CreateInvoiceRectification': _("Create Invoice Rectification"),
-    }
-    linkadd = False
-    linkedit = False
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        obj = SalesInvoice.objects.filter(pk=self.__pk).first()
-        if obj and not obj.lock:
-            self.linkadd = True
-            self.linkedit = True
-        return super(LineInvoiceSubList, self).dispatch(*args, **kwargs)
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['file_link'] = Q(invoice__pk=pk)
-        limit['removed'] = Q(removed=False)
-        return limit
-
-    def get_context_data(self, **kwargs):
-        context = super(LineInvoiceSubList, self).get_context_data(**kwargs)
-        obj_pk = self.kwargs.get('pk', None)
-        if obj_pk:
-            obj = SalesInvoice.objects.get(pk=obj_pk)
-            context['total'] = obj.calculate_price_doc()
-        else:
-            context['total'] = 0
-        return context
-
-
-class LineInvoiceDetails(GenLineInvoiceUrl, GenDetail):
-    model = SalesLineInvoice
-    groups = LineInvoiceForm.__groups_details__()
-
-
-class LineInvoiceDetailsModal(GenDetailModal, LineInvoiceDetails):
-    pass
-
-
-class LineInvoiceForeign(GenLineInvoiceUrl, GenForeignKey):
-    model = SalesLineInvoice
-    label = "{description} - {quantity}"
-
-    def get_foreign(self, queryset, search, filters):
-        # Filter with search string
-        qsobject = Q(description__icontains=search)
-        qs = queryset.filter(qsobject)
-
-        invoice_rectification_pk = filters.get('invoice_rectification_pk', None)
-        if invoice_rectification_pk:
-            # mostramos las lineas de la factura salvo las que ya estan en la propia rectificativa
-            qs = qs.filter(
-                invoice__invoicerectification_sales__pk=invoice_rectification_pk
-            ).exclude(
-                pk__in=[x[0] for x in SalesLineInvoiceRectification.objects.filter(invoice_rectification__pk=invoice_rectification_pk).values_list('line_invoice__pk')]
-            )
-
-        doc = filters.get('doc', None)
-        if doc:
-            qs = qs.filter(invoice__pk=doc)
-        return qs[:settings.LIMIT_FOREIGNKEY]
-
-
-# ###########################################
 class GenInvoiceRectificationUrl(object):
     ws_entry_point = '{}/invoicerectifications'.format(settings.CDNX_INVOICING_URL_SALES)
 
@@ -2784,7 +1635,7 @@ class InvoiceRectificationDetails(GenInvoiceRectificationUrl, GenDetail):
     template_model = "sales/invoicerectification_details.html"
 
     tabs = [
-        {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_lineinvoicerectificationsaless_sublist', 'rows': 'base'},
+        {'id': 'lines', 'name': _('Products'), 'ws': 'CDNX_invoicing_saleslines_sublist_invoicerectification', 'rows': 'base'},
         {'id': 'line_reason', 'name': _('Lines modificed'), 'ws': 'CDNX_invoicing_reasonmodificationlineinvoicerectifications_sublist', 'rows': 'base'},
         {'id': 'line_printer', 'name': _('Print counter'), 'ws': 'CDNX_invoicing_printcounterdocumentinvoicerectifications_sublist', 'rows': 'base'},
     ]
@@ -2855,154 +1706,7 @@ class InvoiceRectificationPrint(PrinterHelper, GenInvoiceRectificationUrl, GenDe
 
         return context
 
-
-# ###########################################
-class GenLineInvoiceRectificationUrl(object):
-    ws_entry_point = '{}/lineinvoicerectifications'.format(settings.CDNX_INVOICING_URL_SALES)
-
-
-# LineInvoiceRectification
-class LineInvoiceRectificationList(GenLineInvoiceRectificationUrl, GenList):
-    model = SalesLineInvoiceRectification
-    extra_context = {'menu': ['sales', 'LineInvoiceRectification'], 'bread': [_('Sales'), _('LineInvoiceRectification')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        limit['removed'] = Q(removed=False)
-        return limit
-
-
-class LineInvoiceRectificationCreate(GenLineInvoiceRectificationUrl, GenCreate):
-    model = SalesLineInvoiceRectification
-    form_class = LineInvoiceRectificationForm
-    hide_foreignkey_button = True
-
-
-class LineInvoiceRectificationCreateModal(GenCreateModal, LineInvoiceRectificationCreate):
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        self.__invoice_rectification_pk = kwargs.get('pk', None)
-        return super(LineInvoiceRectificationCreateModal, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(LineInvoiceRectificationCreateModal, self).get_form(form_class)
-        if self.__invoice_rectification_pk:
-            form.fields['invoice_rectification_pk'].initial = self.__invoice_rectification_pk
-
-        return form
-
-    def form_valid(self, form):
-        line_invoice = form.instance.line_invoice
-        # sumatorio de las cantidades ya devueltas de la misma linea
-        quantity_tmp = SalesLineInvoiceRectification.objects.filter(
-            line_invoice=line_invoice
-        ).annotate(
-            q=Sum('quantity')
-        ).values('q')
-        if quantity_tmp:
-            quantity_bd = line_invoice.quantity - quantity_tmp[0]['q']
-        else:
-            quantity_bd = line_invoice.quantity
-        # comprobamos que la cantidad correcta
-        if quantity_bd < form.instance.quantity:
-            errors = form._errors.setdefault("quantity", ErrorList())
-            errors.append(_("La cantidad seleccionada es excesiva. Las unidades maximas a devolver son {}".format(quantity_bd)))
-            return super(LineInvoiceRectificationCreateModal, self).form_invalid(form)
-        # initial invoice rectifications
-        if self.__invoice_rectification_pk:
-            invoice_rectification = SalesInvoiceRectification.objects.get(pk=self.__invoice_rectification_pk)
-            self.request.invoice_rectification = invoice_rectification
-            form.instance.invoice_rectification = invoice_rectification
-
-        return super(LineInvoiceRectificationCreateModal, self).form_valid(form)
-
-
-class LineInvoiceRectificationUpdate(GenLineInvoiceRectificationUrl, GenUpdate):
-    model = SalesLineInvoiceRectification
-    form_class = LineInvoiceRectificationForm
-
-    def form_valid(self, form):
-        # raise Exception(form.initial)
-        line_invoice = form.instance.line_invoice
-        # sumatorio de las cantidades ya devueltas de la misma linea salvo al actual
-        quantity_tmp = SalesLineInvoiceRectification.objects.filter(
-            line_invoice=line_invoice
-        ).exclude(
-            pk=form.initial.get("id")
-        ).annotate(
-            q=Sum('quantity')
-        ).values('q')
-        if quantity_tmp:
-            quantity_bd = line_invoice.quantity - quantity_tmp[0]['q']
-        else:
-            quantity_bd = line_invoice.quantity
-
-        # comprobamos que la cantidad correcta
-        if quantity_bd < form.instance.quantity:
-            errors = form._errors.setdefault("quantity", ErrorList())
-            errors.append(_("La cantidad seleccionada es excesiva. Las unidades maximas a devolver son {}".format(quantity_bd)))
-            return super(LineInvoiceRectificationUpdate, self).form_invalid(form)
-
-        return super(LineInvoiceRectificationUpdate, self).form_valid(form)
-
-
-class LineInvoiceRectificationUpdateModal(GenUpdateModal, LineInvoiceRectificationUpdate):
-    form_class = LineInvoiceRectificationLinkedForm
-
-
-class LineInvoiceRectificationDelete(GenLineInvoiceRectificationUrl, GenDelete):
-    model = SalesLineInvoiceRectification
-
-
-class LineInvoiceRectificationSubList(GenLineInvoiceRectificationUrl, GenList):
-    model = SalesLineInvoiceRectification
-    gentrans = {
-        'CreateInvoice': _("Create Invoice Rectification"),
-    }
-    linkadd = False
-    linkedit = False
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        obj = SalesInvoiceRectification.objects.filter(pk=self.__pk).first()
-        if obj and not obj.lock:
-            self.linkadd = True
-            self.linkedit = True
-        return super(LineInvoiceRectificationSubList, self).dispatch(*args, **kwargs)
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['file_link'] = Q(invoice_rectification__pk=pk)
-        limit['removed'] = Q(removed=False)
-        return limit
-
-
-class LineInvoiceRectificationDetails(GenLineInvoiceRectificationUrl, GenDetail):
-    model = SalesLineInvoiceRectification
-    groups = LineInvoiceRectificationForm.__groups_details__()
-    exclude_fields = []
-
-
-class LineInvoiceRectificationDetailModal(GenDetailModal, LineInvoiceRectificationDetails):
-    pass
-
-
-class LineInvoiceRectificationForeign(GenLineInvoiceRectificationUrl, GenForeignKey):
-    model = SalesLineInvoiceRectification
-    label = "{description} - {quantity}"
-
-    def get_foreign(self, queryset, search, filters):
-        # Filter with search string
-        qsobject = Q(description__icontains=search)
-        qs = queryset.filter(qsobject)
-
-        doc = filters.get('doc', None)
-        if doc:
-            qs = qs.filter(invoice_rectification__pk=doc)
-        return qs[:settings.LIMIT_FOREIGNKEY]
-
-
+"""
 # ###########################################
 class GenReservedProduct(object):
     ws_entry_point = '{}/reservedproducts'.format(settings.CDNX_INVOICING_URL_SALES)
@@ -3028,7 +1732,7 @@ class ReservedProductUpdate(GenReservedProduct, GenUpdate):
 class ReservedProductDelete(GenReservedProduct, GenDelete):
     model = SalesReservedProduct
 
-
+"""
 # ###########################################
 class GenShoppingCart(object):
     ws_entry_point = '{}/shoppingcarts'.format(settings.CDNX_INVOICING_URL_SALES)
@@ -3083,630 +1787,6 @@ class ShoppingCartManagement(View):
             return JsonResponse(cart.totals)
 
         return HttpResponseBadRequest()
-
-
-# ###########################################
-# ReasonModification
-class ReasonModificationList(GenList):
-    model = ReasonModification
-    extra_context = {'menu': ['sales', 'ReasonModification'], 'bread': [_('Sales'), _('ReasonModification')]}
-
-
-class ReasonModificationCreate(GenCreate):
-    model = ReasonModification
-    form_class = ReasonModificationForm
-
-
-class ReasonModificationCreateModal(GenCreateModal, ReasonModificationCreate):
-    pass
-
-
-class ReasonModificationUpdate(GenUpdate):
-    model = ReasonModification
-    form_class = ReasonModificationForm
-
-
-class ReasonModificationUpdateModal(GenUpdateModal, ReasonModificationUpdate):
-    pass
-
-
-class ReasonModificationDelete(GenDelete):
-    model = ReasonModification
-
-
-class ReasonModificationSubList(GenList):
-    model = ReasonModification
-    extra_context = {'menu': ['sales', 'ReasonModification'], 'bread': [_('Sales'), _('ReasonModification')]}
-
-
-class ReasonModificationDetails(GenDetail):
-    model = ReasonModification
-    groups = ReasonModificationForm.__groups_details__()
-
-
-class ReasonModificationDetailModal(GenDetailModal, ReasonModificationDetails):
-    pass
-
-
-# ###########################################
-# ReasonModificationLineBasket
-class ReasonModificationLineBasketList(GenList):
-    model = ReasonModificationLineBasket
-    extra_context = {'menu': ['sales', 'ReasonModificationLineBasket'], 'bread': [_('Sales'), _('ReasonModificationLineBasket')]}
-
-
-class ReasonModificationLineBasketCreate(GenCreate):
-    model = ReasonModificationLineBasket
-    form_class = ReasonModificationLineBasketForm
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(ReasonModificationLineBasketCreate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(ReasonModificationLineBasketCreate, self).get_form(form_class)
-        obj = SalesBasket.objects.filter(pk=self.__pk).first()
-        if obj:
-            form.fields['doc'].initial = obj.pk
-        return form
-
-    def form_valid(self, form):
-        user = get_current_user()
-        form.instance.user = user
-        self.request.user = user
-        return super(ReasonModificationLineBasketCreate, self).form_valid(form)
-
-
-class ReasonModificationLineBasketCreateModal(GenCreateModal, ReasonModificationLineBasketCreate):
-    pass
-
-
-class ReasonModificationLineBasketUpdate(GenUpdate):
-    model = ReasonModificationLineBasket
-    form_class = ReasonModificationLineBasketForm
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(ReasonModificationLineBasketUpdate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(ReasonModificationLineBasketUpdate, self).get_form(form_class)
-        obj = SalesBasket.objects.filter(pk=self.__pk).first()
-        if obj:
-            form.fields['doc'].initial = obj.pk
-        return form
-
-    def form_valid(self, form):
-        user = get_current_user()
-        form.instance.user = user
-        self.request.user = user
-        return super(ReasonModificationLineBasketUpdate, self).form_valid(form)
-
-
-class ReasonModificationLineBasketUpdateModal(GenUpdateModal, ReasonModificationLineBasketUpdate):
-    pass
-
-
-class ReasonModificationLineBasketDelete(GenDelete):
-    model = ReasonModificationLineBasket
-
-
-class ReasonModificationLineBasketSubList(GenList):
-    model = ReasonModificationLineBasket
-    extra_context = {'menu': ['sales', 'ReasonModificationLineBasket'], 'bread': [_('Sales'), _('ReasonModificationLineBasket')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['link'] = Q(line__basket__pk=pk)
-        return limit
-
-
-class ReasonModificationLineBasketDetails(GenDetail):
-    model = ReasonModificationLineBasket
-    groups = ReasonModificationLineBasketForm.__groups_details__()
-
-
-class ReasonModificationLineBasketDetailModal(GenDetailModal, ReasonModificationLineBasketDetails):
-    pass
-
-
-# ###########################################
-# ReasonModificationLineOrder
-class ReasonModificationLineOrderList(GenList):
-    model = ReasonModificationLineOrder
-    extra_context = {'menu': ['sales', 'ReasonModificationLineOrder'], 'bread': [_('Sales'), _('ReasonModificationLineOrder')]}
-
-
-class ReasonModificationLineOrderCreate(GenCreate):
-    model = ReasonModificationLineOrder
-    form_class = ReasonModificationLineOrderForm
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(ReasonModificationLineOrderCreate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(ReasonModificationLineOrderCreate, self).get_form(form_class)
-        obj = SalesOrder.objects.filter(pk=self.__pk).first()
-        if obj:
-            form.fields['doc'].initial = obj.pk
-        return form
-
-    def form_valid(self, form):
-        user = get_current_user()
-        form.instance.user = user
-        self.request.user = user
-        return super(ReasonModificationLineOrderCreate, self).form_valid(form)
-
-
-class ReasonModificationLineOrderCreateModal(GenCreateModal, ReasonModificationLineOrderCreate):
-    pass
-
-
-class ReasonModificationLineOrderUpdate(GenUpdate):
-    model = ReasonModificationLineOrder
-    form_class = ReasonModificationLineOrderForm
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(ReasonModificationLineOrderUpdate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(ReasonModificationLineOrderUpdate, self).get_form(form_class)
-        obj = SalesOrder.objects.filter(pk=self.__pk).first()
-        if obj:
-            form.fields['doc'].initial = obj.pk
-        return form
-
-    def form_valid(self, form):
-        user = get_current_user()
-        form.instance.user = user
-        self.request.user = user
-        return super(ReasonModificationLineOrderUpdate, self).form_valid(form)
-
-
-class ReasonModificationLineOrderUpdateModal(GenUpdateModal, ReasonModificationLineOrderUpdate):
-    pass
-
-
-class ReasonModificationLineOrderDelete(GenDelete):
-    model = ReasonModificationLineOrder
-
-
-class ReasonModificationLineOrderSubList(GenList):
-    model = ReasonModificationLineOrder
-    extra_context = {'menu': ['sales', 'ReasonModificationLineOrder'], 'bread': [_('Sales'), _('ReasonModificationLineOrder')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['link'] = Q(line__order__pk=pk)
-        return limit
-
-
-class ReasonModificationLineOrderDetails(GenDetail):
-    model = ReasonModificationLineOrder
-    groups = ReasonModificationLineOrderForm.__groups_details__()
-
-
-class ReasonModificationLineOrderDetailModal(GenDetailModal, ReasonModificationLineOrderDetails):
-    pass
-
-
-# ###########################################
-# ReasonModificationLineAlbaran
-class ReasonModificationLineAlbaranList(GenList):
-    model = ReasonModificationLineAlbaran
-    extra_context = {'menu': ['sales', 'ReasonModificationLineAlbaran'], 'bread': [_('Sales'), _('ReasonModificationLineAlbaran')]}
-
-
-class ReasonModificationLineAlbaranCreate(GenCreate):
-    model = ReasonModificationLineAlbaran
-    form_class = ReasonModificationLineAlbaranForm
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(ReasonModificationLineAlbaranCreate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(ReasonModificationLineAlbaranCreate, self).get_form(form_class)
-        obj = SalesAlbaran.objects.filter(pk=self.__pk).first()
-        if obj:
-            form.fields['doc'].initial = obj.pk
-        return form
-
-    def form_valid(self, form):
-        user = get_current_user()
-        form.instance.user = user
-        self.request.user = user
-        return super(ReasonModificationLineAlbaranCreate, self).form_valid(form)
-
-
-class ReasonModificationLineAlbaranCreateModal(GenCreateModal, ReasonModificationLineAlbaranCreate):
-    pass
-
-
-class ReasonModificationLineAlbaranUpdate(GenUpdate):
-    model = ReasonModificationLineAlbaran
-    form_class = ReasonModificationLineAlbaranForm
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(ReasonModificationLineAlbaranUpdate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(ReasonModificationLineAlbaranUpdate, self).get_form(form_class)
-        obj = SalesAlbaran.objects.filter(pk=self.__pk).first()
-        if obj:
-            form.fields['doc'].initial = obj.pk
-        return form
-
-    def form_valid(self, form):
-        user = get_current_user()
-        form.instance.user = user
-        self.request.user = user
-        return super(ReasonModificationLineAlbaranUpdate, self).form_valid(form)
-
-
-class ReasonModificationLineAlbaranUpdateModal(GenUpdateModal, ReasonModificationLineAlbaranUpdate):
-    pass
-
-
-class ReasonModificationLineAlbaranDelete(GenDelete):
-    model = ReasonModificationLineAlbaran
-
-
-class ReasonModificationLineAlbaranSubList(GenList):
-    model = ReasonModificationLineAlbaran
-    extra_context = {'menu': ['sales', 'ReasonModificationLineAlbaran'], 'bread': [_('Sales'), _('ReasonModificationLineAlbaran')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['link'] = Q(line__albaran__pk=pk)
-        return limit
-
-
-class ReasonModificationLineAlbaranDetails(GenDetail):
-    model = ReasonModificationLineAlbaran
-    groups = ReasonModificationLineAlbaranForm.__groups_details__()
-
-
-class ReasonModificationLineAlbaranDetailModal(GenDetailModal, ReasonModificationLineAlbaranDetails):
-    pass
-
-
-# ###########################################
-# ReasonModificationLineTicket
-class ReasonModificationLineTicketList(GenList):
-    model = ReasonModificationLineTicket
-    extra_context = {'menu': ['sales', 'ReasonModificationLineTicket'], 'bread': [_('Sales'), _('ReasonModificationLineTicket')]}
-
-
-class ReasonModificationLineTicketCreate(GenCreate):
-    model = ReasonModificationLineTicket
-    form_class = ReasonModificationLineTicketForm
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(ReasonModificationLineTicketCreate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(ReasonModificationLineTicketCreate, self).get_form(form_class)
-        obj = SalesTicket.objects.filter(pk=self.__pk).first()
-        if obj:
-            form.fields['doc'].initial = obj.pk
-        return form
-
-    def form_valid(self, form):
-        user = get_current_user()
-        form.instance.user = user
-        self.request.user = user
-        return super(ReasonModificationLineTicketCreate, self).form_valid(form)
-
-
-class ReasonModificationLineTicketCreateModal(GenCreateModal, ReasonModificationLineTicketCreate):
-    pass
-
-
-class ReasonModificationLineTicketUpdate(GenUpdate):
-    model = ReasonModificationLineTicket
-    form_class = ReasonModificationLineTicketForm
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(ReasonModificationLineTicketUpdate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(ReasonModificationLineTicketUpdate, self).get_form(form_class)
-        obj = SalesTicket.objects.filter(pk=self.__pk).first()
-        if obj:
-            form.fields['doc'].initial = obj.pk
-        return form
-
-    def form_valid(self, form):
-        user = get_current_user()
-        form.instance.user = user
-        self.request.user = user
-        return super(ReasonModificationLineTicketUpdate, self).form_valid(form)
-
-
-class ReasonModificationLineTicketUpdateModal(GenUpdateModal, ReasonModificationLineTicketUpdate):
-    pass
-
-
-class ReasonModificationLineTicketDelete(GenDelete):
-    model = ReasonModificationLineTicket
-
-
-class ReasonModificationLineTicketSubList(GenList):
-    model = ReasonModificationLineTicket
-    extra_context = {'menu': ['sales', 'ReasonModificationLineTicket'], 'bread': [_('Sales'), _('ReasonModificationLineTicket')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['link'] = Q(line__ticket__pk=pk)
-        return limit
-
-
-class ReasonModificationLineTicketDetails(GenDetail):
-    model = ReasonModificationLineTicket
-    groups = ReasonModificationLineTicketForm.__groups_details__()
-
-
-class ReasonModificationLineTicketDetailModal(GenDetailModal, ReasonModificationLineTicketDetails):
-    pass
-
-
-# ###########################################
-# ReasonModificationLineTicketRectification
-class ReasonModificationLineTicketRectificationList(GenList):
-    model = ReasonModificationLineTicketRectification
-    extra_context = {'menu': ['sales', 'ReasonModificationLineTicketRectification'], 'bread': [_('Sales'), _('ReasonModificationLineTicketRectification')]}
-
-
-class ReasonModificationLineTicketRectificationCreate(GenCreate):
-    model = ReasonModificationLineTicketRectification
-    form_class = ReasonModificationLineTicketRectificationForm
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(ReasonModificationLineTicketRectificationCreate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(ReasonModificationLineTicketRectificationCreate, self).get_form(form_class)
-        obj = SalesTicketRectification.objects.filter(pk=self.__pk).first()
-        if obj:
-            form.fields['doc'].initial = obj.pk
-        return form
-
-    def form_valid(self, form):
-        user = get_current_user()
-        form.instance.user = user
-        self.request.user = user
-        return super(ReasonModificationLineTicketRectificationCreate, self).form_valid(form)
-
-
-class ReasonModificationLineTicketRectificationCreateModal(GenCreateModal, ReasonModificationLineTicketRectificationCreate):
-    pass
-
-
-class ReasonModificationLineTicketRectificationUpdate(GenUpdate):
-    model = ReasonModificationLineTicketRectification
-    form_class = ReasonModificationLineTicketRectificationForm
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(ReasonModificationLineTicketRectificationUpdate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(ReasonModificationLineTicketRectificationUpdate, self).get_form(form_class)
-        obj = SalesTicketRectification.objects.filter(pk=self.__pk).first()
-        if obj:
-            form.fields['doc'].initial = obj.pk
-        return form
-
-    def form_valid(self, form):
-        user = get_current_user()
-        form.instance.user = user
-        self.request.user = user
-        return super(ReasonModificationLineTicketRectificationUpdate, self).form_valid(form)
-
-
-class ReasonModificationLineTicketRectificationUpdateModal(GenUpdateModal, ReasonModificationLineTicketRectificationUpdate):
-    pass
-
-
-class ReasonModificationLineTicketRectificationDelete(GenDelete):
-    model = ReasonModificationLineTicketRectification
-
-
-class ReasonModificationLineTicketRectificationSubList(GenList):
-    model = ReasonModificationLineTicketRectification
-    extra_context = {'menu': ['sales', 'ReasonModificationLineTicketRectification'], 'bread': [_('Sales'), _('ReasonModificationLineTicketRectification')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['link'] = Q(line__ticket_rectification__pk=pk)
-        return limit
-
-
-class ReasonModificationLineTicketRectificationDetails(GenDetail):
-    model = ReasonModificationLineTicketRectification
-    groups = ReasonModificationLineTicketRectificationForm.__groups_details__()
-
-
-class ReasonModificationLineTicketRectificationDetailModal(GenDetailModal, ReasonModificationLineTicketRectificationDetails):
-    pass
-
-
-# ###########################################
-# ReasonModificationLineInvoice
-class ReasonModificationLineInvoiceList(GenList):
-    model = ReasonModificationLineInvoice
-    extra_context = {'menu': ['sales', 'ReasonModificationLineInvoice'], 'bread': [_('Sales'), _('ReasonModificationLineInvoice')]}
-
-
-class ReasonModificationLineInvoiceCreate(GenCreate):
-    model = ReasonModificationLineInvoice
-    form_class = ReasonModificationLineInvoiceForm
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(ReasonModificationLineInvoiceCreate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(ReasonModificationLineInvoiceCreate, self).get_form(form_class)
-        obj = SalesInvoice.objects.filter(pk=self.__pk).first()
-        if obj:
-            form.fields['doc'].initial = obj.pk
-        return form
-
-    def form_valid(self, form):
-        user = get_current_user()
-        form.instance.user = user
-        self.request.user = user
-        return super(ReasonModificationLineInvoiceCreate, self).form_valid(form)
-
-
-class ReasonModificationLineInvoiceCreateModal(GenCreateModal, ReasonModificationLineInvoiceCreate):
-    pass
-
-
-class ReasonModificationLineInvoiceUpdate(GenUpdate):
-    model = ReasonModificationLineInvoice
-    form_class = ReasonModificationLineInvoiceForm
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(ReasonModificationLineInvoiceUpdate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(ReasonModificationLineInvoiceUpdate, self).get_form(form_class)
-        obj = SalesInvoice.objects.filter(pk=self.__pk).first()
-        if obj:
-            form.fields['doc'].initial = obj.pk
-        return form
-
-    def form_valid(self, form):
-        user = get_current_user()
-        form.instance.user = user
-        self.request.user = user
-        return super(ReasonModificationLineInvoiceUpdate, self).form_valid(form)
-
-
-class ReasonModificationLineInvoiceUpdateModal(GenUpdateModal, ReasonModificationLineInvoiceUpdate):
-    pass
-
-
-class ReasonModificationLineInvoiceDelete(GenDelete):
-    model = ReasonModificationLineInvoice
-
-
-class ReasonModificationLineInvoiceSubList(GenList):
-    model = ReasonModificationLineInvoice
-    extra_context = {'menu': ['sales', 'ReasonModificationLineInvoice'], 'bread': [_('Sales'), _('ReasonModificationLineInvoice')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['link'] = Q(invoice__pk=pk)
-        return limit
-
-
-class ReasonModificationLineInvoiceDetails(GenDetail):
-    model = ReasonModificationLineInvoice
-    groups = ReasonModificationLineInvoiceForm.__groups_details__()
-
-
-class ReasonModificationLineInvoiceDetailModal(GenDetailModal, ReasonModificationLineInvoiceDetails):
-    pass
-
-
-# ###########################################
-# ReasonModificationLineInvoiceRectification
-class ReasonModificationLineInvoiceRectificationList(GenList):
-    model = ReasonModificationLineInvoiceRectification
-    extra_context = {'menu': ['sales', 'ReasonModificationLineInvoiceRectification'], 'bread': [_('Sales'), _('ReasonModificationLineInvoiceRectification')]}
-
-
-class ReasonModificationLineInvoiceRectificationCreate(GenCreate):
-    model = ReasonModificationLineInvoiceRectification
-    form_class = ReasonModificationLineInvoiceRectificationForm
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(ReasonModificationLineInvoiceRectificationCreate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(ReasonModificationLineInvoiceRectificationCreate, self).get_form(form_class)
-        obj = SalesInvoiceRectification.objects.filter(pk=self.__pk).first()
-        if obj:
-            form.fields['doc'].initial = obj.pk
-        return form
-
-    def form_valid(self, form):
-        user = get_current_user()
-        form.instance.user = user
-        self.request.user = user
-        return super(ReasonModificationLineInvoiceRectificationCreate, self).form_valid(form)
-
-
-class ReasonModificationLineInvoiceRectificationCreateModal(GenCreateModal, ReasonModificationLineInvoiceRectificationCreate):
-    pass
-
-
-class ReasonModificationLineInvoiceRectificationUpdate(GenUpdate):
-    model = ReasonModificationLineInvoiceRectification
-    form_class = ReasonModificationLineInvoiceRectificationForm
-
-    def dispatch(self, *args, **kwargs):
-        self.__pk = kwargs.get('pk', None)
-        return super(ReasonModificationLineInvoiceRectificationUpdate, self).dispatch(*args, **kwargs)
-
-    def get_form(self, form_class=None):
-        form = super(ReasonModificationLineInvoiceRectificationUpdate, self).get_form(form_class)
-        obj = SalesInvoiceRectification.objects.filter(pk=self.__pk).first()
-        if obj:
-            form.fields['doc'].initial = obj.pk
-        return form
-
-    def form_valid(self, form):
-        user = get_current_user()
-        form.instance.user = user
-        self.request.user = user
-        return super(ReasonModificationLineInvoiceRectificationUpdate, self).form_valid(form)
-
-
-class ReasonModificationLineInvoiceRectificationUpdateModal(GenUpdateModal, ReasonModificationLineInvoiceRectificationUpdate):
-    pass
-
-
-class ReasonModificationLineInvoiceRectificationDelete(GenDelete):
-    model = ReasonModificationLineInvoiceRectification
-
-
-class ReasonModificationLineInvoiceRectificationSubList(GenList):
-    model = ReasonModificationLineInvoiceRectification
-    extra_context = {'menu': ['sales', 'ReasonModificationLineInvoiceRectification'], 'bread': [_('Sales'), _('ReasonModificationLineInvoiceRectification')]}
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['link'] = Q(invoice_rectification__pk=pk)
-        return limit
-
-
-class ReasonModificationLineInvoiceRectificationDetails(GenDetail):
-    model = ReasonModificationLineInvoiceRectification
-    groups = ReasonModificationLineInvoiceRectificationForm.__groups_details__()
-
-
-class ReasonModificationLineInvoiceRectificationDetailModal(GenDetailModal, ReasonModificationLineInvoiceRectificationDetails):
-    pass
 
 
 # ###########################################
@@ -3819,3 +1899,720 @@ class PrintCounterDocumentInvoiceRectificationSublist(GenList):
         pk = info.kwargs.get('pk', None)
         limit['link'] = Q(invoice_rectification__pk=pk)
         return limit
+
+
+# ###########################################
+# ######### SalesLines ######################
+# ###########################################
+class LinesSubListBasket(GenList):
+    model = SalesLines
+    field_delete = False
+    field_check = False
+    ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_linebasket.html"}
+    gentrans = {
+        'CreateBudget': _("Create Budget"),
+        'CreateOrder': _("Create Order"),
+        'Debeseleccionarproducto': ('Debe seleccionar los productos'),
+    }
+    linkadd = False
+    linkedit = False
+    client_context = {
+        'order_btn': False,
+        # 'budget_btn': False,
+        # 'invoice_btn': False,
+    }
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = SalesBasket.objects.filter(pk=self.__pk).first()
+        if obj:
+            if not obj.lock:
+                self.linkadd = True
+                self.linkedit = True
+                self.field_delete = True
+
+            num_lines = obj.lines_sales.filter(removed=False).count()
+            if num_lines != obj.lines_sales.filter(removed=False, order__isnull=False).count():
+                self.client_context['order_btn'] = True
+            elif obj.role == ROLE_BASKET_BUDGET:
+                self.field_check = None
+
+        return super(LinesSubListBasket, self).dispatch(*args, **kwargs)
+
+    def get_context_json(self, context):
+        answer = super(LinesSubListBasket, self).get_context_json(context)
+
+        obj = SalesBasket.objects.filter(pk=self.__pk).first()
+        answer['meta']['role_shoppingcart'] = None
+        answer['meta']['role_budget'] = None
+        answer['meta']['role_wishlist'] = None
+        if obj:
+            if obj.role == ROLE_BASKET_SHOPPINGCART:
+                answer['meta']['role_shoppingcart'] = True
+            elif obj.role == ROLE_BASKET_BUDGET:
+                answer['meta']['role_budget'] = True
+        return answer
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['file_link'] = Q(basket__pk=pk)
+        limit['removed'] = Q(removed=False)
+        return limit
+
+
+class LinesCreateBasket(GenCreate):
+    model = SalesLines
+    form_class = LineOfBasketForm
+
+
+class LinesCreateModalBasket(GenCreateModal, LinesCreateBasket):
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(LinesCreateModalBasket, self).dispatch(*args, **kwargs)
+
+    def form_valid(self, form):
+        if self.__pk:
+            obj = SalesBasket.objects.filter(pk=self.__pk).first()
+            if obj:
+                self.request.basket = obj
+                form.instance.basket = obj
+            else:
+                errors = form._errors.setdefault("product_final", ErrorList())
+                errors.append(_('Budget not found'))
+                return self.form_invalid(form)
+        else:
+            errors = form._errors.setdefault("product_final", ErrorList())
+            errors.append(_('Budget undefined'))
+            return self.form_invalid(form)
+
+        try:
+            return super(LinesCreateModalBasket, self).form_valid(form)
+        except ValidationError as e:
+            errors = form._errors.setdefault("product_final", ErrorList())
+            errors.append(e)
+            return self.form_invalid(form)
+        except IntegrityError as e:
+            errors = form._errors.setdefault("product_final", ErrorList())
+            errors.append(e)
+            return self.form_invalid(form)
+
+
+class LinesUpdateBasket(GenUpdate):
+    model = SalesLines
+    form_class = LineOfBasketFormUpdate
+
+
+class LinesUpdateModalBasket(GenUpdateModal, LinesUpdateBasket):
+    # form_class = LineBasketForm
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        self.__line_pk = kwargs.get('pk', None)
+        """
+        if SalesLineBasketOption.objects.filter(line_budget__pk=self.__line_pk).exists():
+            self.form_class = LineBasketFormPack
+            self.__is_pack = True
+        else:
+            self.__is_pack = False
+        """
+        return super(LinesUpdateModalBasket, self).dispatch(*args, **kwargs)
+
+    def get_form(self, form_class=None):
+        # form_kwargs = super(LineBasketUpdateModal, self).get_form_kwargs(*args, **kwargs)
+        form = super(LinesUpdateModalBasket, self).get_form(form_class)
+        initial = form.initial
+        initial['type_tax'] = self.object.product_final.product.tax.pk
+        initial['tax'] = self.object.tax_basket
+        initial['price'] = float(self.object.price_base_basket) * (1 + (self.object.tax_basket / 100))
+        """
+        if self.__is_pack:
+            options = []
+            lang = get_language_database()
+
+            for option in SalesLineBasketOption.objects.filter(line_budget__pk=self.__line_pk):
+                initial['packs[{}]'.format(option.product_option.pk)] = option.product_final.pk
+                a = {
+                    'id': option.product_option.pk,
+                    'label': getattr(option.product_option, lang).name,
+                    'products': list(option.product_option.products_pack.all().values('pk').annotate(name=F('{}__name'.format(lang)))),
+                    'selected': option.product_final.pk,
+                }
+                options.append(a)
+            # compatibility with GenForeignKey
+            initial['packs'] = json.dumps({'__JSON_DATA__': options})
+        """
+        return form
+
+    def form_valid(self, form):
+        # lb = SalesLines.objects.filter(pk=self.__line_pk).first()
+
+        # product_old = lb.product_final
+        product_pk = self.request.POST.get("product_final", None)
+        quantity = self.request.POST.get("quantity", None)
+        product_final = ProductFinal.objects.filter(pk=product_pk).first()
+        """
+        if product:
+            is_pack = product.is_pack()
+        else:
+            is_pack = False
+        """
+        if product_final and quantity:
+            reason = form.data['reason']
+            if reason:
+                reason_obj = ReasonModification.objects.filter(pk=reason).first()
+                if reason_obj:
+                    try:
+                        with transaction.atomic():
+                            result = super(LinesUpdateModalBasket, self).form_valid(form)
+
+                            reason_basket = ReasonModificationLineBasket()
+                            reason_basket.basket = self.object.basket
+                            reason_basket.reason = reason_obj
+                            reason_basket.line = self.object
+                            reason_basket.user = get_current_user()
+                            reason_basket.quantity = self.object.quantity
+                            reason_basket.save()
+                            return result
+                    except ValidationError as e:
+                        errors = form._errors.setdefault("product_final", ErrorList())
+                        errors.append(e)
+                        return super(LinesUpdateModalBasket, self).form_invalid(form)
+                else:
+                    errors = form._errors.setdefault("reason", ErrorList())
+                    errors.append(_("Reason of modification invalid"))
+                    return super(LinesUpdatelOrder, self).form_invalid(form)
+            else:
+                errors = form._errors.setdefault("reason", ErrorList())
+                errors.append(_("Reason of modification invalid"))
+                return super(LinesUpdatelOrder, self).form_invalid(form)
+
+            """
+            if is_pack:
+                options = product.productfinals_option.filter(active=True)
+                options_pack = []
+                for option in options:
+                    field = 'packs[{}]'.format(option.pk)
+                    opt = self.request.POST.get(field, None)
+                    if opt:
+                        opt_product = ProductFinal.objects.filter(pk=opt).first()
+                        if opt_product:
+                            options_pack.append({
+                                'product_option': option,
+                                'product_final': opt_product,
+                                'quantity': quantity
+                            })
+                        else:
+                            errors = form._errors.setdefault(field, ErrorList())
+                            errors.append(_("Product Option invalid"))
+                            return super(LinesUpdateModalBasket, self).form_invalid(form)
+                    else:
+                        errors = form._errors.setdefault(field, ErrorList())
+                        errors.append(_("Option invalid"))
+                        return super(LinesUpdateModalBasket, self).form_invalid(form)
+            """
+        else:
+            errors = form._errors.setdefault("product_final", ErrorList())
+            errors.append((_("Product invalid"), quantity, product_final))
+            return super(LinesUpdateModalBasket, self).form_invalid(form)
+
+        """
+        ret = super(LinesUpdateModalBasket, self).form_valid(form)
+        if product_old != self.object.product:
+            self.object.remove_options()
+        if is_pack:
+            self.object.set_options(options_pack)
+        return ret
+        """
+
+
+class LineBasketDelete(GenDelete):
+    model = SalesLines
+
+
+# ###########################################
+class LinesSubListOrder(GenList):
+    model = SalesLines
+    field_delete = False
+    field_check = False
+    ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_lineorder.html"}
+    gentrans = {
+        'CreateAlbaran': _("Create Albaran"),
+        'CreateTicket': _("Create Ticket"),
+        'CreateInvoice': _("Create Invoice"),
+    }
+    linkadd = False
+    linkedit = False
+    show_details = True
+    static_partial_row = 'sales/partials/line_order_rows.html'
+    client_context = {
+        'albaran_btn': False,
+        'ticket_btn': False,
+        'invoice_btn': False,
+    }
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = SalesOrder.objects.filter(pk=self.__pk).first()
+        if obj:
+            if not obj.lock:  # and obj.albaran is None and obj.ticket is None and obj.invoice is None and obj.ticket_rectification is None and obj.invoice_rectification is None:
+                self.linkedit = True
+                self.field_delete = True
+                self.linkedit = True
+                self.show_details = False
+
+            num_lines = obj.lines_sales.filter(removed=False).count()
+            if num_lines != obj.lines_sales.filter(removed=False, albaran__isnull=False).count():
+                self.client_context['albaran_btn'] = True
+            if num_lines != obj.lines_sales.filter(removed=False, ticket__isnull=False).count():
+                self.client_context['ticket_btn'] = True
+            if num_lines != obj.lines_sales.filter(removed=False, invoice__isnull=False).count():
+                self.client_context['invoice_btn'] = True
+
+            if self.client_context['albaran_btn'] is False and self.client_context['ticket_btn'] is False and self.client_context['invoice_btn'] is False:
+                self.field_check = None
+            return super(LinesSubListOrder, self).dispatch(*args, **kwargs)
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['file_link'] = Q(order__pk=pk)
+        limit['removed'] = Q(removed=False)
+        return limit
+
+    def get_context_data(self, **kwargs):
+        context = super(LinesSubListOrder, self).get_context_data(**kwargs)
+        order_pk = self.kwargs.get('pk', None)
+        if order_pk:
+            order = SalesOrder.objects.get(pk=order_pk)
+            context['total'] = order.calculate_price_doc()
+        else:
+            context['total'] = 0
+        return context
+
+
+class LinesDetailOrder(GenDetail):
+    model = SalesLines
+    groups = LineOfOrderForm.__groups_details__()
+    exclude_fields = [
+        'order',
+        'removed',
+        'subtotal', 'discounts', 'taxes', 'equivalence_surcharges', 'total',
+        'code',
+        'price_recommended_basket', 'description_basket', 'price_base_basket', 'discount_basket', 'tax_basket', 'equivalence_surcharge_basket', 'tax_label_basket', 'notes_basket',
+        'price_recommended_order',
+        'notes_albaran',
+        'price_recommended_ticket', 'description_ticket', 'price_base_ticket', 'discount_ticket', 'tax_ticket', 'equivalence_surcharge_ticket', 'tax_label_ticket', 'notes_ticket',
+        'notes_ticket_rectification',
+        'price_recommended_invoice', 'description_invoice', 'price_base_invoice', 'discount_invoice', 'tax_invoice', 'equivalence_surcharge_invoice', 'tax_label_invoice', 'notes_invoice', 'notes_invoice_rectification',
+    ]
+    linkedit = False
+    linkdelete = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = self.model.objects.filter(pk=self.__pk).first()
+        if obj and (not obj.order.lock or obj.albaran is None or obj.ticket is None or obj.invoice is None or obj.ticket_rectification is None or obj.invoice_rectification is None):
+            self.linkedit = True
+            self.linkdelete = True
+
+        return super(LinesDetailOrder, self).dispatch(*args, **kwargs)
+
+
+class LinesDetailModalOrder(GenDetailModal, LinesDetailOrder):
+    pass
+
+
+class LinesUpdatelOrder(GenUpdate):
+    model = SalesLines
+    form_class = LineOfOrderForm
+
+    def get_form(self, form_class=None):
+        form = super(LinesUpdatelOrder, self).get_form(form_class)
+        initial = form.initial
+        price = initial['price_base_order'] * Decimal(1 + (initial['tax_order'] / 100))
+        initial['price'] = price.quantize(Decimal(1 / Decimal(10) ** CURRENCY_DECIMAL_PLACES), rounding=ROUND_HALF_UP)
+        initial['tax'] = initial['tax_order']
+        return form
+
+    def form_valid(self, form):
+        reason = form.data['reason']
+        if reason:
+            reason_obj = ReasonModification.objects.filter(pk=reason).first()
+            if reason_obj:
+                try:
+                    with transaction.atomic():
+                        result = super(LinesUpdatelOrder, self).form_valid(form)
+
+                        reason_order = ReasonModificationLineOrder()
+                        reason_order.order = self.object.order
+                        reason_order.reason = reason_obj
+                        reason_order.line = self.object
+                        reason_order.user = get_current_user()
+                        reason_order.quantity = self.object.quantity
+                        reason_order.save()
+                        return result
+                except Exception as e:
+                    errors = form._errors.setdefault("other", ErrorList())
+                    errors.append(e)
+                    return super(LinesUpdatelOrder, self).form_invalid(form)
+            else:
+                errors = form._errors.setdefault("reason", ErrorList())
+                errors.append(_("Reason of modification invalid"))
+                return super(LinesUpdatelOrder, self).form_invalid(form)
+        else:
+            errors = form._errors.setdefault("reason", ErrorList())
+            errors.append(_("Reason of modification invalid"))
+            return super(LinesUpdatelOrder, self).form_invalid(form)
+
+
+class LinesUpdateModalOrder(GenUpdateModal, LinesUpdatelOrder):
+    pass
+
+
+# ###########################################
+class LinesSubListAlbaran(GenList):
+    model = SalesLines
+    field_delete = False
+    field_check = False
+    ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_linealbaran.html"}
+    gentrans = {
+        'CreateTicket': _("Create Ticket"),
+        'CreateInvoice': _("Create Invoice"),
+    }
+    linkadd = False
+    linkedit = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = SalesAlbaran.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkadd = True
+            self.linkedit = True
+            self.field_delete = True
+        return super(LinesSubListAlbaran, self).dispatch(*args, **kwargs)
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['file_link'] = Q(albaran__pk=pk)
+        limit['removed'] = Q(removed=False)
+        return limit
+
+    def get_context_data(self, **kwargs):
+        context = super(LinesSubListAlbaran, self).get_context_data(**kwargs)
+        obj_pk = self.kwargs.get('pk', None)
+        if obj_pk:
+            obj = SalesAlbaran.objects.get(pk=obj_pk)
+            context['total'] = obj.calculate_price_doc()
+        else:
+            context['total'] = 0
+        return context
+
+
+class LinesUpdateAlbaran(GenUpdate):
+    model = SalesLines
+    form_class = LineOfAlbaranForm
+    hide_foreignkey_button = True
+
+    def form_valid(self, form):
+        reason = form.data['reason']
+        if reason:
+            reason_obj = ReasonModification.objects.filter(pk=reason).first()
+            if reason_obj:
+                try:
+                    with transaction.atomic():
+                        result = super(LinesUpdateAlbaran, self).form_valid(form)
+
+                        reason_order = ReasonModificationLineAlbaran()
+                        reason_order.albaran = self.object.albaran
+                        reason_order.reason = reason_obj
+                        reason_order.line = self.object
+                        reason_order.user = get_current_user()
+                        reason_order.quantity = self.object.quantity
+                        reason_order.save()
+                        return result
+                except Exception as e:
+                    errors = form._errors.setdefault("other", ErrorList())
+                    errors.append(e)
+                    return super(LinesUpdatelOrder, self).form_invalid(form)
+            else:
+                errors = form._errors.setdefault("reason", ErrorList())
+                errors.append(_("Reason of modification invalid"))
+                return super(LinesUpdatelOrder, self).form_invalid(form)
+        else:
+            errors = form._errors.setdefault("reason", ErrorList())
+            errors.append(_("Reason of modification invalid"))
+            return super(LinesUpdatelOrder, self).form_invalid(form)
+
+
+class LinesUpdateModalAlbaran(GenUpdateModal, LinesUpdateAlbaran):
+    pass
+
+
+# ###########################################
+class LinesSubListInvoice(GenList):
+    model = SalesLines
+    field_check = False
+    ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_lineinvoice.html"}
+    gentrans = {
+        'CreateInvoiceRectification': _("Create Invoice Rectification"),
+    }
+    linkadd = False
+    linkedit = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = SalesInvoice.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkedit = True
+        return super(LinesSubListInvoice, self).dispatch(*args, **kwargs)
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['file_link'] = Q(invoice__pk=pk)
+        limit['removed'] = Q(removed=False)
+        return limit
+
+    def get_context_data(self, **kwargs):
+        context = super(LinesSubListInvoice, self).get_context_data(**kwargs)
+        obj_pk = self.kwargs.get('pk', None)
+        if obj_pk:
+            obj = SalesInvoice.objects.get(pk=obj_pk)
+            context['total'] = obj.calculate_price_doc()
+        else:
+            context['total'] = 0
+        return context
+
+
+class LinesUpdateModalInvoice(GenUpdate):
+    model = SalesLines
+    form_class = LineOfInvoiceForm
+    hide_foreignkey_button = True
+
+    def form_valid(self, form):
+        reason = form.data['reason']
+        if reason:
+            reason_obj = ReasonModification.objects.filter(pk=reason).first()
+            if reason_obj:
+                try:
+                    with transaction.atomic():
+                        result = super(LinesUpdateModalInvoice, self).form_valid(form)
+
+                        reason_order = ReasonModificationLineInvoice()
+                        reason_order.invoice = self.object.invoice
+                        reason_order.reason = reason_obj
+                        reason_order.line = self.object
+                        reason_order.user = get_current_user()
+                        reason_order.quantity = self.object.quantity
+                        reason_order.save()
+                        return result
+                except Exception as e:
+                    errors = form._errors.setdefault("other", ErrorList())
+                    errors.append(e)
+                    return super(LinesUpdateModalInvoice, self).form_invalid(form)
+            else:
+                errors = form._errors.setdefault("reason", ErrorList())
+                errors.append(_("Reason of modification invalid"))
+                return super(LinesUpdateModalInvoice, self).form_invalid(form)
+        else:
+            errors = form._errors.setdefault("reason", ErrorList())
+            errors.append(_("Reason of modification invalid"))
+            return super(LinesUpdateModalInvoice, self).form_invalid(form)
+
+
+# ###########################################
+class LinesSubListInvoiceRectification(GenList):
+    model = SalesLines
+    gentrans = {
+        'CreateInvoice': _("Create Invoice Rectification"),
+    }
+    linkadd = False
+    linkedit = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = SalesInvoiceRectification.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkadd = True
+            self.linkedit = True
+        return super(LinesSubListInvoiceRectification, self).dispatch(*args, **kwargs)
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['file_link'] = Q(invoice_rectification__pk=pk)
+        limit['removed'] = Q(removed=False)
+        return limit
+
+
+class LinesUpdateModalInvoiceRectification(GenUpdate):
+    model = SalesLines
+    form_class = LineOfInvoiceRectificationForm
+    hide_foreignkey_button = True
+
+    def form_valid(self, form):
+        reason = form.data['reason']
+        if reason:
+            reason_obj = ReasonModification.objects.filter(pk=reason).first()
+            if reason_obj:
+                try:
+                    with transaction.atomic():
+                        result = super(LinesUpdateModalInvoiceRectification, self).form_valid(form)
+
+                        reason_order = ReasonModificationLineInvoice()
+                        reason_order.invoice_rectification = self.object.invoice_rectification
+                        reason_order.reason = reason_obj
+                        reason_order.line = self.object
+                        reason_order.user = get_current_user()
+                        reason_order.quantity = self.object.quantity
+                        reason_order.save()
+                        return result
+                except Exception as e:
+                    errors = form._errors.setdefault("other", ErrorList())
+                    errors.append(e)
+                    return super(LinesUpdateModalInvoiceRectification, self).form_invalid(form)
+            else:
+                errors = form._errors.setdefault("reason", ErrorList())
+                errors.append(_("Reason of modification invalid"))
+                return super(LinesUpdateModalInvoiceRectification, self).form_invalid(form)
+        else:
+            errors = form._errors.setdefault("reason", ErrorList())
+            errors.append(_("Reason of modification invalid"))
+            return super(LinesUpdateModalInvoiceRectification, self).form_invalid(form)
+
+
+# ###########################################
+class LinesSubListTicket(GenList):
+    model = SalesLines
+    field_delete = False
+    field_check = False
+    ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_lineticket.html"}
+    gentrans = {
+        'CreateInvoice': _("Create Invoice"),
+        'CreateTicketRectification': _("Create Ticket Rectification"),
+    }
+    linkadd = False
+    linkedit = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = SalesTicket.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkadd = True
+            self.linkedit = True
+            self.field_delete = True
+        return super(LinesSubListTicket, self).dispatch(*args, **kwargs)
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['file_link'] = Q(ticket__pk=pk)
+        limit['removed'] = Q(removed=False)
+        return limit
+
+    def get_context_data(self, **kwargs):
+        context = super(LinesSubListTicket, self).get_context_data(**kwargs)
+        obj_pk = self.kwargs.get('pk', None)
+        if obj_pk:
+            obj = SalesTicket.objects.get(pk=obj_pk)
+            context['total'] = obj.calculate_price_doc()
+        else:
+            context['total'] = 0
+        return context
+
+
+class LinesUpdateModalTicket(GenUpdate):
+    model = SalesLines
+    form_class = LineOfInvoiceRectificationForm
+    hide_foreignkey_button = True
+
+    def form_valid(self, form):
+        reason = form.data['reason']
+        if reason:
+            reason_obj = ReasonModification.objects.filter(pk=reason).first()
+            if reason_obj:
+                try:
+                    with transaction.atomic():
+                        result = super(LinesUpdateModalTicket, self).form_valid(form)
+
+                        reason_order = ReasonModificationLineTicket()
+                        reason_order.ticket = self.object.ticket
+                        reason_order.reason = reason_obj
+                        reason_order.line = self.object
+                        reason_order.user = get_current_user()
+                        reason_order.quantity = self.object.quantity
+                        reason_order.save()
+                        return result
+                except Exception as e:
+                    errors = form._errors.setdefault("other", ErrorList())
+                    errors.append(e)
+                    return super(LinesUpdateModalTicket, self).form_invalid(form)
+            else:
+                errors = form._errors.setdefault("reason", ErrorList())
+                errors.append(_("Reason of modification invalid"))
+                return super(LinesUpdateModalTicket, self).form_invalid(form)
+        else:
+            errors = form._errors.setdefault("reason", ErrorList())
+            errors.append(_("Reason of modification invalid"))
+            return super(LinesUpdateModalTicket, self).form_invalid(form)
+
+
+# ###########################################
+class LinesSubListTicketRectification(GenList):
+    model = SalesLines
+    linkadd = False
+    linkedit = False
+
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        obj = SalesTicketRectification.objects.filter(pk=self.__pk).first()
+        if obj and not obj.lock:
+            self.linkadd = True
+            self.linkedit = True
+        return super(LinesSubListTicketRectification, self).dispatch(*args, **kwargs)
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['file_link'] = Q(ticket_rectification__pk=pk)
+        limit['removed'] = Q(removed=False)
+        return limit
+
+
+class LinesUpdateModalTicketRectification(GenUpdate):
+    model = SalesLines
+    form_class = LineOfInvoiceRectificationForm
+    hide_foreignkey_button = True
+
+    def form_valid(self, form):
+        reason = form.data['reason']
+        if reason:
+            reason_obj = ReasonModification.objects.filter(pk=reason).first()
+            if reason_obj:
+                try:
+                    with transaction.atomic():
+                        result = super(LinesUpdateModalTicketRectification, self).form_valid(form)
+
+                        reason_order = ReasonModificationLineTicketRectification()
+                        reason_order.ticket_rectification = self.object.ticket_rectification
+                        reason_order.reason = reason_obj
+                        reason_order.line = self.object
+                        reason_order.user = get_current_user()
+                        reason_order.quantity = self.object.quantity
+                        reason_order.save()
+                        return result
+                except Exception as e:
+                    errors = form._errors.setdefault("other", ErrorList())
+                    errors.append(e)
+                    return super(LinesUpdateModalTicketRectification, self).form_invalid(form)
+            else:
+                errors = form._errors.setdefault("reason", ErrorList())
+                errors.append(_("Reason of modification invalid"))
+                return super(LinesUpdateModalTicketRectification, self).form_invalid(form)
+        else:
+            errors = form._errors.setdefault("reason", ErrorList())
+            errors.append(_("Reason of modification invalid"))
+            return super(LinesUpdateModalTicketRectification, self).form_invalid(form)

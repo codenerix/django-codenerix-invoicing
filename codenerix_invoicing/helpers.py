@@ -27,11 +27,14 @@ from django.db.models import F, Sum
 from django.utils.translation import ugettext as _
 
 from codenerix_invoicing.models import Haulier
-from codenerix_invoicing.models_sales import SalesBasket, SalesLineBasket, ROLE_BASKET_SHOPPINGCART
+# from codenerix_invoicing.models_sales import SalesBasket, SalesLines__________staticmethod as SalesLineBasket, ROLE_BASKET_SHOPPINGCART
 from codenerix_products.models import ProductFinal
 
 
 class ShoppingCartProxy(object):
+    pass
+"""
+class ShoppingCartProxy_XXXX(object):
     __slots__ = ['_lang', '_cart', '_session', '_apply_surcharge', '_lines', '_quantities', '_products', '_totals', '__price_base', '__price_tax', '__ws_line', '__wos_line', ]
     SESSION_KEY = 'cdnx-shopping-cart'
 
@@ -422,3 +425,4 @@ class ShoppingCartProxy(object):
 
     def list(self):
         return SalesLineBasket.objects.filter(basket=self._cart)
+"""

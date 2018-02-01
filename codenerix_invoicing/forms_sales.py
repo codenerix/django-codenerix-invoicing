@@ -28,15 +28,27 @@ from codenerix_products.models import TypeTax
 
 from .models_sales import Address
 from .models_sales import Customer, CustomerDocument
-from .models_sales import SalesBasket, SalesLineBasket
-from .models_sales import SalesOrder, SalesLineOrder, SalesOrderDocument
-from .models_sales import SalesAlbaran, SalesLineAlbaran
-from .models_sales import SalesTicket, SalesLineTicket
-from .models_sales import SalesTicketRectification, SalesLineTicketRectification
-from .models_sales import SalesInvoice, SalesLineInvoice
-from .models_sales import SalesInvoiceRectification, SalesLineInvoiceRectification
-from .models_sales import SalesReservedProduct
-from .models_sales import ReasonModification, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
+
+from .models_sales import SalesBasket
+from .models_sales import SalesOrder, SalesOrderDocument
+from .models_sales import SalesAlbaran
+from .models_sales import SalesTicket
+from .models_sales import SalesTicketRectification
+from .models_sales import SalesInvoice
+from .models_sales import SalesInvoiceRectification
+from .models_sales import SalesLines
+from .models_sales import ReasonModification
+
+from .models_sales import CURRENCY_MAX_DIGITS, CURRENCY_DECIMAL_PLACES
+# , SalesLineBasket
+# , SalesLineAlbaran
+# , SalesLineOrder
+# , SalesLineTicket
+# , SalesLineTicketRectification
+# , SalesLineInvoice
+# , SalesLineInvoiceRectification
+
+# from .models_sales import SalesReservedProduct, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
 
 
 class CustomerForm(GenModelForm):
@@ -130,6 +142,7 @@ class BasketForm(GenModelForm):
         autofill = {
             'address_delivery': ['select', 3, Address.foreignkey_external_delivery()['related'], 'customer'],
             'address_invoice': ['select', 3, Address.foreignkey_external_invoice()['related'], 'customer'],
+            'pos_slot': ['select', 3, 'CDNX_posslots_foreign', 'slot'],
         }
 
     def __groups__(self):
@@ -142,9 +155,10 @@ class BasketForm(GenModelForm):
                 ['billing_series', 4],
                 ['address_delivery', 4],
                 ['address_invoice', 4],
-                ['name', 4],
-                ['pos_slot', 4],
-                ['haulier', 4],
+                ['name', 3],
+                ['pos', 3, {'extra': ['ng-disabled=true']}],
+                ['pos_slot', 3],
+                ['haulier', 3],
                 ['observations', 12],),
         ]
         return g
@@ -178,17 +192,17 @@ class BasketForm(GenModelForm):
         return g
 
 
-class LineBasketForm(GenModelForm):
+class LineOfBasketForm(GenModelForm):
     price = forms.FloatField(label=_('Price with tax'), widget=forms.NumberInput(attrs={"disabled": 'disabled'}))
     tax = forms.FloatField(label=_('Tax hidden'), widget=forms.NumberInput(attrs={"disabled": 'disabled'}))
-    type_tax = forms.ModelChoiceField(label=_('Tax'), queryset=TypeTax.objects.all())
+    # type_tax = forms.ModelChoiceField(label=_('Tax'), queryset=TypeTax.objects.all())
 
     class Meta:
-        model = SalesLineBasket
-        exclude = ['basket', 'price_recommended', 'equivalence_surcharges', 'equivalence_surcharge', 'tax_label', 'code']
+        model = SalesLines
+        fields = ['product_final', 'description_basket', 'quantity', 'price_base_basket', 'price', 'tax_basket_fk', 'tax', 'discount_basket', 'notes_basket', ]
         autofill = {
             'product': ['select', 3, 'CDNX_products_productfinals_foreign_sales', ],
-            'type_tax': ['select', 3, 'CDNX_products_typetaxs_foreing', ],
+            'tax_basket_fk': ['select', 3, 'CDNX_products_typetaxs_foreign', ],
         }
         widgets = {
             'notes': WysiwygAngularInput()
@@ -196,16 +210,147 @@ class LineBasketForm(GenModelForm):
 
     def __groups__(self):
         g = [
-            (_('Details'), 12,
-                ['product', 6],
-                ['description', 6],
+            (
+                _('Details'), 12,
+                ['product_final', 6],
+                ['description_basket', 6],
                 ['quantity', 6],
-                ['price_base', 6, {'extra': ['ng-controller=codenerixSalesLineBasketCtrl', 'ng-change=update_price()']}],
+                ['price_base_basket', 6, {'extra': ['ng-controller=codenerixSalesLineBasketCtrl', 'ng-change=update_price()']}],
                 ['price', 6],
-                ['type_tax', 6, {'extra': ['ng-controller=codenerixSalesLineBasketCtrl', 'ng-blur=update_price()']}],
+                ['tax_basket_fk', 6, {'extra': ['ng-controller=codenerixSalesLineBasketCtrl', 'ng-blur=update_price()']}],
                 ['tax', 6],
-                ['discount', 6],
-                ['notes', 12],)
+                ['discount_basket', 6],
+                ['notes_basket', 12],
+            )
+        ]
+        return g
+
+    @staticmethod
+    def __groups_details__():
+        g = [
+            (
+                _('Details'), 12,
+                ['basket', 6],
+                ['product_final', 6],
+                ['description_basket', 6],
+                ['quantity', 6],
+                ['price_base_basket', 6],
+                ['price', 6],
+                ['type_tax', 6],
+                ['tax', 6],
+                ['discount_basket', 6],
+                ['notes_basket', 12],
+            ),
+        ]
+        return g
+
+
+class LineOfBasketFormUpdate(LineOfBasketForm):
+    reason = forms.ModelChoiceField(label=_('Reason of modification'), queryset=ReasonModification.objects.all().order_by('code'))
+
+    class Meta(LineOfBasketForm.Meta):
+        fields = ['product_final', 'description_basket', 'quantity', 'price_base_basket', 'price', 'tax_basket_fk', 'tax', 'discount_basket', 'reason', 'notes_basket', ]
+
+    def __groups__(self):
+        g = [
+            (
+                _('Details'), 12,
+                ['product_final', 6],
+                ['description_basket', 6],
+                ['quantity', 6],
+                ['price_base_basket', 6, {'extra': ['ng-controller=codenerixSalesLineBasketCtrl', 'ng-change=update_price()']}],
+                ['price', 6],
+                ['tax_basket_fk', 6, {'extra': ['ng-controller=codenerixSalesLineBasketCtrl', 'ng-blur=update_price()']}],
+                ['tax', 6],
+                ['discount_basket', 6],
+                ['reason', 6],
+                ['notes_basket', 12],
+            )
+        ]
+        return g
+
+
+class LineOfOrderForm(GenModelForm):
+    reason = forms.ModelChoiceField(label=_('Reason of modification'), queryset=ReasonModification.objects.all().order_by('code'))
+    price = forms.DecimalField(label=_('Price with tax'), widget=forms.NumberInput(attrs={"disabled": 'disabled'}), max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
+    tax = forms.FloatField(label=_('Tax hidden'), widget=forms.NumberInput(attrs={"disabled": 'disabled'}))
+    
+    class Meta:
+        model = SalesLines
+        exclude = []
+        fields = ['code', 'description_order', 'quantity', 'price_base_order', 'price', 'tax_order_fk', 'tax', 'tax_order', 'discount_order', 'reason', 'notes_order', ]
+        autofill = {
+            'tax_order_fk': ['select', 3, 'CDNX_products_typetaxs_foreign', ],
+        }
+        widgets = {
+            'notes_order': WysiwygAngularInput()
+        }
+
+    def __groups__(self):
+        g = [
+            (
+                _('Details'), 12,
+                ['code', 6, {'extra': ['ng-disabled=true']}],
+                ['description_order', 6],
+                ['quantity', 6],
+                ['price_base_order', 6, {'extra': ['ng-controller=codenerixSalesLineBasketCtrl', 'ng-change=update_price()']}],
+                ['price', 6],
+                ['tax_order_fk', 6, {'extra': ['ng-controller=codenerixSalesLineBasketCtrl', 'ng-blur=update_price()']}],
+                ['tax', 6],
+                ['tax_order', 6, {'extra': ['ng-disabled=true']}],
+                ['discount_order', 6],
+                ['reason', 6],
+                ['notes_order', 12],
+            )
+        ]
+        return g
+
+    @staticmethod
+    def __groups_details__():
+        g = [
+            (
+                _('Details'), 12,
+                ['basket', 6],
+                ['albaran', 6],
+                ['ticket', 6],
+                ['ticket_rectification', 6],
+                ['invoice', 6],
+                ['invoice_rectification', 6],
+            ), (
+                _('Product'), 12,
+                ['code', 6],
+                ['product_final', 6],
+                ['product_unique', 6],
+                ['description_order', 6],
+                ['quantity', 6],
+                ['price_base_order', 6],
+                ['tax_order', 6],
+                ['tax_label_order', 6],
+                ['discount_order', 6],
+                ['equivalence_surcharge_order', 6],
+                ['notes_order', 12],
+            ),
+        ]
+        return g
+
+
+class LineOfAlbaranForm(GenModelForm):
+    reason = forms.ModelChoiceField(label=_('Reason of modification'), queryset=ReasonModification.objects.all().order_by('code'))
+
+    class Meta:
+        model = SalesLines
+        fields = ['description_order', 'quantity', 'notes_albaran', 'reason']
+        widgets = {
+            'notes': WysiwygAngularInput()
+        }
+
+    def __groups__(self):
+        g = [
+            (_('Details'), 12,
+                ['description_order', 5, {'extra': ['ng-disabled=true']}],
+                ['quantity', 2],
+                ['reason', 5],
+                ['notes_albaran', 12])
         ]
         return g
 
@@ -213,18 +358,73 @@ class LineBasketForm(GenModelForm):
     def __groups_details__():
         g = [
             (_('Details'), 12,
-                ['budget', 6],
-                ['product', 6],
-                ['description', 6],
-                ['quantity', 6],
-                ['price_base', 6],
-                ['price_recommended', 6],
-                ['discount', 6],
-                ['tax', 6],
-                ['notes', 12]),
+                ['order', 5],
+                ['product_final', 5],
+                ['product_unique', 5],
+                ['code', 5],
+                ['description_order', 5],
+                ['quantity', 2],
+                ['notes_albaran', 12])
         ]
         return g
 
+
+class LineOfInvoiceForm(GenModelForm):
+    reason = forms.ModelChoiceField(label=_('Reason of modification'), queryset=ReasonModification.objects.all().order_by('code'))
+
+    class Meta:
+        model = SalesLines
+        fields = ['code', 'quantity', 'description_invoice', 'reason', 'notes_invoice']
+        widgets = {
+            'notes': WysiwygAngularInput()
+        }
+
+    def __groups__(self):
+        g = [
+            (_('Details'), 12,
+                ['code', 5, {'extra': ['ng-disabled=true']}],
+                ['description_invoice', 5],
+                ['quantity', 2],
+                ['reason', 12],
+                ['notes_invoice', 12])
+        ]
+        return g
+
+
+class LineOfInvoiceRectificationForm(GenModelForm):
+    reason = forms.ModelChoiceField(label=_('Reason of modification'), queryset=ReasonModification.objects.all().order_by('code'))
+
+    class Meta:
+        model = SalesLines
+        fields = ['description_order', 'quantity', 'notes_invoice_rectification', 'reason']
+        widgets = {
+            'notes': WysiwygAngularInput()
+        }
+
+    def __groups__(self):
+        g = [
+            (_('Details'), 12,
+                ['description_order', 5, {'extra': ['ng-disabled=true']}],
+                ['quantity', 2],
+                ['reason', 5],
+                ['notes_invoice_rectification', 12])
+        ]
+        return g
+
+    @staticmethod
+    def __groups_details__():
+        g = [
+            (_('Details'), 12,
+                ['order', 5],
+                ['product_final', 5],
+                ['product_unique', 5],
+                ['code', 5],
+                ['description_order', 5],
+                ['quantity', 2],
+                ['notes_invoice_rectification', 12])
+        ]
+        return g
+"""
 
 class LineBasketFormPack(GenModelForm):
     packs = forms.CharField()  # widget=forms.HiddenInput())
@@ -266,8 +466,7 @@ class LineBasketFormPack(GenModelForm):
                 ['notes', 12]),
         ]
         return g
-
-
+"""
 class OrderFromBudgetForm(GenModelForm):
     class Meta:
         model = SalesOrder
@@ -321,10 +520,9 @@ class OrderForm(GenModelForm):
         g = [
             (
                 _('Details'), 12,
-                ['customer', 4],
-                ['billing_series', 2],
-                ['date', 2],
-                ['storage', 4],
+                ['customer', 6],
+                ['billing_series', 3],
+                ['date', 3],
                 ['status_order', 4],
                 ['payment_detail', 4],
                 ['source', 4],
@@ -370,13 +568,15 @@ class OrderForm(GenModelForm):
         )
         return g
 
-
+"""
 class LineOrderForm(GenModelForm):
     class Meta:
         model = SalesLineOrder
-        exclude = ['order', 'line_budget', 'tax', 'price_recommended', 'equivalence_surcharge', 'equivalence_surcharges']
+        exclude = ['order', 'line_budget', 'tax', 'price_recommended', 'equivalence_surcharge', 'equivalence_surcharges', 'tax_label', 'code']
         autofill = {
             'product': ['select', 3, 'CDNX_products_productfinals_foreign_sales'],
+            'product_unique': ['select', 3, 'CDNX_products_productunique_foreign', 'product'],
+            'type_tax': ['select', 3, 'CDNX_products_typetaxs_foreign', ],
         }
         widgets = {
             'notes': WysiwygAngularInput()
@@ -394,7 +594,8 @@ class LineOrderForm(GenModelForm):
         g = [
             (_('Details'), 12,
                 ['product', 6],
-                ['description', 6],
+                ['product_unique', 6],
+                ['description', 12],
                 ['quantity', 6],
                 ['price_base', 6],
                 ['discount', 6],
@@ -427,7 +628,8 @@ class LineOrderFormEdit(LineOrderForm):
         g = [
             (_('Details'), 12,
                 ['product', 6],
-                ['description', 6],
+                ['product_unique', 6],
+                ['description', 12],
                 ['quantity', 6],
                 ['price_base', 6],
                 ['discount', 6],
@@ -436,7 +638,7 @@ class LineOrderFormEdit(LineOrderForm):
         ]
         return g
 
-
+"""
 class OrderDocumentForm(GenModelForm):
     class Meta:
         model = SalesOrderDocument
@@ -530,6 +732,7 @@ class AlbaranForm(GenModelForm):
         ]
         return g
 
+"""
 
 class LineAlbaranForm(GenModelForm):
     albaran_pk = forms.IntegerField(widget=forms.HiddenInput())
@@ -574,7 +777,7 @@ class LineAlbaranForm(GenModelForm):
         ]
         return g
 
-
+"""
 class TicketForm(GenModelForm):
     class Meta:
         model = SalesTicket
@@ -613,7 +816,7 @@ class TicketForm(GenModelForm):
         ]
         return g
 
-
+"""
 class LineTicketForm(GenModelForm):
     ticket_pk = forms.IntegerField(widget=forms.HiddenInput())
     order = forms.ModelChoiceField(label=_('Sales order'), queryset=SalesOrder.objects.all())
@@ -659,7 +862,7 @@ class LineTicketForm(GenModelForm):
         ]
         return g
 
-
+"""
 class TicketRectificationForm(GenModelForm):
     class Meta:
         model = SalesTicketRectification
@@ -714,7 +917,7 @@ class TicketRectificationUpdateForm(GenModelForm):
                 ['observations', 12],)
         ]
         return g
-
+"""
 
 class LineTicketRectificationForm(GenModelForm):
     ticket_rectification_pk = forms.IntegerField(widget=forms.HiddenInput())
@@ -772,7 +975,7 @@ class LineTicketRectificationLinkedForm(GenModelForm):
         ]
         return g
 
-
+"""
 class InvoiceForm(GenModelForm):
     class Meta:
         model = SalesInvoice
@@ -816,7 +1019,7 @@ class InvoiceForm(GenModelForm):
         ]
         return g
 
-
+"""
 class LineInvoiceForm(GenModelForm):
     invoice_pk = forms.IntegerField(widget=forms.HiddenInput())
     order = forms.ModelChoiceField(label=_('Sales order'), queryset=SalesOrder.objects.all())
@@ -862,7 +1065,7 @@ class LineInvoiceForm(GenModelForm):
         ]
         return g
 
-
+"""
 class InvoiceRectificationForm(GenModelForm):
     class Meta:
         model = SalesInvoiceRectification
@@ -917,7 +1120,7 @@ class InvoiceRectificationUpdateForm(GenModelForm):
         ]
         return g
 
-
+"""
 class LineInvoiceRectificationForm(GenModelForm):
     invoice_rectification_pk = forms.IntegerField(widget=forms.HiddenInput())
 
@@ -972,7 +1175,6 @@ class LineInvoiceRectificationLinkedForm(GenModelForm):
         ]
         return g
 
-
 class ReservedProductForm(GenModelForm):
     class Meta:
         model = SalesReservedProduct
@@ -988,115 +1190,7 @@ class ReservedProductForm(GenModelForm):
         return g
 
 
-class ReasonModificationForm(GenModelForm):
-    class Meta:
-        model = ReasonModification
-        exclude = []
+"""
 
-    def __groups__(self):
-        return [
-            (
-                _('Details'), 12,
-                ['code', 6],
-                ['name', 6],
-                ['enable', 6],
-            )
-        ]
-
-    @staticmethod
-    def __groups_details__():
-        return [
-            (
-                _('Details'), 12,
-                ['code', 6],
-                ['name', 6],
-                ['enable', 6],
-            )
-        ]
-
-
-class ReasonModificationLineForm(GenModelForm):
-    doc = forms.FloatField(label=_('Document'), widget=forms.NumberInput(attrs={"disabled": 'disabled'}))
-
-    class Meta:
-        exclude = ['user', ]
-
-    def __groups__(self):
-        return [
-            (
-                _('Details'), 12,
-                ['date', 6],
-                ['line', 6],
-                ['reason', 6],
-                ['quantity', 6],
-                ['doc', 6]
-            )
-        ]
-
-    @staticmethod
-    def __groups_details__():
-        return [
-            (
-                _('Details'), 12,
-                ['date', 6],
-                ['line', 6],
-                ['reason', 6],
-                ['quantity', 6],
-            )
-        ]
-
-
-class ReasonModificationLineBasketForm(ReasonModificationLineForm):
-    class Meta(ReasonModificationLineForm.Meta):
-        model = ReasonModificationLineBasket
-        autofill = {
-            'line': ['select', 3, 'CDNX_invoicing_linebasketsaless_foreign', 'doc']
-        }
-
-
-class ReasonModificationLineOrderForm(ReasonModificationLineForm):
-    class Meta(ReasonModificationLineForm.Meta):
-        model = ReasonModificationLineOrder
-        autofill = {
-            'line': ['select', 3, 'CDNX_invoicing_lineordersaless_foreign', 'doc']
-        }
-
-
-class ReasonModificationLineAlbaranForm(ReasonModificationLineForm):
-    class Meta(ReasonModificationLineForm.Meta):
-        model = ReasonModificationLineAlbaran
-        autofill = {
-            'line': ['select', 3, 'CDNX_invoicing_linealbaransaless_foreign', 'doc']
-        }
-
-
-class ReasonModificationLineTicketForm(ReasonModificationLineForm):
-    class Meta(ReasonModificationLineForm.Meta):
-        model = ReasonModificationLineTicket
-        autofill = {
-            'line': ['select', 3, 'CDNX_invoicing_lineticketsaless_foreign', 'doc']
-        }
-
-
-class ReasonModificationLineTicketRectificationForm(ReasonModificationLineForm):
-    class Meta(ReasonModificationLineForm.Meta):
-        model = ReasonModificationLineTicketRectification
-        autofill = {
-            'line': ['select', 3, 'CDNX_invoicing_lineticketrectificationsaless_sublist_foreign', 'doc']
-        }
-
-
-class ReasonModificationLineInvoiceForm(ReasonModificationLineForm):
-    class Meta(ReasonModificationLineForm.Meta):
-        model = ReasonModificationLineInvoice
-        autofill = {
-            'line': ['select', 3, 'CDNX_invoicing_lineinvoicessaless_foreign', 'doc']
-        }
-
-
-class ReasonModificationLineInvoiceRectificationForm(ReasonModificationLineForm):
-    class Meta(ReasonModificationLineForm.Meta):
-        model = ReasonModificationLineInvoiceRectification
-        autofill = {
-            'line': ['select', 3, 'CDNX_invoicing_lineinvoicerectificationsaless_sublist_foreign', 'doc']
-        }
+"""
+"""
