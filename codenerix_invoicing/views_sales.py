@@ -80,6 +80,8 @@ from .models_sales import PrintCounterDocumentBasket, PrintCounterDocumentOrder,
 from .helpers import ShoppingCartProxy
 from codenerix_pos.helpers import get_POS
 
+from .forms_sales import LineOfInvoiceRectificationUnityForm
+
 
 # ###########################################
 class GenCustomerUrl(object):
@@ -573,7 +575,7 @@ class OrderList(GenOrderUrl, GenList):
     model = SalesOrder
     template_model = "sales/order_list.html"
     show_details = True
-    # linkadd = False
+    linkadd = False
     extra_context = {'menu': ['sales', 'sales_order'], 'bread': [_('Sales'), _('Sales orders')]}
     ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_order.html"}
     default_ordering = "-created"
@@ -1537,6 +1539,35 @@ class InvoiceCreateRectification(View):
         return HttpResponse(json_answer, content_type='application/json')
 
 
+class InvoiceCreateRectificationUnity(GenUpdate):
+    model = SalesLines
+    form_class = LineOfInvoiceRectificationUnityForm
+
+    def get_form(self, form_class=None):
+        form = super(InvoiceCreateRectificationUnity, self).get_form(form_class)
+        initial = form.initial
+        initial['quantity_original'] = initial['quantity']
+        return form
+
+    def form_valid(self, form):
+        quantity = form.data['quantity']
+        if quantity > self.object.quantity:
+            errors = form._errors.setdefault("reason", ErrorList())
+            errors.append(_("Quantity invalid. More quantity than allowed"))
+            return super(InvoiceCreateRectificationUnity, self).form_invalid(form)
+        elif quantity == self.object.quantity:
+            # generar TR y asociar
+            # crear PU?
+            pass
+        else:
+            # duplicar saleslines
+            # generar TR y asociar
+            # crear PU?
+            pass
+        raise Exception("form_valid pending!!!!")
+
+
+
 class InvoicePrint(PrinterHelper, GenInvoiceUrl, GenDetail):
     model = SalesInvoice
     modelname = "list"
@@ -1934,8 +1965,10 @@ class LinesSubListBasket(GenList):
             num_lines = obj.lines_sales.filter(removed=False).count()
             if num_lines != obj.lines_sales.filter(removed=False, order__isnull=False).count():
                 self.client_context['order_btn'] = True
-            elif obj.role == ROLE_BASKET_BUDGET:
-                self.field_check = None
+            self.client_context['num_lines'] = num_lines
+            self.client_context['num_lines_order'] = obj.lines_sales.filter(removed=False, order__isnull=False).count()
+            # elif obj.role == ROLE_BASKET_BUDGET:
+            #     self.field_check = None
 
         return super(LinesSubListBasket, self).dispatch(*args, **kwargs)
 
@@ -2275,7 +2308,6 @@ class LinesUpdateModalOrder(GenUpdateModal, LinesUpdatelOrder):
 class LinesSubListAlbaran(GenList):
     model = SalesLines
     field_delete = False
-    field_check = False
     ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_linealbaran.html"}
     gentrans = {
         'CreateTicket': _("Create Ticket"),
@@ -2283,14 +2315,28 @@ class LinesSubListAlbaran(GenList):
     }
     linkadd = False
     linkedit = False
+    client_context = {
+        'ticket_btn': False,
+        'invoice_btn': False,
+    }
 
     def dispatch(self, *args, **kwargs):
         self.__pk = kwargs.get('pk', None)
         obj = SalesAlbaran.objects.filter(pk=self.__pk).first()
         if obj and not obj.lock:
-            self.linkadd = True
+            # self.linkadd = True
             self.linkedit = True
             self.field_delete = True
+
+            num_lines = obj.lines_sales.filter(removed=False).count()
+            if num_lines != obj.lines_sales.filter(removed=False, ticket__isnull=False).count():
+                self.client_context['ticket_btn'] = True
+            if num_lines != obj.lines_sales.filter(removed=False, invoice__isnull=False).count():
+                self.client_context['invoice_btn'] = True
+
+            if self.client_context['ticket_btn'] is True or self.client_context['invoice_btn'] is True:
+                self.field_check = False
+
         return super(LinesSubListAlbaran, self).dispatch(*args, **kwargs)
 
     def __limitQ__(self, info):
@@ -2360,7 +2406,7 @@ class LinesSubListInvoice(GenList):
         'CreateInvoiceRectification': _("Create Invoice Rectification"),
     }
     linkadd = False
-    linkedit = False
+    show_details = True
 
     def dispatch(self, *args, **kwargs):
         self.__pk = kwargs.get('pk', None)
@@ -2385,6 +2431,41 @@ class LinesSubListInvoice(GenList):
         else:
             context['total'] = 0
         return context
+
+
+class LinesDetailInvoice(GenDetail):
+    model = SalesLines
+    groups = LineOfInvoiceForm.__groups_details__()
+    gentrans = {
+        'CreateInvoiceRectification': _("Create Invoice Rectification"),
+    }
+    linkedit = False
+    linkdelete = False
+    exclude_fields = [
+        'basket', 'tax_basket_fk', 'order', 'tax_order_fk', 'albaran', 'ticket', 'tax_ticket_fk', 'ticket_rectification', 'invoice', 'tax_invoice_fk', 'invoice_rectification', 'product_final', 'product_unique',
+        # logical deletion
+        'removed',
+        # additional information
+        'subtotal', 'discounts', 'taxes', 'equivalence_surcharges', 'total',
+        # info basket
+        'price_recommended_basket', 'description_basket', 'price_base_basket', 'discount_basket', 'tax_basket', 'equivalence_surcharge_basket', 'tax_label_basket', 'notes_basket',
+        # info order
+        'price_recommended_order', 'description_order', 'price_base_order', 'discount_order', 'tax_order', 'equivalence_surcharge_order', 'tax_label_order', 'notes_order',
+        # info albaran - basic
+        'notes_albaran',
+        # info ticket
+        'price_recommended_ticket', 'description_ticket', 'price_base_ticket', 'discount_ticket', 'tax_ticket', 'equivalence_surcharge_ticket', 'tax_label_ticket', 'notes_ticket',
+        # info ticket rectification - basic
+        'notes_ticket_rectification',
+        # info invoice
+        'price_recommended_invoice',
+        # info invoice rectification - basic
+        'notes_invoice_rectification',
+    ]
+
+
+class LinesDetailModalInvoice(GenDetailModal, LinesDetailInvoice):
+    template_model = "sales/saleslines_invoice_detailsmodal.html"
 
 
 class LinesUpdateModalInvoice(GenUpdate):

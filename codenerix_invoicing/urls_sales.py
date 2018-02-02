@@ -44,7 +44,7 @@ from .views_sales import AlbaranCreateTicket, AlbaranCreateInvoice
 
 from .views_sales import InvoiceCreate, InvoiceCreateModal, InvoiceDelete, InvoiceList, InvoiceUpdate, InvoiceUpdateModal, InvoicePrint
 from .views_sales import InvoiceDetails
-from .views_sales import InvoiceCreateRectification
+from .views_sales import InvoiceCreateRectification, InvoiceCreateRectificationUnity
 from .views_sales import InvoiceRectificationCreate, InvoiceRectificationCreateModal, InvoiceRectificationDelete, InvoiceRectificationList, InvoiceRectificationUpdate, InvoiceRectificationUpdateModal, InvoiceRectificationDetails, InvoiceRectificationPrint
 
 from .views_sales import TicketCreate, TicketCreateModal, TicketDelete, TicketList, TicketUpdate, TicketUpdateModal
@@ -58,7 +58,7 @@ from .views_sales import PrintCounterDocumentBasketSublist, PrintCounterDocument
 from .views_sales import LinesSubListBasket, LinesCreateModalBasket, LinesUpdateModalBasket
 from .views_sales import LinesSubListOrder, LinesDetailModalOrder, LinesUpdateModalOrder
 from .views_sales import LinesSubListAlbaran, LinesUpdateModalAlbaran
-from .views_sales import LinesSubListInvoice, LinesUpdateModalInvoice
+from .views_sales import LinesSubListInvoice, LinesUpdateModalInvoice, LinesDetailModalInvoice
 from .views_sales import LinesSubListInvoiceRectification, LinesUpdateModalInvoiceRectification
 from .views_sales import LinesSubListTicket, LinesUpdateModalTicket
 from .views_sales import LinesSubListTicketRectification, LinesUpdateModalTicketRectification
@@ -169,6 +169,7 @@ urlpatterns = [
     url(r'^lines/(?P<cpk>\w+)/albaran_sublist/(?P<pk>\w+)/editmodal$', LinesUpdateModalAlbaran.as_view(), name='CDNX_invoicing_saleslines_sublist_editmodal_albaran'),
         
     url(r'^lines/(?P<pk>\w+)/invoice_sublist$', LinesSubListInvoice.as_view(), name='CDNX_invoicing_saleslines_sublist_invoice'),
+    url(r'^lines/(?P<cpk>\w+)/invoice_sublist/(?P<pk>\w+)/modal$', LinesDetailModalInvoice.as_view(), name='CDNX_invoicing_saleslines_sublist_details_invoice'),
     url(r'^lines/(?P<cpk>\w+)/invoice_sublist/(?P<pk>\w+)/editmodal$', LinesUpdateModalInvoice.as_view(), name='CDNX_invoicing_saleslines_sublist_editmodal_invoice'),
     
     url(r'^lines/(?P<pk>\w+)/invoicerectification_sublist$', LinesSubListInvoiceRectification.as_view(), name='CDNX_invoicing_saleslines_sublist_invoicerectification'),
@@ -232,6 +233,7 @@ urlpatterns = [
     url(r'^invoices/(?P<pk>\w+)/delete$', InvoiceDelete.as_view(), name='CDNX_invoicing_invoicesaless_delete'),
     url(r'^invoices/(?P<pk>\w+)/createinvoicerectification$', InvoiceCreateRectification.as_view(), name='CDNX_invoicing_invoicesaless_create_rectification'),
     url(r'^invoices/(?P<pk>\w+)/print$', InvoicePrint.as_view(), name='CDNX_invoicing_invoicesaless_print'),
+    url(r'^invoices/(?P<ipk>\w+)/createinvoicerectification/(?P<pk>\w+)$', InvoiceCreateRectificationUnity.as_view(), name='CDNX_invoicing_invoicesaless_create_rectification_unity'),
 
     url(r'^invoicerectifications$', InvoiceRectificationList.as_view(), name='CDNX_invoicing_invoicerectificationsaless_list'),
     url(r'^invoicerectifications/add$', InvoiceRectificationCreate.as_view(), name='CDNX_invoicing_invoicerectificationsaless_add'),

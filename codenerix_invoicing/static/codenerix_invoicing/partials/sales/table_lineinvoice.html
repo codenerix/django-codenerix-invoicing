@@ -23,5 +23,9 @@ limitations under the License.
 <div ng-include="'/static/codenerix/partials/table.html'"></div>
 <div>
     <label  class="sr-only"  for="invoice_rectification">{{ data.meta.gentranslate.CreateInvoiceRectification }}</label>
-    <button ng-controller="codenerixSalesDetailsCtrl" id="invoice_rectification" ng-click="invoice_rectification()" class="btn btn-sm btn-info">{{ data.meta.gentranslate.CreateInvoiceRectification }}</button>
+    <button ng-controller="codenerixSalesDetailsCtrl" id="return_product_invoice" ng-click="invoice_rectification()" class="btn btn-sm btn-info">{{ data.meta.gentranslate.CreateInvoiceRectification }}</button>
+
+
+    <label  class="sr-only"  for="invoice_rectification">{{ data.meta.gentranslate.CreateInvoiceRectification }}</label>
+    <button ng-controller="codenerixSalesReturnLineCtrl" id="return_product_invoice" ng-click="return_product_ticket(75)" class="btn btn-sm btn-info">{{ data.meta.gentranslate.CreateInvoiceRectification }}</button>
 </div>

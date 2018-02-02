@@ -23,14 +23,13 @@ import datetime
 import json
 from decimal import Decimal
 
-from django.core.exceptions import ValidationError
-from django.db import models, transaction, IntegrityError
-from django.db.models import Q, F
 from django.urls import reverse
+from django.db import models, transaction, IntegrityError
 from django.utils import timezone
 from django.utils.encoding import smart_text
 from django.utils.translation import ugettext_lazy as _
 from django.conf import settings
+from django.db.models import Q
 
 from codenerix.middleware import get_current_user
 from codenerix.models import GenInterface, CodenerixModel
@@ -298,8 +297,8 @@ class Customer(GenRole, CodenerixModel):
         """
         determina si el customer ha comprado un producto
         """
-        if self.invoice_sales.filter(lines_sales__product_final__pk=product_pk).exists() \
-                or self.ticket_sales.filter(lines_sales__product_final__pk=product_pk).exists():
+        if self.invoice_sales.filter(line_invoice_sales__line_order__product__pk=product_pk).exists() \
+                or self.ticket_sales.filter(line_ticket_sales__line_order__product__pk=product_pk).exists():
             return True
         else:
             return False
@@ -706,25 +705,43 @@ class GenInvoiceRectification(GenVersion):  # META: Abstract class
         fields.append(('total', _('Total')))
         return fields
 
-# ############################
+
+# reserva de productos
+class SalesReservedProduct(CodenerixModel):
+    customer = models.ForeignKey(Customer, related_name='reservedproduct_sales', verbose_name=_("Customer"), on_delete=models.CASCADE)
+    product = models.ForeignKey(ProductFinal, related_name='reservedproduct_sales', verbose_name=_("Product"), on_delete=models.CASCADE)
+    quantity = models.FloatField(_("Quantity"), blank=False, null=False)
+
+    def __str__(self):
+        return u"{}".format(smart_text(self.customer))
+
+    def __unicode__(self):
+        return self.__str__()
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('customer', _("Customer")))
+        fields.append(('product', _("Product")))
+        fields.append(('quantity', _("Quantity")))
+        fields.append(('created', _("Created")))
+        return fields
 
 
 # nueva cesta de la compra
 class SalesBasket(GenVersion):
     customer = models.ForeignKey(Customer, related_name='basket_sales', verbose_name=_("Customer"), on_delete=models.CASCADE)
-    pos = models.ForeignKey(POS, related_name='basket_sales', verbose_name=_("Point of Sales"), blank=True, null=True, on_delete=models.CASCADE)
-    pos_slot = models.ForeignKey(POSSlot, related_name='basket_sales', verbose_name=_("POS Slot"), blank=True, null=True, on_delete=models.CASCADE)
-    address_delivery = models.ForeignKey(Address, related_name='order_sales_delivery', verbose_name=_("Address delivery"), blank=True, null=True, on_delete=models.CASCADE)
-    address_invoice = models.ForeignKey(Address, related_name='order_sales_invoice', verbose_name=_("Address invoice"), blank=True, null=True, on_delete=models.CASCADE)
-    haulier = models.ForeignKey(Haulier, related_name='basket_sales', verbose_name=_("Haulier"), blank=True, null=True, on_delete=models.CASCADE)
-    billing_series = models.ForeignKey(BillingSeries, related_name='basket_sales', verbose_name='Billing series', blank=False, null=False, on_delete=models.CASCADE)
-
+    pos = models.ForeignKey(POS, related_name='basket_sales', verbose_name=_("Point of Sales"), null=True, on_delete=models.CASCADE)
+    pos_slot = models.ForeignKey(POSSlot, related_name='basket_sales', verbose_name=_("POS Slot"), null=True, on_delete=models.CASCADE)
     role = models.CharField(_("Role basket"), max_length=2, choices=ROLE_BASKET, blank=False, null=False, default=ROLE_BASKET_SHOPPINGCART)
     signed = models.BooleanField(_("Signed"), blank=False, default=False)
     public = models.BooleanField(_("Public"), blank=False, default=False)
     payment = models.ManyToManyField(PaymentRequest, verbose_name=_(u"Payment Request"), blank=True, related_name='basket_sales')
     name = models.CharField(_("Name"), max_length=250, blank=False, null=False)
+    address_delivery = models.ForeignKey(Address, related_name='order_sales_delivery', verbose_name=_("Address delivery"), blank=True, null=True, on_delete=models.CASCADE)
+    address_invoice = models.ForeignKey(Address, related_name='order_sales_invoice', verbose_name=_("Address invoice"), blank=True, null=True, on_delete=models.CASCADE)
     expiration_date = models.DateTimeField(_("Expiration date"), blank=True, null=True, editable=False)
+    haulier = models.ForeignKey(Haulier, related_name='basket_sales', verbose_name=_("Haulier"), blank=True, null=True, on_delete=models.CASCADE)
+    billing_series = models.ForeignKey(BillingSeries, related_name='basket_sales', verbose_name='Billing series', blank=False, null=False, on_delete=models.CASCADE)
 
     def __str__(self):
         return u"Order-{}".format(smart_text(self.code))
@@ -752,14 +769,14 @@ class SalesBasket(GenVersion):
         return fields
 
     def pass_to_budget(self, lines=None):
-        if self.role != ROLE_BASKET_BUDGET and lines and self.lines_sales.count() != len(lines):
+        if self.role != ROLE_BASKET_BUDGET and lines and self.line_basket_sales.count() != len(lines):
             # duplicate object
             lines = [int(x) for x in lines]
             obj = copy.copy(self)
             obj.pk = None
             obj.role = ROLE_BASKET_BUDGET
             obj.save()
-            for line in self.lines_sales.filter(pk__in=lines):
+            for line in self.line_basket_sales.filter(pk__in=lines):
                 new_line = copy.copy(line)
                 new_line.pk = None  # reset
                 new_line.basket = obj  # relation to new object
@@ -776,8 +793,6 @@ class SalesBasket(GenVersion):
         return self
 
     def pass_to_order(self, payment_request=None):
-        raise Exception("pass_to_order")
-        """
         context = {
             'error': None,
             'order': None
@@ -838,7 +853,6 @@ class SalesBasket(GenVersion):
             context['order'] = self.order_sales
 
         return context
-        """
 
     def lock_delete(self, request=None):
         # Solo se puede eliminar si:
@@ -848,27 +862,25 @@ class SalesBasket(GenVersion):
         if hasattr(self, 'order_sales') and self.order_sales:
             if self.order_sales.payment is not None:
                 return _('Cannot delete, it is related to payment')
-
-            if self.lines_sales.filter(albaran__isnull=False).exists():
-                return _('Cannot delete, it is related to albaran')
-            if self.lines_sales.filter(ticket__isnull=False).exists():
-                return _('Cannot delete, it is related to tickets')
-            if self.lines_sales.filter(invoice__isnull=False).exists():
-                return _('Cannot delete, it is related to invoices')
+            if self.order_sales.line_order_sales.count() != 0:
+                lines_order = [x['pk'] for x in self.order_sales.line_order_sales.all().values('pk')]
+                if SalesLineAlbaran.objects.filter(line_order__in=lines_order).count() != 0:
+                    return _('Cannot delete, it is related to albaran')
+                if SalesLineTicket.objects.filter(line_order__in=lines_order).count() != 0:
+                    return _('Cannot delete, it is related to tickets')
+                if SalesLineInvoice.objects.filter(line_order__in=lines_order).count() != 0:
+                    return _('Cannot delete, it is related to invoices')
 
         return super(SalesBasket, self).lock_delete()
 
     def calculate_price_doc_complete(self, details=False):
-        return super(SalesBasket, self).calculate_price_doc_complete(self.lines_sales.filter(removed=False), details)
+        return super(SalesBasket, self).calculate_price_doc_complete(self.line_basket_sales.filter(removed=False), details)
 
     def list_tickets(self):
-        raise Exception("list_tickets")
         # retorna todos los tickets en los que hay lineas de la cesta
-        # return SalesTicket.objects.filter(line_ticket_sales__line_order__order__budget=self).distinct()
+        return SalesTicket.objects.filter(line_ticket_sales__line_order__order__budget=self).distinct()
 
     def print_counter(self, user):
-        raise Exception("print_counter")
-        """
         obj = PrintCounterDocumentBasket()
         obj.basket = self
         obj.user = user
@@ -882,15 +894,12 @@ class SalesBasket(GenVersion):
             status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE,
             basket=self
         ).count()
-        """
 
     def get_customer(self):
         return self.customer
 
     @staticmethod
     def add_product(kind, product_pk, info_pack, quantity_str, customer, slot):
-        raise Exception('add_product')
-        """
         context = {'error': None}
         product_final = ProductFinal.objects.filter(pk=product_pk).first()
 
@@ -1043,7 +1052,6 @@ class SalesBasket(GenVersion):
                 context['error'] = str(e)
 
         return context
-        """
 
     def duplicate(self, list_lines):
         new_budget = SalesBasket.objects.get(pk=self.pk)
@@ -1055,11 +1063,6 @@ class SalesBasket(GenVersion):
             line.basket = new_budget
             line.save()
         return new_budget
-
-    def delete(self):
-        with transaction.atomic():
-            SalesLines.delete_doc(self)
-            return super(SalesBasket, self).delete()
 
 
 # pedidos
@@ -1084,7 +1087,6 @@ class SalesOrder(GenVersion):
         fields = []
         fields.append(('customer', _('Customer')))
         fields.append(('code', _('Code')))
-        fields.append(('budget__code', _('Budget')))
         fields.append(('date', _('Date')))
         # fields.append(('storage', _('Storage')))
         fields.append(('status_order', None))
@@ -1102,7 +1104,7 @@ class SalesOrder(GenVersion):
         return self.total
 
     def calculate_price_doc_complete(self, details=False):
-        return super(SalesOrder, self).calculate_price_doc_complete(self.lines_sales.filter(removed=False), details)
+        return super(SalesOrder, self).calculate_price_doc_complete(self.line_order_sales.filter(removed=False), details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentOrder()
@@ -1123,10 +1125,10 @@ class SalesOrder(GenVersion):
         return self.customer
 
     def get_invoices(self, only_code=True):
-        queryset = SalesLines.objects.filter(
-            order=self,
-            invoice__isnull=False,
-            removed=False
+        queryset = SalesLineInvoice.objects.filter(
+            removed=False,
+            invoice__removed=False,
+            line_order__in=self.line_order_sales.filter(removed=False)
         )
         if only_code:
             result = list(queryset.values('invoice__code', 'invoice__pk').distinct())
@@ -1134,18 +1136,12 @@ class SalesOrder(GenVersion):
             result = queryset.distinct()
         return result
 
-    def delete(self):
-        with transaction.atomic():
-            SalesLines.delete_doc(self)
-            return super(SalesOrder, self).delete()
-
 
 # documentos de pedidos
 class SalesOrderDocument(CodenerixModel, GenDocumentFile):
     order = models.ForeignKey(SalesOrder, related_name='order_document_sales', verbose_name=_("Sales order"), on_delete=models.CASCADE)
     kind = models.ForeignKey(TypeDocument, related_name='order_document_sales', verbose_name=_('Document type'), blank=False, null=False, on_delete=models.CASCADE)
     notes = models.TextField(_("Notes"), max_length=256, blank=True, null=True)
-    removed = models.BooleanField(_("Removed"), blank=False, default=False, editable=False)
 
     def __str__(self):
         return u'{}'.format(smart_text(self.name_file))
@@ -1159,13 +1155,6 @@ class SalesOrderDocument(CodenerixModel, GenDocumentFile):
         fields.append(('name_file', _('Name')))
         return fields
 
-    def delete(self):
-        with transaction.atomic():
-            if not hasattr(settings, 'CDNX_INVOICING_LOGICAL_DELETION') or settings.CDNX_INVOICING_LOGICAL_DELETION is False:
-                return super(SalesLines, self).delete()
-            else:
-                self.removed = True
-                self.save(force_save=True)
 
 # albaranes
 class SalesAlbaran(GenVersion):
@@ -1190,7 +1179,7 @@ class SalesAlbaran(GenVersion):
         return self.total
 
     def calculate_price_doc_complete(self, details=False):
-        return super(SalesAlbaran, self).calculate_price_doc_complete(self.lines_sales.filter(removed=False), details)
+        return super(SalesAlbaran, self).calculate_price_doc_complete(self.line_albaran_sales.filter(removed=False), details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentAlbaran()
@@ -1206,11 +1195,6 @@ class SalesAlbaran(GenVersion):
             status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE,
             albaran=self
         ).count()
-
-    def delete(self):
-        with transaction.atomic():
-            SalesLines.delete_doc(self)
-            return super(SalesAlbaran, self).delete()
 
 
 # ticket y facturas son lo mismo con un check de "tengo datos del customere"
@@ -1234,7 +1218,7 @@ class SalesTicket(GenVersion):
         fields = []
         fields.append(('customer', _('Customer')))
         fields.append(('code', _('Code')))
-        fields.append(('lines_sales__product_final', _('Products')))
+        fields.append(('line_ticket_sales__line_order__product', _('Products')))
         fields.append(('date', _('Date')))
         fields.append(('total', _('Total')))
         return fields
@@ -1243,7 +1227,7 @@ class SalesTicket(GenVersion):
         return self.total
 
     def calculate_price_doc_complete(self, details=False):
-        return super(SalesTicket, self).calculate_price_doc_complete(self.lines_sales.filter(removed=False), details)
+        return super(SalesTicket, self).calculate_price_doc_complete(self.line_ticket_sales.filter(removed=False), details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentTicket()
@@ -1259,14 +1243,6 @@ class SalesTicket(GenVersion):
             status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE,
             ticket=self
         ).count()
-
-    def get_customer(self):
-        return self.customer
-
-    def delete(self):
-        with transaction.atomic():
-            SalesLines.delete_doc(self)
-            return super(SalesTicket, self).delete()
 
 
 # puede haber facturas o tickets rectificativos
@@ -1285,7 +1261,7 @@ class SalesTicketRectification(GenInvoiceRectification):
         return self.total
 
     def calculate_price_doc_complete(self, details=False):
-        return super(SalesTicketRectification, self).calculate_price_doc_complete(self.lines_sales.filter(removed=False), details)
+        return super(SalesTicketRectification, self).calculate_price_doc_complete(self.line_ticketrectification_sales.filter(removed=False), details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentTicketRectification()
@@ -1301,11 +1277,6 @@ class SalesTicketRectification(GenInvoiceRectification):
             status_document=STATUS_PRINTER_DOCUMENT_DEFINITVE,
             ticket_rectification=self
         ).count()
-
-    def delete(self):
-        with transaction.atomic():
-            SalesLines.delete_doc(self)
-            return super(SalesTicketRectification, self).delete()
 
 
 # facturas
@@ -1335,7 +1306,7 @@ class SalesInvoice(GenVersion):
         return self.total
 
     def calculate_price_doc_complete(self, details=False):
-        return super(SalesInvoice, self).calculate_price_doc_complete(self.lines_sales.filter(removed=False), details)
+        return super(SalesInvoice, self).calculate_price_doc_complete(self.line_invoice_sales.filter(removed=False), details)
 
     def get_customer(self):
         return self.customer
@@ -1355,11 +1326,6 @@ class SalesInvoice(GenVersion):
             invoice=self
         ).count()
 
-    def delete(self):
-        with transaction.atomic():
-            SalesLines.delete_doc(self)
-            return super(SalesInvoice, self).delete()
-
 
 # factura rectificativa
 class SalesInvoiceRectification(GenInvoiceRectification):
@@ -1376,7 +1342,7 @@ class SalesInvoiceRectification(GenInvoiceRectification):
         return self.total
 
     def calculate_price_doc_complete(self, details=False):
-        return super(SalesInvoiceRectification, self).calculate_price_doc_complete(self.lines_sales.filter(removed=False), details)
+        return super(SalesInvoiceRectification, self).calculate_price_doc_complete(self.line_invoicerectification_sales.filter(removed=False), details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentInvoiceRectification()
@@ -1393,24 +1359,16 @@ class SalesInvoiceRectification(GenInvoiceRectification):
             invoice_rectification=self
         ).count()
 
-    def delete(self):
-        with transaction.atomic():
-            SalesLines.delete_doc(self)
-            return super(SalesInvoiceRectification, self).delete()
 
-
+"""
 # #############################################
 class SalesLines(CodenerixModel):
     basket = models.ForeignKey(SalesBasket, related_name='lines_sales', verbose_name=_("Basket"), on_delete=models.CASCADE)
-    tax_basket_fk = models.ForeignKey(TypeTax, related_name='lines_sales_basket', verbose_name=_("Tax Basket"), on_delete=models.CASCADE)
     order = models.ForeignKey(SalesOrder, related_name='lines_sales', verbose_name=_("Sales order"), on_delete=models.CASCADE, null=True, blank=True)
-    tax_order_fk = models.ForeignKey(TypeTax, related_name='lines_sales_order', verbose_name=_("Tax Sales order"), on_delete=models.CASCADE, null=True, blank=True)
     albaran = models.ForeignKey(SalesAlbaran, related_name='lines_sales', verbose_name=_("Albaran"), on_delete=models.CASCADE, null=True, blank=True)
     ticket = models.ForeignKey(SalesTicket, related_name='lines_sales', verbose_name=_("Ticket"), on_delete=models.CASCADE, null=True, blank=True)
-    tax_ticket_fk = models.ForeignKey(TypeTax, related_name='lines_sales_ticket', verbose_name=_("Tax Ticket"), on_delete=models.CASCADE, null=True, blank=True)
     ticket_rectification = models.ForeignKey(SalesTicketRectification, related_name='lines_sales', verbose_name=_("Ticket rectification"), on_delete=models.CASCADE, null=True, blank=True)
     invoice = models.ForeignKey(SalesInvoice, related_name='lines_sales', verbose_name=_("Invoice"), on_delete=models.CASCADE, null=True, blank=True)
-    tax_invoice_fk = models.ForeignKey(TypeTax, related_name='lines_sales_invoice', verbose_name=_("Tax Invoice"), on_delete=models.CASCADE, null=True, blank=True)
     invoice_rectification = models.ForeignKey(SalesInvoiceRectification, related_name='lines_sales', verbose_name=_("Invoice rectification"), on_delete=models.CASCADE, null=True, blank=True)
     product_final = models.ForeignKey(ProductFinal, related_name='lines_sales', verbose_name=_("Product"), on_delete=models.CASCADE)
     product_unique = models.ForeignKey(ProductUnique, related_name='lines_sales', verbose_name=_("Product Unique"), on_delete=models.CASCADE, null=True, blank=True)
@@ -1419,6 +1377,7 @@ class SalesLines(CodenerixModel):
     # logical deletion
     removed = models.BooleanField(_("Removed"), blank=False, default=False, editable=False)
 
+    price_recommended = models.DecimalField(_("Recomended price base"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
     quantity = models.FloatField(_("Quantity"), blank=False, null=False)
 
     # additional information
@@ -1434,7 +1393,6 @@ class SalesLines(CodenerixModel):
     # se guarda el tax usado y la relacion para poder hacer un seguimiento
     # ####
     # info basket
-    price_recommended_basket = models.DecimalField(_("Recomended price base"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
     description_basket = models.CharField(_("Description"), max_length=256, blank=True, null=True)
     price_base_basket = models.DecimalField(_("Price base"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
     discount_basket = models.DecimalField(_("Discount (%)"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0)
@@ -1443,10 +1401,9 @@ class SalesLines(CodenerixModel):
     tax_label_basket = models.CharField(_("Tax Name"), max_length=250, blank=True, null=True)
     notes_basket = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
     # info order
-    price_recommended_order = models.DecimalField(_("Recomended price base"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
     description_order = models.CharField(_("Description"), max_length=256, blank=True, null=True)
-    price_base_order = models.DecimalField(_("Price base"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
-    discount_order = models.DecimalField(_("Discount (%)"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0)
+    price_base_order = models.DecimalField(_("Price base"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
+    discount_order = models.DecimalField(_("Discount (%)"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0)
     tax_order = models.FloatField(_("Tax (%)"), blank=True, null=True, default=0)
     equivalence_surcharge_order = models.FloatField(_("Equivalence surcharge (%)"), blank=True, null=True, default=0)
     tax_label_order = models.CharField(_("Tax Name"), max_length=250, blank=True, null=True)
@@ -1454,10 +1411,9 @@ class SalesLines(CodenerixModel):
     # info albaran - basic
     notes_albaran = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
     # info ticket
-    price_recommended_ticket = models.DecimalField(_("Recomended price base"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
     description_ticket = models.CharField(_("Description"), max_length=256, blank=True, null=True)
-    price_base_ticket = models.DecimalField(_("Price base"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
-    discount_ticket = models.DecimalField(_("Discount (%)"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0)
+    price_base_ticket = models.DecimalField(_("Price base"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
+    discount_ticket = models.DecimalField(_("Discount (%)"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0)
     tax_ticket = models.FloatField(_("Tax (%)"), blank=True, null=True, default=0)
     equivalence_surcharge_ticket = models.FloatField(_("Equivalence surcharge (%)"), blank=True, null=True, default=0)
     tax_label_ticket = models.CharField(_("Tax Name"), max_length=250, blank=True, null=True)
@@ -1465,10 +1421,9 @@ class SalesLines(CodenerixModel):
     # info ticket rectification - basic
     notes_ticket_rectification = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
     # info invoice
-    price_recommended_invoice = models.DecimalField(_("Recomended price base"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
     description_invoice = models.CharField(_("Description"), max_length=256, blank=True, null=True)
-    price_base_invoice = models.DecimalField(_("Price base"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
-    discount_invoice = models.DecimalField(_("Discount (%)"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0)
+    price_base_invoice = models.DecimalField(_("Price base"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
+    discount_invoice = models.DecimalField(_("Discount (%)"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0)
     tax_invoice = models.FloatField(_("Tax (%)"), blank=True, null=True, default=0)
     equivalence_surcharge_invoice = models.FloatField(_("Equivalence surcharge (%)"), blank=True, null=True, default=0)
     tax_label_invoice = models.CharField(_("Tax Name"), max_length=250, blank=True, null=True)
@@ -1489,328 +1444,23 @@ class SalesLines(CodenerixModel):
         fields.append(('quantity', _("Quantity")))
         return fields
 
-    def search_product_unique(self, quantity, pos=None):
-        context = {'error': None}
-
-        if self.product_final.sample:
-            context['error'] = _("This product can not be sold, it is marked as 'sample'")
-        else:
-            qs = ProductUnique.objects.filter(
-                product_final=self.product_final,
-                stock_real__gt=0,
-                stock_locked__lt=F('stock_real')
-            )
-            if pos:
-                qs = qs.filter(box__box_structure__zone__storage__in=pos.storage_stock.filter(storage_zones__salable=True))
-            elif self.basket.pos:
-                qs = qs.filter(box__box_structure__zone__storage__in=self.basket.pos.storage_stock.filter(storage_zones__salable=True))
-
-            if self.product_final.product.force_stock is False:
-                product_unique = qs.first()
-                if product_unique:
-                    context['products_unique'] = [
-                        {
-                            'quantity': quantity,
-                            'product_unique': product_unique
-                        }
-                    ]
-                else:
-                    context['error'] = _('Unique product not exists!')
-            else:
-                products_unique = []
-                stock_available = None
-                for unique_product in qs:
-                    if quantity <= 0:
-                        break
-                    stock_available = unique_product.stock_real - unique_product.stock_locked
-                    # if stock_enable >= quantity:
-                    if stock_available > quantity:
-                        stock_available = quantity
-                        unique_product.duplicate(quantity)
-                    products_unique.append({
-                        'product_unique': unique_product,
-                        'quantity': stock_available
-                    })
-                    quantity -= stock_available
-
-                if quantity > 0:
-                    context['error'] = "{} -- {} -- {} -- {}".format(_("Insufficient stock"), quantity, stock_available, [(x.pk, x.stock_real, x.stock_locked) for x in qs])
-                else:
-                    context['products_unique'] = products_unique
-        return context
-
-    def save(self, *args, **kwargs):
-        with transaction.atomic():
-            if self.pk is None:
-                if self.product_final.code:
-                    self.code = self.product_final.code
-                else:
-                    self.code = self.product_final.product.code
-
-                if self.product_unique is None:
-                    if getattr(settings, 'CDNX_INVOICING_FORCE_STOCK_IN_BUDGET', True):
-                        info = self.search_product_unique(self.quantity)
-                        if info['error']:
-                            raise ValidationError(info['error'], code='invalid')
-                        else:
-                            first = True
-                            for unique_product in info['products_unique']:
-                                if first:
-                                    first = False
-                                    self.quantity = unique_product['quantity']
-                                    self.product_unique = unique_product['product_unique']
-                                else:
-                                    line = copy.copy(self)
-                                    line.pk = None
-                                    line.quantity = unique_product['quantity']
-                                    line.product_unique = unique_product['product_unique']
-                                    line.save()
-
-            elif self.pk:
-                line_old = SalesLines.objects.filter(pk=self.pk).first()
-                if line_old:
-                    product_final_old = line_old.product_final
-                else:
-                    product_final_old = None
-                if self.product_final != product_final_old:
-                    if self.order or self.albaran or self.ticket or self.invoice:
-                        raise ValidationError(_('You can not modify product'), code='invalid')
-                    elif self.description_basket == '{}'.format(product_final_old):
-                        self.description_basket = ''
-
-                    # solo se puede cambiar el producto si no esta en un pedido, albaran, ticket o factura
-                    self.price_recommended_basket = None
-                    self.tax_label_basket = None
-                    if getattr(settings, 'CDNX_INVOICING_FORCE_STOCK_IN_BUDGET', True):
-                        info = self.search_product_unique(self.quantity)
-                        if info['error']:
-                            raise ValidationError(info['error'], code='invalid')
-                        else:
-                            first = True
-                            for unique_product in info['products_unique']:
-                                if first:
-                                    first = False
-                                    self.quantity = unique_product['quantity']
-                                    self.product_unique = unique_product['product_unique']
-                                else:
-                                    line = copy.copy(self)
-                                    line.pk = None
-                                    line.quantity = unique_product['quantity']
-                                    line.product_unique = unique_product['product_unique']
-                                    line.save()
-                    else:
-                        self.product_unique = None
-                elif self.order and line_old.order is None:
-                    # associate line with order
-                    # locked product unique!!
-                    if self.product_final.product.force_stock:
-                        if self.product_unique is None:
-                            info = self.search_product_unique(self.quantity)
-                            if info['error']:
-                                raise ValidationError(info['error'], code='invalid')
-                            else:
-                                first = True
-                                for unique_product in info['products_unique']:
-                                    if first:
-                                        first = False
-                                        self.quantity = unique_product['quantity']
-                                        self.product_unique = unique_product['product_unique']
-                                        self.product_unique.locked_stock(self.quantity)
-                                    else:
-                                        line = copy.copy(self)
-                                        line.pk = None
-                                        line.quantity = unique_product['quantity']
-                                        line.product_unique = unique_product['product_unique']
-                                        line.save()
-                                        self.product_unique.locked_stock(self.quantity)
-                        else:
-                            available = self.product_unique.stock_real - self.product_unique.stock_locked
-                            if available >= self.quantity:
-                                self.product_unique.locked_stock(self.quantity)
-                            else:
-                                info = self.search_product_unique(self.quantity)
-                                if info['error']:
-                                    raise ValidationError(info['error'], code='invalid')
-                                else:
-                                    first = True
-                                    for unique_product in info['products_unique']:
-                                        if first:
-                                            first = False
-                                            self.quantity = unique_product['quantity']
-                                            self.product_unique = unique_product['product_unique']
-                                            self.product_unique.locked_stock(self.quantity)
-                                        else:
-                                            line = copy.copy(self)
-                                            line.pk = None
-                                            line.quantity = unique_product['quantity']
-                                            line.product_unique = unique_product['product_unique']
-                                            line.save()
-                                            self.product_unique.locked_stock(self.quantity)
-
-            # calculate value of equivalence_surcharge
-            # save tax label
-            # save price recommended
-            # save tax foreignkey
-            if self.basket:
-                if self.tax_basket_fk is None:
-                    self.tax_basket_fk = self.product_final.product.tax
-                if self.tax_label_basket is None:
-                    self.tax_label_basket = self.product_final.product.tax.name
-                if not self.tax_basket:
-                    self.tax_basket = self.product_final.product.tax.tax
-                if self.basket.get_customer().apply_equivalence_surcharge:
-                    self.equivalence_surcharge_basket = self.basket.get_customer().tax.recargo_equivalencia
-                if self.price_recommended_basket is None:
-                    self.price_recommended_basket = self.product_final.price_base
-                if not self.description_basket:
-                    self.description_basket = '{}'.format(self.product_final)
-            if self.order:
-                if self.tax_order_fk is None:
-                    self.tax_order_fk = self.product_final.product.tax
-                if self.tax_label_order is None:
-                    self.tax_label_order = self.product_final.product.tax.name
-                if not self.tax_order:
-                    self.tax_order = self.product_final.product.tax.tax
-                if self.order.get_customer().apply_equivalence_surcharge:
-                    self.equivalence_surcharge_order = self.order.get_customer().tax.recargo_equivalencia
-                if self.price_recommended_order is None:
-                    self.price_recommended_order = self.product_final.price_base
-                if not self.description_order:
-                    self.description_order = '{}'.format(self.product_final)
-            if self.ticket:
-                if self.tax_ticket_fk is None:
-                    self.tax_ticket_fk = self.product_final.product.tax
-                if self.tax_label_ticket is None:
-                    self.tax_label_ticket = self.product_final.product.tax.name
-                if not self.tax_ticket:
-                    self.tax_ticket = self.product_final.product.tax.tax
-                if self.ticket.get_customer().apply_equivalence_surcharge:
-                    self.equivalence_surcharge_ticket = self.ticket.get_customer().tax.recargo_equivalencia
-                if self.price_recommended_ticket is None:
-                    self.price_recommended_ticket = self.product_final.price_base
-                if not self.description_ticket:
-                    self.description_ticket = '{}'.format(self.product_final)
-            if self.invoice:
-                if self.tax_invoice_fk is None:
-                    self.tax_invoice_fk = self.product_final.product.tax
-                if self.tax_label_invoice is None:
-                    self.tax_label_invoice = self.product_final.product.tax.name
-                if not self.tax_invoice:
-                    self.tax_invoice = self.product_final.product.tax.tax
-                if self.invoice.get_customer().apply_equivalence_surcharge:
-                    self.equivalence_surcharge_invoice = self.invoice.get_customer().tax.recargo_equivalencia
-                if self.price_recommended_invoice is None:
-                    self.price_recommended_invoice = self.product_final.price_base
-                if not self.description_invoice:
-                    self.description_invoice = '{}'.format(self.product_final)
-
-            result = super(self._meta.model, self).save(*args, **kwargs)
-            # update totals
-            if self.order:
-                self.order.update_totales()
-            if self.albaran:
-                self.albaran.update_totales()
-            if self.ticket:
-                self.ticket.update_totales()
-            if self.ticket_rectification:
-                self.ticket_rectification.update_totales()
-            if self.invoice:
-                self.invoice.update_totales()
-            if self.invoice_rectification:
-                self.invoice_rectification.update_totales()
-            return result
-
     def delete(self):
         with transaction.atomic():
             if not hasattr(settings, 'CDNX_INVOICING_LOGICAL_DELETION') or settings.CDNX_INVOICING_LOGICAL_DELETION is False:
                 return super(SalesLines, self).delete()
             else:
                 self.removed = True
-                self.save()
+                self.save(force_save=True)
 
     def __limitQ__(self, info):
         return {'removed': Q(removed=False)}
-
-    @staticmethod
-    def delete_doc(doc):
-        if isinstance(doc, SalesBasket):
-            qs = doc.lines_sales.filter(Q(order__isnull=False) | Q(albaran__isnull=False) | Q(ticket__isnull=False) | Q(invoice__isnull=False)).exists()
-            if qs:
-                raise IntegrityError(_('No se puede eliminar el presupuesto al estar relacionado con pedido, albaran, ticket o factura'))
-            else:
-                with transaction.atomic():
-                    doc.lines_sales.objects.filter(removed=False).delete()
-        elif isinstance(doc, SalesOrder):
-            qs = doc.lines_sales.filter(Q(albaran__isnull=False) | Q(ticket__isnull=False) | Q(invoice__isnull=False)).exists()
-            if qs:
-                raise IntegrityError(_('No se puede eliminar el presupuesto al estar relacionado con albaran, ticket o factura'))
-            else:
-                with transaction.atomic():
-                    for line in doc.lines_sales.filter(removed=False):
-                        nline = copy.copy(line)
-                        nline.pk = None
-                        nline.order = None
-                        nline.save()
-                        line.delete()
-        elif isinstance(doc, SalesAlbaran):
-            qs = doc.lines_sales.filter(Q(ticket__isnull=False) | Q(invoice__isnull=False)).exists()
-            if qs:
-                raise IntegrityError(_('No se puede eliminar el presupuesto al estar relacionado ticket o factura'))
-            else:
-                with transaction.atomic():
-                    for line in doc.lines_sales.filter(removed=False):
-                        nline = copy.copy(line)
-                        nline.pk = None
-                        nline.albaran = None
-                        nline.save()
-                        line.delete()
-        elif isinstance(doc, SalesTicket):
-            qs = doc.lines_sales.filter(Q(ticket_rectification__isnull=False)).exists()
-            if qs:
-                raise IntegrityError(_('No se puede eliminar el presupuesto al estar relacionado con ticket rectificativos'))
-            else:
-                with transaction.atomic():
-                    for line in doc.lines_sales.filter(removed=False):
-                        nline = copy.copy(line)
-                        nline.pk = None
-                        nline.ticket = None
-                        nline.save()
-                        line.delete()
-        elif isinstance(doc, SalesTicketRectification):
-            with transaction.atomic():
-                for line in doc.lines_sales.filter(removed=False):
-                    nline = copy.copy(line)
-                    nline.pk = None
-                    nline.ticket_rectification = None
-                    nline.save()
-                    line.delete()
-        elif isinstance(doc, SalesInvoice):
-            qs = doc.lines_sales.filter(Q(invoice_rectification__isnull=False)).exists()
-            if qs:
-                raise IntegrityError(_('No se puede eliminar el presupuesto al estar relacionado con factura rectificativos'))
-            else:
-                with transaction.atomic():
-                    for line in doc.lines_sales.filter(removed=False):
-                        nline = copy.copy(line)
-                        nline.pk = None
-                        nline.invoice = None
-                        nline.save()
-                        line.delete()
-        elif isinstance(doc, SalesInvoiceRectification):
-            with transaction.atomic():
-                for line in doc.lines_sales.filter(removed=False):
-                    nline = copy.copy(line)
-                    nline.pk = None
-                    nline.invoice_rectification = None
-                    nline.save()
-                    line.delete()
-
+"""
+class SalesLines__________staticmethod(CodenerixModel):
     @staticmethod
     def create_document_from_another(pk, list_lines,
                                      MODEL_SOURCE, MODEL_FINAL,
                                      url_reverse,
-                                     msg_error_relation, msg_error_not_found, msg_error_line_not_found,
-                                     unique):
+                                     msg_error_relation, msg_error_not_found, unique):
         """
         pk: pk del documento origen
         list_lines: listado de pk de lineas de origen
@@ -1826,36 +1476,9 @@ class SalesLines(CodenerixModel):
         if list_lines and obj_src:
             # parse to int
             list_lines = [int(x) for x in list_lines]
-
-            obj_final = MODEL_FINAL()
-            complete = True
-            field_final_tax = None
-            if isinstance(obj_final, SalesOrder):
-                obj_final.budget = obj_src
-                field_final = 'order'
-                field_final_tax = 'tax_order_fk'
-            elif isinstance(obj_final, SalesAlbaran):
-                field_final = 'albaran'
-                field_final_tax = 'tax_albaran_fk'
-                complete = False
-            elif isinstance(obj_final, SalesTicket):
-                field_final = 'ticket'
-                field_final_tax = 'tax_ticket_fk'
-            elif isinstance(obj_final, SalesTicketRectification):
-                field_final = 'ticket_rectification'
-                complete = False
-            elif isinstance(obj_final, SalesInvoice):
-                field_final = 'invoice'
-                field_final_tax = 'tax_invoice_fk'
-            elif isinstance(obj_final, SalesInvoiceRectification):
-                field_final = 'invoice_rectification'
-                complete = False
             # list of lines objects
             if unique:
-                create = not SalesLines.objects.filter(**{
-                    "pk__in": list_lines,
-                    "{}__isnull".format(field_final): False
-                }).exists()
+                create = not SalesLines.objects.filter(**{"pk__in": list_lines}).exists()
             else:
                 create = True
 
@@ -1864,68 +1487,70 @@ class SalesLines(CodenerixModel):
             """
             if create:
                 with transaction.atomic():
-                    if hasattr(obj_src, 'customer'):
-                        customer = obj_src.customer
-                    else:
-                        customer = obj_src.lines_sales.filter(removed=False).first().order.customer
-                    obj_final.customer = customer
+                    obj_final = MODEL_FINAL()
+                    obj_final.customer = obj_src.customer
                     obj_final.date = datetime.datetime.now()
                     obj_final.billing_series = obj_src.billing_series
 
-                    field_src_tax = None
                     if isinstance(obj_src, SalesBasket):
                         field_src = 'basket'
-                        field_src_tax = 'tax_basket_fk'
                     elif isinstance(obj_src, SalesOrder) or isinstance(obj_src, SalesAlbaran):
                         field_src = 'order'
-                        field_src_tax = 'tax_order_fk'
                     elif isinstance(obj_src, SalesTicket) or isinstance(obj_src, SalesTicketRectification):
                         field_src = 'ticket'
-                        field_src_tax = 'tax_ticket_fk'
                     elif isinstance(obj_src, SalesInvoice) or isinstance(obj_src, SalesInvoiceRectification):
                         field_src = 'invoice'
-                        field_src_tax = 'tax_invoice_fk'
+
+                    complete = True
+                    if isinstance(obj_final, SalesOrder):
+                        obj_final.budget = obj_src
+                        field_final = 'order'
+                    elif isinstance(obj_final, SalesAlbaran):
+                        field_final = 'albaran'
+                        complete = False
+                    elif isinstance(obj_final, SalesTicket):
+                        field_final = 'ticket'
+                    elif isinstance(obj_final, SalesTicketRectification):
+                        field_final = 'ticket_rectification'
+                        complete = False
+                    elif isinstance(obj_final, SalesInvoice):
+                        field_final = 'invoice'
+                    elif isinstance(obj_final, SalesInvoiceRectification):
+                        field_final = 'invoice_rectification'
+                        complete = False
 
                     obj_final.save()
 
-                    qs = SalesLines.objects.filter(**{'pk__in': list_lines, '{}__isnull'.format(field_final): True})
-                    if qs:
-                        for line in qs:
-                            setattr(line, field_final, obj_final)
-                            if complete:
-                                setattr(line, 'description_{}'.format(field_final), getattr(line, 'description_{}'.format(field_src)))
-                                setattr(line, 'price_base_{}'.format(field_final), getattr(line, 'price_base_{}'.format(field_src)))
-                                setattr(line, 'discount_{}'.format(field_final), getattr(line, 'discount_{}'.format(field_src)))
-                                setattr(line, 'tax_{}'.format(field_final), getattr(line, 'tax_{}'.format(field_src)))
-                                setattr(line, 'equivalence_surcharge_{}'.format(field_final), getattr(line, 'equivalence_surcharge_{}'.format(field_src)))
-                                setattr(line, 'tax_label_{}'.format(field_final), getattr(line, 'tax_label_{}'.format(field_src)))
-                            if field_src_tax and field_final_tax:
-                                setattr(line, '{}'.format(field_final_tax), getattr(line, '{}'.format(field_src_tax)))
+                    for line in SalesLines.objects.filter(**{'pk__in': list_lines, '{}__isnull'.format(field): True}):
+                        setattr(line, field, obj_final)
+                        if complete:
+                            setattr(line, 'description_{}'.format(field_final), 'description_{}'.format(field_src))
+                            setattr(line, 'price_base_{}'.format(field_final), 'price_base_{}'.format(field_src))
+                            setattr(line, 'discount_{}'.format(field_final), 'discount_{}'.format(field_src))
+                            setattr(line, 'tax_{}'.format(field_final), 'tax_{}'.format(field_src))
+                            setattr(line, 'equivalence_surcharge_{}'.format(field_final), 'equivalence_surcharge_{}'.format(field_src))
+                            setattr(line, 'tax_label_{}'.format(field_final), 'tax_label_{}'.format(field_src))
+                        setattr(line, 'notes_{}'.format(field_final), 'notes_{}'.format(field_src))
+                        line.save()
 
-                            setattr(line, 'notes_{}'.format(field_final), getattr(line, 'notes_{}'.format(field_src)))
+                        """
+                        FALTA LOS PACKS
+                            if hasattr(line_src, 'line_basket_option_sales') and line_src.line_basket_option_sales.exists():
+                                for opt_src in line_src.line_basket_option_sales.all():
+                                    opt_dst = SalesLineOrderOption()
+                                    opt_dst.line_order = line_final
+                                    opt_dst.product_option = opt_src.product_option
+                                    opt_dst.product_final = opt_src.product_final
+                                    opt_dst.quantity = opt_src.quantity
+                                    opt_dst.save()
+                        """
 
-                            line.save()
-
-                            """
-                            FALTA LOS PACKS
-                                if hasattr(line_src, 'line_basket_option_sales') and line_src.line_basket_option_sales.exists():
-                                    for opt_src in line_src.line_basket_option_sales.all():
-                                        opt_dst = SalesLineOrderOption()
-                                        opt_dst.line_order = line_final
-                                        opt_dst.product_option = opt_src.product_option
-                                        opt_dst.product_final = opt_src.product_final
-                                        opt_dst.quantity = opt_src.quantity
-                                        opt_dst.save()
-                            """
-
-                        # bloqueamos el documento origen
-                        obj_src.lock = True
-                        obj_src.save()
-                        # context['url'] = reverse('ordersaless_details', kwargs={'pk': order.pk})
-                        context['url'] = "{}#/{}".format(reverse(url_reverse), obj_final.pk)
-                        context['obj_final'] = obj_final
-                    else:
-                        context['error'] = msg_error_relation
+                    # bloqueamos el documento origen
+                    obj_src.lock = True
+                    obj_src.save()
+                    # context['url'] = reverse('ordersaless_details', kwargs={'pk': order.pk})
+                    context['url'] = "{}#/{}".format(reverse(url_reverse), obj_final.pk)
+                    context['obj_final'] = obj_final
             else:
                 # _("Hay lineas asignadas a pedidos")
                 context['error'] = msg_error_relation
@@ -1935,9 +1560,9 @@ class SalesLines(CodenerixModel):
 
         return context
 
-    @staticmethod  # ok
+    @staticmethod
     def create_order_from_budget_all(order):
-        lines_budget = order.budget.lines_sales.filter(removed=False)
+        lines_budget = order.budget.lines_sales.all()
         for lb in lines_budget:
             lb.order = order
             lb.description_order = lb.description_basket
@@ -1952,45 +1577,42 @@ class SalesLines(CodenerixModel):
         order.budget.role = ROLE_BASKET_BUDGET
         order.budget.save()
 
-        return lines_budget.count() == order.lines_sales.filter(removed=False).count()
+        return lines_budget.count() == order.line_order_sales.all().count()
 
-    @staticmethod  # ok
-    def create_order_from_budget(pk, list_lines, signed_obligatorily=True):
+    @staticmethod
+    def create_order_from_budget(pk, list_lines):
         MODEL_SOURCE = SalesBasket
         MODEL_FINAL = SalesOrder
-        url_reverse = 'CDNX_invoicing_ordersaless_list'
+        # url_reverse = 'CDNX_invoicing_ordersaless_list'
+        raise Exception("url_reverse = 'CDNX_invoicing_ordersaless_list'")
         # type_doc
         msg_error_relation = _("Hay lineas asignadas a pedidos")
         msg_error_not_found = _('Budget not found')
-        msg_error_line_not_found = _('Todas las lineas ya se han pasado a pedido')
 
-        budget = MODEL_SOURCE.objects.get(pk=pk)
-
-        if signed_obligatorily and not budget.signed:
+        # duplicamos el presupuesto si el numero de lineas es diferente
+        # relacionando el pedido a este nuevo presupuesto
+        if list_lines and len(list_lines) != SalesLines.objects.filter(basket=pk).count():
+            budget = MODEL_SOURCE.objects.get(pk=pk)
             # el presupuesto tiene que estar firmado para poder generar el pedido
-            context = {}
-            context['error'] = _("Unsigned budget!")
-            return context
-        else:
-            # duplicamos el presupuesto si el numero de lineas es diferente
-            # relacionando el pedido a este nuevo presupuesto
-            if list_lines and len(list_lines) != SalesLines.objects.filter(removed=False, basket=pk).count():
-                
-                    new_budget = budget.duplicate(list_lines)
-                    pk = new_budget.pk
-                    list_lines = [x[0] for x in SalesLines.objects.filter(removed=False, basket=pk).values_list('pk')]
+            if not budget.signed:
+                context = {}
+                context['error'] = _("Unsigned budget")
+                return context
+            else:
+                new_budget = budget.duplicate(SalesLines, list_lines)
+                pk = new_budget.pk
+                list_lines = [x[0] for x in SalesLines.objects.filter(basket=pk).values_list('pk')]
 
-            return SalesLines.create_document_from_another(pk, list_lines,
-                                                           MODEL_SOURCE, MODEL_FINAL, url_reverse,
-                                                           msg_error_relation, msg_error_not_found, msg_error_line_not_found,
-                                                           True)
+        return SalesLines.create_document_from_another(pk, list_lines,
+                                                       MODEL_SOURCE, MODEL_FINAL, url_reverse,
+                                                       msg_error_relation, msg_error_not_found, True)
     
-    @staticmethod  # ok
+    @staticmethod
     def create_albaran_automatic(pk, list_lines):
         """
         creamos de forma automatica el albaran
         """
-        lines = SalesLines.objects.filter(pk__in=list_lines, removed=False).exclude(albaran__isnull=False).values_list('pk')
+        lines = SalesLines.objects.filter(pk__in=list_lines).exclude(albaran__isnull=False).values_list('pk')
         lines_to_albaran = [x[0] for x in lines]
         SalesLines.create_albaran_from_order(pk, lines_to_albaran)
 
@@ -2013,12 +1635,10 @@ class SalesLines(CodenerixModel):
         # type_doc
         msg_error_relation = _("Hay lineas asignadas a albaranes")
         msg_error_not_found = _('Sales order not found')
-        msg_error_line_not_found = _('Todas las lineas ya se han pasado a albaran')
 
         return SalesLines.create_document_from_another(pk, list_lines,
                                                        MODEL_SOURCE, MODEL_FINAL, url_reverse,
-                                                       msg_error_relation, msg_error_not_found, msg_error_line_not_found,
-                                                       False)
+                                                       msg_error_relation, msg_error_not_found, False)
         
     @staticmethod
     def create_ticket_from_order(pk, list_lines):
@@ -2028,14 +1648,12 @@ class SalesLines(CodenerixModel):
         # type_doc
         msg_error_relation = _("Hay lineas asignadas a ticket")
         msg_error_not_found = _('Sales order not found')
-        msg_error_line_not_found = _('Todas las lineas ya se han pasado a ticket')
 
         with transaction.atomic():
             SalesLines.create_albaran_automatic(pk, list_lines)
             return SalesLines.create_document_from_another(pk, list_lines,
                                                            MODEL_SOURCE, MODEL_FINAL, url_reverse,
-                                                           msg_error_relation, msg_error_not_found, msg_error_line_not_found,
-                                                           False)
+                                                           msg_error_relation, msg_error_not_found, False)
             
     @staticmethod
     def create_ticket_from_slot(slot_pk):
@@ -2112,8 +1730,9 @@ class SalesLines(CodenerixModel):
             ).last()
             ticket = SalesTicket.objects.filter(
                 customer=line_order.order.customer,
-                lines_sales=line_order,
-                lines_sales__removed=False,
+                line_ticket_sales__line_order=line_order,
+                line_ticket_sales__line_order__removed=False,
+                line_ticket_sales__removed=False,
                 removed=False
             ).first()
             if ticket:
@@ -2130,37 +1749,22 @@ class SalesLines(CodenerixModel):
         # type_doc
         msg_error_relation = _("Hay lineas asignadas a facturas")
         msg_error_not_found = _('Sales order not found')
-        msg_error_line_not_found = _('Todas las lineas ya se han pasado a facturas')
 
         with transaction.atomic():
             SalesLines.create_albaran_automatic(pk, list_lines)
             return SalesLines.create_document_from_another(pk, list_lines,
                                                            MODEL_SOURCE, MODEL_FINAL, url_reverse,
-                                                           msg_error_relation, msg_error_not_found, msg_error_line_not_found,
-                                                           False)
+                                                           msg_error_relation, msg_error_not_found, False)
         
     @staticmethod
     def create_ticket_from_albaran(pk, list_lines):
-        MODEL_SOURCE = SalesAlbaran
-        MODEL_FINAL = SalesTicket
-        url_reverse = 'CDNX_invoicing_ticketsaless_list'
-        # type_doc
-        msg_error_relation = _("Hay lineas asignadas a ticket")
-        msg_error_not_found = _('Sales albaran not found')
-        msg_error_line_not_found = _('Todas las lineas ya se han pasado a ticket')
-
-        return SalesLines.create_document_from_another(pk, list_lines,
-                                                       MODEL_SOURCE, MODEL_FINAL, url_reverse,
-                                                       msg_error_relation, msg_error_not_found, msg_error_line_not_found,
-                                                       False)
-        """
         context = {}
         if list_lines:
             new_list_lines = SalesLines.objects.filter(
                 pk__in=[int(x) for x in list_lines]
             ).exclude(
                 invoice__isnull=True
-            ).values_list('pk')
+            ).values_list('line_order__pk')
 
             if new_list_lines:
                 new_pk = SalesLines.objects.values_list('order__pk').filter(pk__in=new_list_lines).first()
@@ -2175,37 +1779,21 @@ class SalesLines(CodenerixModel):
             error = _('Lineas no seleccionadas')
         context['error'] = error
         return context
-        """
         
     @staticmethod
     def create_invoice_from_albaran(pk, list_lines):
-        MODEL_SOURCE = SalesAlbaran
-        MODEL_FINAL = SalesInvoice
-        url_reverse = 'CDNX_invoicing_invoicesaless_list'
-        # type_doc
-        msg_error_relation = _("Hay lineas asignadas a facturas")
-        msg_error_not_found = _('Sales albaran not found')
-        msg_error_line_not_found = _('Todas las lineas ya se han pasado a facturas')
-
-        return SalesLines.create_document_from_another(pk, list_lines,
-                                                       MODEL_SOURCE, MODEL_FINAL, url_reverse,
-                                                       msg_error_relation, msg_error_not_found, msg_error_line_not_found,
-                                                       False)
-        """
         context = {}
         if list_lines:
             new_list_lines = SalesLines.objects.filter(
                 pk__in=[int(x) for x in list_lines]
             ).exclude(
-                invoice__isnull=False
-            )
+                invoice__isnull=True
+            ).values_list('line_order__pk')
 
             if new_list_lines:
-                new_pk = new_list_lines.first()
+                new_pk = SalesLines.objects.values_list('order__pk').filter(pk__in=new_list_lines).first()
                 if new_pk:
-                    context = SalesLines.create_invoice_from_order(
-                        new_pk.order.pk,
-                        [x['pk'] for x in new_list_lines.values('pk')])
+                    context = SalesLines.create_invoice_from_order(new_pk, new_list_lines)
                     return context
                 else:
                     error = _('Pedido no encontrado')
@@ -2215,48 +1803,124 @@ class SalesLines(CodenerixModel):
             error = _('Lineas no seleccionadas')
         context['error'] = error
         return context
-        """
         
     @staticmethod
     def create_invoice_from_ticket(pk, list_lines):
-        MODEL_SOURCE = SalesTicket
-        MODEL_FINAL = SalesInvoice
-        url_reverse = 'CDNX_invoicing_invoicesaless_list'
-        # type_doc
-        msg_error_relation = _("Hay lineas asignadas a facturas")
-        msg_error_not_found = _('Sales ticket not found')
-        msg_error_line_not_found = _('Todas las lineas ya se han pasado a facturas')
+        context = {}
+        if list_lines:
+            new_list_lines = SalesLines.objects.filter(
+                pk__in=[int(x) for x in list_lines]
+            ).values_list('line_order__pk')
 
-        return SalesLines.create_document_from_another(pk, list_lines,
-                                                       MODEL_SOURCE, MODEL_FINAL, url_reverse,
-                                                       msg_error_relation, msg_error_not_found, msg_error_line_not_found,
-                                                       False)
-        """
-                                context = {}
-                                if list_lines:
-                                    new_list_lines = SalesLines.objects.filter(
-                                        pk__in=[int(x) for x in list_lines]
-                                    ).exclude(
-                                        invoice__isnull=True
-                                    )
-                                    if new_list_lines:
-                                        new_pk = new_list_lines.first()
-                                        if new_pk:
-                                            context = SalesLines.create_invoice_from_order(
-                                                new_pk.order.pk,
-                                                [x['pk'] for x in new_list_lines.values('pk')])
-                                            return context
-                                        else:
-                                            error = _('Pedido no encontrado')
-                                    else:
-                                        error = _('Lineas no relacionadas con pedido')
-                                else:
-                                    error = _('Lineas no seleccionadas')
-                                context['error'] = error
-                                return context
-                        """
+            if new_list_lines:
+                new_pk = SalesLines.objects.values_list('order__pk').filter(pk__in=new_list_lines).first()
+                if new_pk:
+                    return SalesLines.create_invoice_from_order(new_pk, new_list_lines)
+                else:
+                    error = _('Pedido no encontrado')
+            else:
+                error = _('Lineas no relacionadas con pedido')
+        else:
+            error = _('Lineas no seleccionadas')
+        context['error'] = error
+        return context
 
+"""
 # #############################################
+# Reason of modification
+class ReasonModification(CodenerixModel):
+    code = models.CharField(_("Code"), max_length=15, blank=False, null=False, unique=True)
+    name = models.CharField(_("Name"), max_length=250, blank=False, null=False)
+    enable = models.BooleanField(_("Enable"), blank=True, default=True)
+
+    def __str__(self):
+        return u"{} ({})".format(smart_text(self.name), smart_text(self.code))
+
+    def __unicode__(self):
+        return self.__str__()
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('code', _("Code")))
+        fields.append(('name', _("Name")))
+        fields.append(('enable', _("Enable")))
+        return fields
+
+
+# Relation between reason of modification and documents lines
+class ReasonModificationLine(CodenerixModel):  # META: Abstract class
+    date = models.DateTimeField(_("Date"), blank=False, null=False, default=timezone.now)
+    quantity = models.FloatField(_("Quantity"), blank=False, null=False)
+
+    class Meta(object):
+        abstract = True
+
+    def __str__(self):
+        return u"{} - {}  ({})".format(smart_text(self.reason), smart_text(self.line), smart_text(self.quantity))
+
+    def __unicode__(self):
+        return self.__str__()
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('user', _("User")))
+        fields.append(('date', _("Date")))
+        fields.append(('reason', _("Reason")))
+        fields.append(('line', _("Line")))
+        fields.append(('quantity', _("Quantity")))
+        return fields
+
+    def save(self, *args, **kwargs):
+        if self.user is None:
+            self.user = get_current_user()
+        if self.date is None:
+            self.date = datetime.datetime.now()
+        return super(ReasonModificationLine, self).save(*args, **kwargs)
+
+
+class ReasonModificationLineBasket(ReasonModificationLine):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_basket', verbose_name=_("User"), on_delete=models.CASCADE)
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_basket', verbose_name=_("Reason"), on_delete=models.CASCADE)
+    line = models.ForeignKey(SalesLines, related_name='reason_line_basket', verbose_name=_("Line"), on_delete=models.CASCADE)
+
+
+class ReasonModificationLineOrder(ReasonModificationLine):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_order', verbose_name=_("User"), on_delete=models.CASCADE)
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_order', verbose_name=_("Reason"), on_delete=models.CASCADE)
+    line = models.ForeignKey(SalesLines, related_name='reason_line_order', verbose_name=_("Line"), on_delete=models.CASCADE)
+
+
+class ReasonModificationLineAlbaran(ReasonModificationLine):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_albaran', verbose_name=_("User"), on_delete=models.CASCADE)
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_albaran', verbose_name=_("Reason"), on_delete=models.CASCADE)
+    line = models.ForeignKey(SalesLines, related_name='reason_line_albaran', verbose_name=_("Line"), on_delete=models.CASCADE)
+
+
+class ReasonModificationLineTicket(ReasonModificationLine):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_ticket', verbose_name=_("User"), on_delete=models.CASCADE)
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_ticket', verbose_name=_("Reason"), on_delete=models.CASCADE)
+    line = models.ForeignKey(SalesLines, related_name='reason_line_ticket', verbose_name=_("Line"), on_delete=models.CASCADE)
+
+
+class ReasonModificationLineTicketRectification(ReasonModificationLine):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_ticket_rectification', verbose_name=_("User"), on_delete=models.CASCADE)
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_ticket_rectification', verbose_name=_("Reason"), on_delete=models.CASCADE)
+    line = models.ForeignKey(SalesLines, related_name='reason_line_ticket_rectification', verbose_name=_("Line"), on_delete=models.CASCADE)
+
+
+class ReasonModificationLineInvoice(ReasonModificationLine):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_invoice', verbose_name=_("User"), on_delete=models.CASCADE)
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_invoice', verbose_name=_("Reason"), on_delete=models.CASCADE)
+    line = models.ForeignKey(SalesLines, related_name='reason_line_invoice', verbose_name=_("Line"), on_delete=models.CASCADE)
+
+
+class ReasonModificationLineInvoiceRectification(ReasonModificationLine):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_invoice_rectification', verbose_name=_("User"), on_delete=models.CASCADE)
+    reason = models.ForeignKey(ReasonModification, related_name='reason_line_invoice_rectification', verbose_name=_("Reason"), on_delete=models.CASCADE)
+    line = models.ForeignKey(SalesLines, related_name='reason_line_invoice_rectification', verbose_name=_("Line"), on_delete=models.CASCADE)
+
+"""
+
 # Print counter per document
 class PrintCounterDocument(CodenerixModel):  # META: Abstract class
     date = models.DateTimeField(_("Date"), blank=False, null=False, default=timezone.now, editable=False)
@@ -2313,102 +1977,3 @@ class PrintCounterDocumentInvoiceRectification(PrintCounterDocument):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='print_counter_document_invoice_rectification', verbose_name=_("User"), on_delete=models.CASCADE)
     invoice_rectification = models.ForeignKey(SalesInvoiceRectification, related_name='print_counter_document_invoice_rectification', verbose_name=_("Document"), on_delete=models.CASCADE)
 
-
-# Reason of modification
-class ReasonModification(CodenerixModel):
-    code = models.CharField(_("Code"), max_length=15, blank=False, null=False, unique=True)
-    name = models.CharField(_("Name"), max_length=250, blank=False, null=False)
-    enable = models.BooleanField(_("Enable"), blank=True, default=True)
-
-    def __str__(self):
-        return u"{} ({})".format(smart_text(self.name), smart_text(self.code))
-
-    def __unicode__(self):
-        return self.__str__()
-
-    def __fields__(self, info):
-        fields = []
-        fields.append(('code', _("Code")))
-        fields.append(('name', _("Name")))
-        fields.append(('enable', _("Enable")))
-        return fields
-
-
-# Relation between reason of modification and documents lines
-class ReasonModificationLine(CodenerixModel):  # META: Abstract class
-    date = models.DateTimeField(_("Date"), blank=False, null=False, default=timezone.now)
-    quantity = models.FloatField(_("Quantity"), blank=False, null=False)
-
-    class Meta(object):
-        abstract = True
-
-    def __str__(self):
-        return u"{} - {}  ({})".format(smart_text(self.reason), smart_text(self.line), smart_text(self.quantity))
-
-    def __unicode__(self):
-        return self.__str__()
-
-    def __fields__(self, info):
-        fields = []
-        fields.append(('user', _("User")))
-        fields.append(('date', _("Date")))
-        fields.append(('reason', _("Reason")))
-        fields.append(('line', _("Line")))
-        fields.append(('quantity', _("Quantity")))
-        return fields
-
-    def save(self, *args, **kwargs):
-        if self.user is None:
-            self.user = get_current_user()
-        if self.date is None:
-            self.date = datetime.datetime.now()
-        return super(ReasonModificationLine, self).save(*args, **kwargs)
-
-
-class ReasonModificationLineBasket(ReasonModificationLine):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_basket', verbose_name=_("User"), on_delete=models.CASCADE)
-    reason = models.ForeignKey(ReasonModification, related_name='reason_line_basket', verbose_name=_("Reason"), on_delete=models.CASCADE)
-    line = models.ForeignKey(SalesLines, related_name='reason_line_basket', verbose_name=_("Line"), on_delete=models.CASCADE)
-    basket = models.ForeignKey(SalesBasket, related_name='reason_line_basket', verbose_name=_("Basket"), on_delete=models.CASCADE)
-
-
-class ReasonModificationLineOrder(ReasonModificationLine):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_order', verbose_name=_("User"), on_delete=models.CASCADE)
-    reason = models.ForeignKey(ReasonModification, related_name='reason_line_order', verbose_name=_("Reason"), on_delete=models.CASCADE)
-    line = models.ForeignKey(SalesLines, related_name='reason_line_order', verbose_name=_("Line"), on_delete=models.CASCADE)
-    order = models.ForeignKey(SalesOrder, related_name='reason_line_order', verbose_name=_("Order"), on_delete=models.CASCADE)
-
-
-class ReasonModificationLineAlbaran(ReasonModificationLine):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_albaran', verbose_name=_("User"), on_delete=models.CASCADE)
-    reason = models.ForeignKey(ReasonModification, related_name='reason_line_albaran', verbose_name=_("Reason"), on_delete=models.CASCADE)
-    line = models.ForeignKey(SalesLines, related_name='reason_line_albaran', verbose_name=_("Line"), on_delete=models.CASCADE)
-    albaran = models.ForeignKey(SalesAlbaran, related_name='reason_line_albaran', verbose_name=_("Albaran"), on_delete=models.CASCADE)
-
-
-class ReasonModificationLineTicket(ReasonModificationLine):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_ticket', verbose_name=_("User"), on_delete=models.CASCADE)
-    reason = models.ForeignKey(ReasonModification, related_name='reason_line_ticket', verbose_name=_("Reason"), on_delete=models.CASCADE)
-    line = models.ForeignKey(SalesLines, related_name='reason_line_ticket', verbose_name=_("Line"), on_delete=models.CASCADE)
-    ticket = models.ForeignKey(SalesTicket, related_name='reason_line_ticket', verbose_name=_("Ticket"), on_delete=models.CASCADE)
-
-
-class ReasonModificationLineTicketRectification(ReasonModificationLine):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_ticket_rectification', verbose_name=_("User"), on_delete=models.CASCADE)
-    reason = models.ForeignKey(ReasonModification, related_name='reason_line_ticket_rectification', verbose_name=_("Reason"), on_delete=models.CASCADE)
-    line = models.ForeignKey(SalesLines, related_name='reason_line_ticket_rectification', verbose_name=_("Line"), on_delete=models.CASCADE)
-    ticket_rectification = models.ForeignKey(SalesTicketRectification, related_name='reason_line_ticket_rectification', verbose_name=_("Ticket Rectification"), on_delete=models.CASCADE)
-
-
-class ReasonModificationLineInvoice(ReasonModificationLine):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_invoice', verbose_name=_("User"), on_delete=models.CASCADE)
-    reason = models.ForeignKey(ReasonModification, related_name='reason_line_invoice', verbose_name=_("Reason"), on_delete=models.CASCADE)
-    line = models.ForeignKey(SalesLines, related_name='reason_line_invoice', verbose_name=_("Line"), on_delete=models.CASCADE)
-    invoice = models.ForeignKey(SalesInvoice, related_name='reason_line_invoice', verbose_name=_("Invoice"), on_delete=models.CASCADE)
-
-
-class ReasonModificationLineInvoiceRectification(ReasonModificationLine):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, related_name='reason_line_invoice_rectification', verbose_name=_("User"), on_delete=models.CASCADE)
-    reason = models.ForeignKey(ReasonModification, related_name='reason_line_invoice_rectification', verbose_name=_("Reason"), on_delete=models.CASCADE)
-    line = models.ForeignKey(SalesLines, related_name='reason_line_invoice_rectification', verbose_name=_("Line"), on_delete=models.CASCADE)
-    invoice_rectification = models.ForeignKey(SalesInvoiceRectification, related_name='reason_line_invoice_rectification', verbose_name=_("Invoice Rectification"), on_delete=models.CASCADE)

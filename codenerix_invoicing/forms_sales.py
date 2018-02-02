@@ -21,10 +21,13 @@
 from django import forms
 from django.utils.translation import ugettext as _
 
-from codenerix.forms import GenModelForm
+from codenerix.forms import GenModelForm, GenForm
 from codenerix.widgets import WysiwygAngularInput
 from codenerix_extensions.helpers import get_external_model, get_external_method
 from codenerix_products.models import TypeTax
+from codenerix_storages.models import StorageBox
+
+from codenerix_products.models import ProductUnique
 
 from .models_sales import Address
 from .models_sales import Customer, CustomerDocument
@@ -387,6 +390,24 @@ class LineOfInvoiceForm(GenModelForm):
                 ['quantity', 2],
                 ['reason', 12],
                 ['notes_invoice', 12])
+        ]
+        return g
+
+    @staticmethod
+    def __groups_details__():
+        g = [
+            (
+                _('Details'), 12,
+                ['code', 5],
+                ['quantity', 2],
+                ['description_invoice', 6],
+                ['price_base_invoice', 6],
+                ['discount_invoice', 6],
+                ['tax_invoice', 6],
+                ['equivalence_surcharge_invoice', 6],
+                ['tax_label_invoice', 6],
+                ['notes_invoice', 6],
+            )
         ]
         return g
 
@@ -1194,3 +1215,25 @@ class ReservedProductForm(GenModelForm):
 
 """
 """
+
+
+class LineOfInvoiceRectificationUnityForm(GenModelForm):
+    quantity_original = forms.FloatField(label=_('Quantity original'))
+
+    class Meta:
+        model = ProductUnique
+        exclude = []
+        widgets = {
+            'notes': WysiwygAngularInput()
+        }
+
+    def __groups__(self):
+        g = [
+            (
+                _('Details'), 12,
+                ['box', 12],
+                ['quantity_original', 6, {'extra': ['ng-disabled=true']}],
+                ['quantity', 6],
+            )
+        ]
+        return g

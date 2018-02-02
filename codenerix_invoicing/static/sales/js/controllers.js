@@ -306,4 +306,32 @@ angular.module('codenerixSalesControllers', [])
             }
         }
     }
+])
+.controller('codenerixSalesReturnLineCtrl', ['$scope', '$rootScope', '$timeout', '$http', '$window', '$uibModal', '$state', '$stateParams', '$templateCache', 'Register',
+    function($scope, $rootScope, $timeout, $http, $window, $uibModal, $state, $stateParams, $templateCache, Register) {
+        if (ws_entry_point==undefined) { ws_entry_point=""; }
+        var url = ws_entry_point+"/"+$stateParams.pk;
+
+        modal_manager($scope, $timeout, $uibModal, $templateCache, $http, $scope);
+
+        multidetails($scope, $rootScope, $timeout, $http, $window, $uibModal, $state, $stateParams, $templateCache, Register, 0, "/"+ws_entry_point);
+
+        $scope.return_product = function(path, apk){
+            var functions = function(){};
+            var callback = function(){
+                //var reload = $("li.ng-isolate-scope.active").attr("ng-click").split("(")[1].split(")")[0].replace(/'/g, "");
+                // $scope.$parent.refreshTab(reload);
+            };
+            $scope.ws = "/" + url + "/" + path + "/" + apk;
+            openmodal($scope, $timeout, $uibModal, 'lg', functions, callback);
+        };
+
+        $scope.return_product_ticket = function(apk){
+            $scope.return_product('ticket_rectification', apk);
+        };
+
+        $scope.return_product_invoice = function(apk){
+            $scope.return_product('invoice_rectification', apk);
+        };
+    }
 ]);
