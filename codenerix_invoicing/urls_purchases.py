@@ -64,7 +64,7 @@ from codenerix_invoicing.views_purchases import ProviderList, BudgetList, LineBu
     BudgetDocumentDetailsModal, OrderDocumentDetailsModal, AlbaranDocumentDetailsModal, \
     TicketDocumentDetailsModal, TicketRectificationDocumentDetailsModal, InvoiceDocumentDetailsModal, InvoiceRectificationDocumentDetailsModal, \
     BudgetDetails, LineBudgetSubList, LineBudgetDetailsModal, \
-    OrderDetails, LineOrderSubList, LineOrderDetailsModal, \
+    OrderDetails, OrderForeign, LineOrderSubList, LineOrderDetailsModal, \
     AlbaranDetails, LineAlbaranSubList, LineAlbaranDetailsModal, \
     InvoiceDetails, LineInvoiceSubList, LineInvoiceDetailsModal, \
     InvoiceRectificationDetails, LineInvoiceRectificationSubList, LineInvoiceRectificationDetailsModal, \
@@ -118,6 +118,7 @@ urlpatterns = [
     url(r'^orders/(?P<pk>\w+)/editmodal$', OrderUpdateModal.as_view(), name='CDNX_invoicing_orderpurchasess_editmodal'),
     url(r'^orders/(?P<pk>\w+)/delete$', OrderDelete.as_view(), name='CDNX_invoicing_orderpurchasess_delete'),
     url(r'^orders/(?P<pk>\w+)/print$', OrderPrint.as_view(), name='CDNX_invoicing_orderpurchasess_print'),
+    url(r'^orders/foreign/(?P<search>[\w\W]+|\*)$', OrderForeign.as_view(), name='CDNX_invoicing_orderpurchasess_foreign'),
 
     url(r'^lineorders$', LineOrderList.as_view(), name='CDNX_invoicing_lineorderpurchasess_list'),
     url(r'^lineorders/(?P<pk>\w+)/delete$', LineOrderDelete.as_view(), name='CDNX_invoicing_lineorderpurchasess_delete'),

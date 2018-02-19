@@ -140,7 +140,6 @@ class Customer(GenRole, CodenerixModel):
             'add_regiongeonameen',
             'add_regiongeonamees',
             'add_salesbasket',
-            'add_saleslinebasket',
             'add_timezone',
             'change_city',
             'change_citygeonameen',
@@ -163,7 +162,6 @@ class Customer(GenRole, CodenerixModel):
             'change_regiongeonameen',
             'change_regiongeonamees',
             'change_salesbasket',
-            'change_saleslinebasket',
             'change_timezone',
             'change_user',
             'delete_city',
@@ -187,7 +185,6 @@ class Customer(GenRole, CodenerixModel):
             'delete_regiongeonameen',
             'delete_regiongeonamees',
             'delete_salesbasket',
-            'delete_saleslinebasket',
             'delete_timezone ',
             'list_billingseries',
             'list_city',
@@ -206,15 +203,7 @@ class Customer(GenRole, CodenerixModel):
             'list_salesbasket',
             'list_salesinvoice',
             'list_salesinvoicerectification',
-            'list_saleslinealbaran',
-            'list_saleslinebasket',
-            'list_saleslineinvoice',
-            'list_saleslineinvoicerectification',
-            'list_saleslineorder',
-            'list_saleslineticket',
-            'list_saleslineticketrectification',
             'list_salesorder',
-            'list_salesreservedproduct',
             'list_salesticket',
             'list_salesticketrectification',
             'list_timezone',
@@ -233,7 +222,6 @@ class Customer(GenRole, CodenerixModel):
             'view_province',
             'view_region',
             'view_salesbasket',
-            'view_saleslinebasket',
             'view_timezone',
             'view_typedocument',
             'view_typedocumenttexten',
@@ -1975,7 +1963,7 @@ class SalesLines(CodenerixModel):
             # duplicamos el presupuesto si el numero de lineas es diferente
             # relacionando el pedido a este nuevo presupuesto
             if list_lines and len(list_lines) != SalesLines.objects.filter(removed=False, basket=pk).count():
-                
+
                     new_budget = budget.duplicate(list_lines)
                     pk = new_budget.pk
                     list_lines = [x[0] for x in SalesLines.objects.filter(removed=False, basket=pk).values_list('pk')]
@@ -1984,7 +1972,7 @@ class SalesLines(CodenerixModel):
                                                            MODEL_SOURCE, MODEL_FINAL, url_reverse,
                                                            msg_error_relation, msg_error_not_found, msg_error_line_not_found,
                                                            True)
-    
+
     @staticmethod  # ok
     def create_albaran_automatic(pk, list_lines):
         """
@@ -2004,7 +1992,7 @@ class SalesLines(CodenerixModel):
 
             SalesLines.create_albaran_from_order(pk, list_lines)
         """
-        
+
     @staticmethod
     def create_albaran_from_order(pk, list_lines):
         MODEL_SOURCE = SalesOrder
@@ -2019,7 +2007,7 @@ class SalesLines(CodenerixModel):
                                                        MODEL_SOURCE, MODEL_FINAL, url_reverse,
                                                        msg_error_relation, msg_error_not_found, msg_error_line_not_found,
                                                        False)
-        
+
     @staticmethod
     def create_ticket_from_order(pk, list_lines):
         MODEL_SOURCE = SalesOrder
@@ -2036,7 +2024,7 @@ class SalesLines(CodenerixModel):
                                                            MODEL_SOURCE, MODEL_FINAL, url_reverse,
                                                            msg_error_relation, msg_error_not_found, msg_error_line_not_found,
                                                            False)
-            
+
     @staticmethod
     def create_ticket_from_slot(slot_pk):
         context = {
@@ -2121,7 +2109,7 @@ class SalesLines(CodenerixModel):
             else:
                 context['error'] = _("Ticket don't found")
         return context
-        
+
     @staticmethod
     def create_invoice_from_order(pk, list_lines):
         MODEL_SOURCE = SalesOrder
@@ -2138,7 +2126,7 @@ class SalesLines(CodenerixModel):
                                                            MODEL_SOURCE, MODEL_FINAL, url_reverse,
                                                            msg_error_relation, msg_error_not_found, msg_error_line_not_found,
                                                            False)
-        
+
     @staticmethod
     def create_ticket_from_albaran(pk, list_lines):
         MODEL_SOURCE = SalesAlbaran
@@ -2176,7 +2164,7 @@ class SalesLines(CodenerixModel):
         context['error'] = error
         return context
         """
-        
+
     @staticmethod
     def create_invoice_from_albaran(pk, list_lines):
         MODEL_SOURCE = SalesAlbaran
@@ -2216,7 +2204,7 @@ class SalesLines(CodenerixModel):
         context['error'] = error
         return context
         """
-        
+
     @staticmethod
     def create_invoice_from_ticket(pk, list_lines):
         MODEL_SOURCE = SalesTicket

@@ -33,7 +33,7 @@ from django.views.generic import View
 from django.conf import settings
 
 from codenerix_extensions.views import GenCreateBridge, GenUpdateBridge
-from codenerix.views import GenList, GenCreate, GenCreateModal, GenUpdate, GenUpdateModal, GenDelete, GenDetail, GenDetailModal
+from codenerix.views import GenList, GenCreate, GenCreateModal, GenUpdate, GenUpdateModal, GenDelete, GenDetail, GenDetailModal, GenForeignKey
 
 from codenerix_invoicing.models_purchases import Provider
 from codenerix_invoicing.models_purchases import PurchasesBudget, PurchasesLineBudget, PurchasesOrder, PurchasesLineOrder, PurchasesAlbaran, PurchasesLineAlbaran
@@ -431,6 +431,25 @@ class OrderDetails(GenOrderUrl, GenDetail):
 
 class OrderDetailsModal(GenDetailModal, OrderDetails):
     pass
+
+
+class OrderForeign(GenForeignKey):
+    model = PurchasesOrder
+    label = "{code}"
+
+    def get_foreign(self, queryset, search, filters):
+
+        # Filter with search str:ing
+        qsobject = Q(code__icontains=search)
+
+        # Add limiting filters
+        qsobject &= Q(line_order_purchases__line_albaran_purchases__isnull=True)
+        if 'provider' in filters:
+            qsobject &= Q(provider__pk=filters.get('provider'))
+
+        # Send result
+        qs = queryset.filter(qsobject).distinct()
+        return qs[:settings.LIMIT_FOREIGNKEY]
 
 
 class OrderPrint(PrinterHelper, GenOrderUrl, GenDetail):
@@ -881,7 +900,7 @@ class LineAlbaranUpdate(GenLineAlbaranUrl, GenUpdate):
                                 return super(LineAlbaranUpdate, self).form_invalid(form)
                         # guardar, borrar antiguo y dar de alta los nuevos
                         result = super(LineAlbaranUpdate, self).form_valid(form)
-                        
+
                         raise Exception("Cambiar ProductStock por ProductUnique")
                         """
                         ProductStock.objects.filter(
