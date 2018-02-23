@@ -266,7 +266,6 @@ class PurchasesOrder(GenPurchase):
         fields.append(('budget', _('Budget')))
         fields.append(('code', _('Code')))
         fields.append(('date', _('Date')))
-        fields.append(('tax', _('Tax')))
         return fields
 
 
@@ -304,6 +303,9 @@ class PurchasesLineAlbaran(GenLineProduct):
     line_order = models.ForeignKey(PurchasesLineOrder, on_delete=models.CASCADE, related_name='line_albaran_purchases', verbose_name=_("Line orders"), blank=True, null=True)
     product_unique = models.ForeignKey(ProductUnique, on_delete=models.CASCADE, related_name='line_albaran_purchases', verbose_name=_("Product"))
     validator_user = models.ForeignKey(User, related_name='line_albaran_purchases', verbose_name=_("Validator user"), blank=False, null=False, on_delete=models.CASCADE, editable=False)
+
+    def __str__(self):
+        return u"{} - {}".format(smart_text(self.product_unique), smart_text(self.quantity))
 
     def __fields__(self, info):
         fields = super(PurchasesLineAlbaran, self).__fields__(info)

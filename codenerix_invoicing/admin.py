@@ -20,15 +20,10 @@
 
 from django.contrib import admin
 from django.conf import settings
-"""
-from .models import BillingSeries, LegalNote, TypeDocument, MODELS  # , StockMovement, StockMovementProduct
-from .models_purchases import Provider, PurchasesBudget, PurchasesLineBudget, PurchasesBudgetDocument, PurchasesOrder, PurchasesLineOrder, PurchasesOrderDocument, PurchasesAlbaran, PurchasesLineAlbaran, PurchasesAlbaranDocument, PurchasesTicket, PurchasesLineTicket, PurchasesTicketDocument, PurchasesTicketRectification, PurchasesLineTicketRectification, PurchasesTicketRectificationDocument, PurchasesInvoice, PurchasesLineInvoice, PurchasesInvoiceDocument, PurchasesInvoiceRectification, PurchasesLineInvoiceRectification, PurchasesInvoiceRectificationDocument
-# from .models_sales import Address, Customer, CustomerDocument, SalesReservedProduct, SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, SalesLineInvoiceRectification, SalesBasket, SalesLineBasket
-# from .models_sales import SalesLineBasketOption
-from .models_sales import ReasonModification, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
-from .models_cash import CashDiary, CashMovement
 
-admin.site.register(Provider)
+from .models_purchases import Provider, PurchasesBudget, PurchasesLineBudget, PurchasesBudgetDocument, PurchasesOrder, PurchasesLineOrder, PurchasesOrderDocument, PurchasesAlbaran, PurchasesLineAlbaran, PurchasesAlbaranDocument, PurchasesTicket, PurchasesLineTicket, PurchasesTicketDocument, PurchasesTicketRectification, PurchasesLineTicketRectification, PurchasesTicketRectificationDocument, PurchasesInvoice, PurchasesLineInvoice, PurchasesInvoiceDocument, PurchasesInvoiceRectification, PurchasesLineInvoiceRectification, PurchasesInvoiceRectificationDocument
+from .models_sales import SalesAlbaran, SalesLines
+
 admin.site.register(PurchasesBudget)
 admin.site.register(PurchasesLineBudget)
 admin.site.register(PurchasesBudgetDocument)
@@ -51,6 +46,19 @@ admin.site.register(PurchasesInvoiceRectification)
 admin.site.register(PurchasesLineInvoiceRectification)
 admin.site.register(PurchasesInvoiceRectificationDocument)
 
+admin.site.register(SalesAlbaran)
+admin.site.register(SalesLines)
+
+
+"""
+from .models import BillingSeries, LegalNote, TypeDocument, MODELS  # , StockMovement, StockMovementProduct
+# from .models_sales import Address, Customer, CustomerDocument, SalesReservedProduct, SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, SalesLineInvoiceRectification, SalesBasket, SalesLineBasket
+# from .models_sales import SalesLineBasketOption
+from .models_sales import ReasonModification, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
+from .models_cash import CashDiary, CashMovement
+
+admin.site.register(Provider)
+
 admin.site.register(BillingSeries)
 admin.site.register(LegalNote)
 admin.site.register(TypeDocument)
@@ -66,8 +74,6 @@ admin.site.register(SalesBasket)
 admin.site.register(SalesLineBasket)
 admin.site.register(SalesOrder)
 admin.site.register(SalesLineOrder)
-admin.site.register(SalesAlbaran)
-admin.site.register(SalesLineAlbaran)
 admin.site.register(SalesTicket)
 admin.site.register(SalesLineTicket)
 admin.site.register(SalesTicketRectification)
