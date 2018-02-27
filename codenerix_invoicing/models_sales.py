@@ -1911,7 +1911,9 @@ class SalesLines(CodenerixModel):
     @staticmethod  # ok
     def create_order_from_budget_all(order, signed_obligatorily=True):
         lines_budget = order.budget.lines_sales.filter(removed=False)
-        result = SalesLines.create_order_from_budget(order.pk, lines_budget, signed_obligatorily)
+        lines = [x[0] for x in lines_budget.values_list('pk')]
+        result = SalesLines.create_order_from_budget(order.pk, lines, signed_obligatorily)
+        order = result['obj_final']
 
         return lines_budget.count() == order.lines_sales.filter(removed=False).count()
 
