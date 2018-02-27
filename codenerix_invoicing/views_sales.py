@@ -81,6 +81,7 @@ from .helpers import ShoppingCartProxy
 from codenerix_pos.helpers import get_POS
 
 from .forms_sales import LineOfInvoiceRectificationUnityForm
+from .exceptions import SalesLinesInsufficientStock, SalesLinesProductFinalIsSample, SalesLinesUniqueProductNotExists, SalesLinesNotModifiable
 
 
 # ###########################################
@@ -552,11 +553,21 @@ class BasketPassToOrder(View):
 
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
-        context = SalesLines.create_order_from_budget(pk, list_lines)
+        try:
+            context = SalesLines.create_order_from_budget(pk, list_lines)
+            if 'error' in context:
+                context['error'] = str(context['error'])
+        except SalesLinesProductFinalIsSample as e:
+            context = {'error': str(e)}
+        except SalesLinesUniqueProductNotExists as e:
+            context = {'error': str(e)}
+        except SalesLinesInsufficientStock as e:
+            context = {'error': str(e)}
+        except SalesLinesNotModifiable as e:
+            context = {'error': str(e)}
+
         if 'obj_final' in context:
             context.pop('obj_final')
-        if 'error' in context:
-            context['error'] = str(context['error'])
         try:
             json_answer = json.dumps(context)
         except TypeError:

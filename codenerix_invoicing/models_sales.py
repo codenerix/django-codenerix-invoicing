@@ -48,6 +48,9 @@ from codenerix_products.models import ProductFinal, TypeTax, ProductFinalOption,
 # from codenerix_storages.models import Storage
 from codenerix_payments.models import PaymentRequest, Currency
 
+from codenerix_invoicing.exceptions import SalesLinesProductFinalIsSample, SalesLinesUniqueProductNotExists, SalesLinesInsufficientStock, SalesLinesNotModifiable, SalesLinesNotDelete
+
+
 CURRENCY_MAX_DIGITS = getattr(settings, 'CDNX_INVOICING_CURRENCY_MAX_DIGITS', 10)
 CURRENCY_DECIMAL_PLACES = getattr(settings, 'CDNX_INVOICING_CURRENCY_DECIMAL_PLACES', 2)
 
@@ -1477,55 +1480,54 @@ class SalesLines(CodenerixModel):
         fields.append(('quantity', _("Quantity")))
         return fields
 
-    def search_product_unique(self, quantity, pos=None):
-        context = {'error': None}
-
+    def get_product_unique(self, quantity, pos=None):
         if self.product_final.sample:
-            context['error'] = _("This product can not be sold, it is marked as 'sample'")
+            raise SalesLinesProductFinalIsSample(_("This product can not be sold, it is marked as 'sample'"))
         else:
-            qs = ProductUnique.objects.filter(
-                product_final=self.product_final,
-                stock_real__gt=0,
-                stock_locked__lt=F('stock_real')
-            )
-            if pos:
-                qs = qs.filter(box__box_structure__zone__storage__in=pos.storage_stock.filter(storage_zones__salable=True))
-            elif self.basket.pos:
-                qs = qs.filter(box__box_structure__zone__storage__in=self.basket.pos.storage_stock.filter(storage_zones__salable=True))
+            products_unique = []
+            with transaction.atomic():
+                qs = ProductUnique.objects.filter(
+                    product_final=self.product_final,
+                    stock_real__gt=0,
+                    stock_locked__lt=F('stock_real')
+                )
+                if pos:
+                    qs = qs.filter(box__box_structure__zone__storage__in=pos.storage_stock.filter(storage_zones__salable=True))
+                elif self.basket.pos:
+                    qs = qs.filter(box__box_structure__zone__storage__in=self.basket.pos.storage_stock.filter(storage_zones__salable=True))
 
-            if self.product_final.product.force_stock is False:
-                product_unique = qs.first()
-                if product_unique:
-                    context['products_unique'] = [
-                        {
-                            'quantity': quantity,
-                            'product_unique': product_unique
-                        }
-                    ]
+                if self.product_final.product.force_stock is False:
+                    product_unique = qs.first()
+                    if product_unique:
+                        products_unique = [
+                            {
+                                'quantity': quantity,
+                                'product_unique': product_unique
+                            }
+                        ]
+                    else:
+                        raise SalesLinesUniqueProductNotExists(_('Unique product not exists!'))
                 else:
-                    context['error'] = _('Unique product not exists!')
-            else:
-                products_unique = []
-                stock_available = None
-                for unique_product in qs:
-                    if quantity <= 0:
-                        break
-                    stock_available = unique_product.stock_real - unique_product.stock_locked
-                    # if stock_enable >= quantity:
-                    if stock_available > quantity:
-                        stock_available = quantity
-                        unique_product.duplicate(quantity)
-                    products_unique.append({
-                        'product_unique': unique_product,
-                        'quantity': stock_available
-                    })
-                    quantity -= stock_available
+                    stock_available = None
+                    for unique_product in qs:
+                        if quantity <= 0:
+                            break
+                        stock_available = unique_product.stock_real - unique_product.stock_locked
+                        if stock_available > quantity:
+                            stock_available = quantity
+                            unique_product.duplicate(quantity)
+                        unique_product.locked_stock(stock_available)
 
-                if quantity > 0:
-                    context['error'] = "{} -- {} -- {} -- {}".format(_("Insufficient stock"), quantity, stock_available, [(x.pk, x.stock_real, x.stock_locked) for x in qs])
-                else:
-                    context['products_unique'] = products_unique
-        return context
+                        products_unique.append({
+                            'product_unique': unique_product,
+                            'quantity': stock_available
+                        })
+                        quantity -= stock_available
+
+                    if quantity > 0:
+                        raise SalesLinesInsufficientStock(_("Insufficient stock"))
+                    else:
+                        return products_unique
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
@@ -1537,22 +1539,19 @@ class SalesLines(CodenerixModel):
 
                 if self.product_unique is None:
                     if getattr(settings, 'CDNX_INVOICING_FORCE_STOCK_IN_BUDGET', True):
-                        info = self.search_product_unique(self.quantity)
-                        if info['error']:
-                            raise ValidationError(info['error'], code='invalid')
-                        else:
-                            first = True
-                            for unique_product in info['products_unique']:
-                                if first:
-                                    first = False
-                                    self.quantity = unique_product['quantity']
-                                    self.product_unique = unique_product['product_unique']
-                                else:
-                                    line = copy.copy(self)
-                                    line.pk = None
-                                    line.quantity = unique_product['quantity']
-                                    line.product_unique = unique_product['product_unique']
-                                    line.save()
+                        products_unique = self.get_product_unique(self.quantity)
+                        first = True
+                        for unique_product in products_unique:
+                            if first:
+                                first = False
+                                self.quantity = unique_product['quantity']
+                                self.product_unique = unique_product['product_unique']
+                            else:
+                                line = copy.copy(self)
+                                line.pk = None
+                                line.quantity = unique_product['quantity']
+                                line.product_unique = unique_product['product_unique']
+                                line.save()
 
             elif self.pk:
                 line_old = SalesLines.objects.filter(pk=self.pk).first()
@@ -1560,9 +1559,10 @@ class SalesLines(CodenerixModel):
                     product_final_old = line_old.product_final
                 else:
                     product_final_old = None
+
                 if self.product_final != product_final_old:
                     if self.order or self.albaran or self.ticket or self.invoice:
-                        raise ValidationError(_('You can not modify product'), code='invalid')
+                        raise SalesLinesNotModifiable(_('You can not modify product'))
                     elif self.description_basket == '{}'.format(product_final_old):
                         self.description_basket = ''
 
@@ -1570,12 +1570,29 @@ class SalesLines(CodenerixModel):
                     self.price_recommended_basket = None
                     self.tax_label_basket = None
                     if getattr(settings, 'CDNX_INVOICING_FORCE_STOCK_IN_BUDGET', True):
-                        info = self.search_product_unique(self.quantity)
-                        if info['error']:
-                            raise ValidationError(info['error'], code='invalid')
-                        else:
+                        products_unique = self.get_product_unique(self.quantity)
+                        first = True
+                        for unique_product in products_unique:
+                            if first:
+                                first = False
+                                self.quantity = unique_product['quantity']
+                                self.product_unique = unique_product['product_unique']
+                            else:
+                                line = copy.copy(self)
+                                line.pk = None
+                                line.quantity = unique_product['quantity']
+                                line.product_unique = unique_product['product_unique']
+                                line.save()
+                    else:
+                        self.product_unique = None
+                elif self.order and line_old.order is None:
+                    # associate line with order
+                    # locked product unique!!
+                    if self.product_final.product.force_stock:
+                        if self.product_unique is None:
+                            products_unique = self.get_product_unique(self.quantity)
                             first = True
-                            for unique_product in info['products_unique']:
+                            for unique_product in products_unique:
                                 if first:
                                     first = False
                                     self.quantity = unique_product['quantity']
@@ -1586,54 +1603,22 @@ class SalesLines(CodenerixModel):
                                     line.quantity = unique_product['quantity']
                                     line.product_unique = unique_product['product_unique']
                                     line.save()
-                    else:
-                        self.product_unique = None
-                elif self.order and line_old.order is None:
-                    # associate line with order
-                    # locked product unique!!
-                    if self.product_final.product.force_stock:
-                        if self.product_unique is None:
-                            info = self.search_product_unique(self.quantity)
-                            if info['error']:
-                                raise ValidationError(info['error'], code='invalid')
-                            else:
+                        else:
+                            available = self.product_unique.stock_real - self.product_unique.stock_locked
+                            if available < self.quantity:
+                                products_unique = self.get_product_unique(self.quantity)
                                 first = True
-                                for unique_product in info['products_unique']:
+                                for unique_product in products_unique:
                                     if first:
                                         first = False
                                         self.quantity = unique_product['quantity']
                                         self.product_unique = unique_product['product_unique']
-                                        self.product_unique.locked_stock(self.quantity)
                                     else:
                                         line = copy.copy(self)
                                         line.pk = None
                                         line.quantity = unique_product['quantity']
                                         line.product_unique = unique_product['product_unique']
                                         line.save()
-                                        self.product_unique.locked_stock(self.quantity)
-                        else:
-                            available = self.product_unique.stock_real - self.product_unique.stock_locked
-                            if available >= self.quantity:
-                                self.product_unique.locked_stock(self.quantity)
-                            else:
-                                info = self.search_product_unique(self.quantity)
-                                if info['error']:
-                                    raise ValidationError(info['error'], code='invalid')
-                                else:
-                                    first = True
-                                    for unique_product in info['products_unique']:
-                                        if first:
-                                            first = False
-                                            self.quantity = unique_product['quantity']
-                                            self.product_unique = unique_product['product_unique']
-                                            self.product_unique.locked_stock(self.quantity)
-                                        else:
-                                            line = copy.copy(self)
-                                            line.pk = None
-                                            line.quantity = unique_product['quantity']
-                                            line.product_unique = unique_product['product_unique']
-                                            line.save()
-                                            self.product_unique.locked_stock(self.quantity)
 
             # calculate value of equivalence_surcharge
             # save tax label
@@ -1724,14 +1709,14 @@ class SalesLines(CodenerixModel):
         if isinstance(doc, SalesBasket):
             qs = doc.lines_sales.filter(Q(order__isnull=False) | Q(albaran__isnull=False) | Q(ticket__isnull=False) | Q(invoice__isnull=False)).exists()
             if qs:
-                raise IntegrityError(_('No se puede eliminar el presupuesto al estar relacionado con pedido, albaran, ticket o factura'))
+                raise SalesLinesNotDelete(_('No se puede eliminar el presupuesto al estar relacionado con pedido, albaran, ticket o factura'))
             else:
                 with transaction.atomic():
                     doc.lines_sales.objects.filter(removed=False).delete()
         elif isinstance(doc, SalesOrder):
             qs = doc.lines_sales.filter(Q(albaran__isnull=False) | Q(ticket__isnull=False) | Q(invoice__isnull=False)).exists()
             if qs:
-                raise IntegrityError(_('No se puede eliminar el presupuesto al estar relacionado con albaran, ticket o factura'))
+                raise SalesLinesNotDelete(_('No se puede eliminar el presupuesto al estar relacionado con albaran, ticket o factura'))
             else:
                 with transaction.atomic():
                     for line in doc.lines_sales.filter(removed=False):
@@ -1743,7 +1728,7 @@ class SalesLines(CodenerixModel):
         elif isinstance(doc, SalesAlbaran):
             qs = doc.lines_sales.filter(Q(ticket__isnull=False) | Q(invoice__isnull=False)).exists()
             if qs:
-                raise IntegrityError(_('No se puede eliminar el presupuesto al estar relacionado ticket o factura'))
+                raise SalesLinesNotDelete(_('No se puede eliminar el presupuesto al estar relacionado ticket o factura'))
             else:
                 with transaction.atomic():
                     for line in doc.lines_sales.filter(removed=False):
@@ -1755,7 +1740,7 @@ class SalesLines(CodenerixModel):
         elif isinstance(doc, SalesTicket):
             qs = doc.lines_sales.filter(Q(ticket_rectification__isnull=False)).exists()
             if qs:
-                raise IntegrityError(_('No se puede eliminar el presupuesto al estar relacionado con ticket rectificativos'))
+                raise SalesLinesNotDelete(_('No se puede eliminar el presupuesto al estar relacionado con ticket rectificativos'))
             else:
                 with transaction.atomic():
                     for line in doc.lines_sales.filter(removed=False):
@@ -1775,7 +1760,7 @@ class SalesLines(CodenerixModel):
         elif isinstance(doc, SalesInvoice):
             qs = doc.lines_sales.filter(Q(invoice_rectification__isnull=False)).exists()
             if qs:
-                raise IntegrityError(_('No se puede eliminar el presupuesto al estar relacionado con factura rectificativos'))
+                raise SalesLinesNotDelete(_('No se puede eliminar el presupuesto al estar relacionado con factura rectificativos'))
             else:
                 with transaction.atomic():
                     for line in doc.lines_sales.filter(removed=False):
@@ -1924,21 +1909,9 @@ class SalesLines(CodenerixModel):
         return context
 
     @staticmethod  # ok
-    def create_order_from_budget_all(order):
+    def create_order_from_budget_all(order, signed_obligatorily=True):
         lines_budget = order.budget.lines_sales.filter(removed=False)
-        for lb in lines_budget:
-            lb.order = order
-            lb.description_order = lb.description_basket
-            lb.price_base_order = lb.price_base_basket
-            lb.discount_order = lb.discount_basket
-            lb.tax_order = lb.tax_basket
-            lb.equivalence_surcharge_order = lb.equivalence_surcharge_basket
-            lb.tax_label_order = lb.tax_label_basket
-            lb.notes_order = lb.notes_basket
-            lb.save()
-
-        order.budget.role = ROLE_BASKET_BUDGET
-        order.budget.save()
+        result = SalesLines.create_order_from_budget(order.pk, lines_budget, signed_obligatorily)
 
         return lines_budget.count() == order.lines_sales.filter(removed=False).count()
 
@@ -1981,17 +1954,6 @@ class SalesLines(CodenerixModel):
         lines = SalesLines.objects.filter(pk__in=list_lines, removed=False).exclude(albaran__isnull=False).values_list('pk')
         lines_to_albaran = [x[0] for x in lines]
         SalesLines.create_albaran_from_order(pk, lines_to_albaran)
-
-        """
-        line_bd = SalesLineAlbaran.objects.filter(line_order__pk__in=list_lines).values_list('line_order__pk')
-        if line_bd.count() == 0 or len(list_lines) != len(line_bd[0]):
-            # solo aquellas lineas de pedidos que no estan ya albarandas
-            if line_bd.count() != 0:
-                for x in line_bd[0]:
-                    list_lines.pop(list_lines.index(x))
-
-            SalesLines.create_albaran_from_order(pk, list_lines)
-        """
 
     @staticmethod
     def create_albaran_from_order(pk, list_lines):
