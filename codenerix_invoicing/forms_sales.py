@@ -1237,3 +1237,27 @@ class LineOfInvoiceRectificationUnityForm(GenModelForm):
             )
         ]
         return g
+
+
+class SalesLinesInLineForm(GenModelForm):
+    price_tmp = forms.FloatField(label=_('Price'))
+    tax_tmp = forms.FloatField(label=_('Tax'))
+
+    class Meta:
+        model = SalesLines
+        fields = ['product_final', 'product_unique', 'quantity', 'price_tmp', 'tax_tmp']
+
+    @staticmethod
+    def __groups_details__():
+        return [
+            (
+                _('Details'), 12,
+                ['quantity', 6],
+                ['product_final', 6],
+                ['product_unique', 6],
+                ['price_tmp', 6],
+                ['tax_tmp', 6],
+            )
+        ]
+        # ['price_base_basket'],
+        # ['tax_basket', 6]
