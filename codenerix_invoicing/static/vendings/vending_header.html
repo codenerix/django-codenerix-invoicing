@@ -1,0 +1,26 @@
+<th ng-show="data.table.head.extra_fields.field_check!=None"></th>
+<th>
+    <span codenerix-html-compile="data.meta.context.form_quantity"></span>
+    <span class='fa fa-warning text-danger' ng-show='data.meta.context.errors.quantity' uib-popover='{{data.meta.context.errors.quantity}}' popover-placement='top' popover-trigger='mouseenter'></span>
+</th>
+<th>
+    <span codenerix-html-compile="data.meta.context.form_product"></span>
+    <span class='fa fa-warning text-danger' ng-show='final_error' title='{{data.meta.gentranslate.notfound}}'></span>
+    <span class='fa fa-warning text-danger' ng-show='data.meta.context.errors.product' uib-popover='{{data.meta.context.errors.product}}' popover-placement='top' popover-trigger='mouseenter'></span>
+</th>
+<th>
+    <span codenerix-html-compile="data.meta.context.form_unique"></span>
+    <span class='fa fa-cart-plus text-primary' ng-show='unique_new' uib-popover='{{data.meta.gentranslate.new}}' popover-placement='top' popover-trigger='mouseenter'></span>
+    <span class='fa fa-warning text-danger' ng-show='data.meta.context.errors.unique' uib-popover='{{data.meta.context.errors.unique}}' popover-placement='top' popover-trigger='mouseenter'></span>
+</th>
+<th>
+    <span codenerix-html-compile="data.meta.context.form_price"></span>
+    <span class='fa fa-warning text-danger' ng-show='final_error' title='{{data.meta.gentranslate.notfound}}'></span>
+    <span class='fa fa-warning text-danger' ng-show='data.meta.context.errors.price_tmp' uib-popover='{{data.meta.context.errors.price_tmp}}' popover-placement='top' popover-trigger='mouseenter'></span>
+</th>
+<th>
+    <span codenerix-html-compile="data.meta.context.form_tax"></span>
+    <span class='fa fa-warning text-danger' ng-show='final_error' title='{{data.meta.gentranslate.notfound}}'></span>
+    <span class='fa fa-warning text-danger' ng-show='data.meta.context.errors.tax_tmp' uib-popover='{{data.meta.context.errors.tax_tmp}}' popover-placement='top' popover-trigger='mouseenter'></span>
+</th>
+<th ng-show="data.table.head.extra_fields.field_delete"></th>

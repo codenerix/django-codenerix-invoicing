@@ -1,0 +1,80 @@
+{% extends "codenerix/list.html" %}
+{% load i18n %}
+{% comment %}
+
+django-codenerix
+
+Copyright 2017 Centrologic Computational Logistic Center S.L.
+
+Project URL : http://www.codenerix.com
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+{% endcomment %}
+
+
+{% block subbody %}
+<div class="row">
+    <div class="col-sm-3">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <strong>{% trans "Details"%}</strong>
+            </div>
+            <div class="panel-body">
+                <label>{% trans "Customer" %}: </label> {{ customer }}<br />
+                <label>{% trans "Name" %}: </label> {{ name }}<br />
+                <label>{% trans "Code" %}: </label> {{ code }}<br />
+                <label>{% trans "Date" %}: </label> {{ date }}<br />strftime(formats.get_format('DATETIME_INPUT_FORMATS', lang=get_language())[0]),
+                <label>{% trans "Address delivery" %}: </label> {{ address_delivery }}<br />
+                <label>{% trans "Address invoice" %}: </label> {{ address_invoice }}<br />
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <strong>{% trans "Discount customer"%}</strong>
+            </div>
+            <div class="panel-body">
+                <label>{% trans "Discount" %}: </label> {{ cusomer_discount }}<br />
+            </div>
+        </div>
+
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <strong>{% trans "History"%}</strong>
+            </div>
+            <div class="panel-body">
+            <table class="table">
+                <thead>
+                    <th>{% trans "code" %}</th>
+                    <th>{% trans "date" %}</th>
+                    <th>{% trans "total" %}</th>
+                </thead>
+                <tbody>
+                {% for basket in history %}
+                <tr>
+                    <td>{{ basket.code }}</td>
+                    <td>{{ basket.date }}</td>
+                    <td>{{ basket.total }} &euro;</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-9">
+        <div ui-view class="body-view"></div>
+    </div>
+</div>
+{% endblock %}

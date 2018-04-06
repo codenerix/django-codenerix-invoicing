@@ -23,6 +23,10 @@ from django.conf import settings
 
 from .models_purchases import Provider, PurchasesBudget, PurchasesLineBudget, PurchasesBudgetDocument, PurchasesOrder, PurchasesLineOrder, PurchasesOrderDocument, PurchasesAlbaran, PurchasesLineAlbaran, PurchasesAlbaranDocument, PurchasesTicket, PurchasesLineTicket, PurchasesTicketDocument, PurchasesTicketRectification, PurchasesLineTicketRectification, PurchasesTicketRectificationDocument, PurchasesInvoice, PurchasesLineInvoice, PurchasesInvoiceDocument, PurchasesInvoiceRectification, PurchasesLineInvoiceRectification, PurchasesInvoiceRectificationDocument
 from .models_sales import SalesAlbaran, SalesLines
+from .models_cash import CashDiary, CashMovement
+
+admin.site.register(CashDiary)
+admin.site.register(CashMovement)
 
 admin.site.register(PurchasesBudget)
 admin.site.register(PurchasesLineBudget)
@@ -55,7 +59,6 @@ from .models import BillingSeries, LegalNote, TypeDocument, MODELS  # , StockMov
 # from .models_sales import Address, Customer, CustomerDocument, SalesReservedProduct, SalesOrder, SalesLineOrder, SalesAlbaran, SalesLineAlbaran, SalesTicket, SalesLineTicket, SalesTicketRectification, SalesLineTicketRectification, SalesInvoice, SalesLineInvoice, SalesInvoiceRectification, SalesLineInvoiceRectification, SalesBasket, SalesLineBasket
 # from .models_sales import SalesLineBasketOption
 from .models_sales import ReasonModification, ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineTicket, ReasonModificationLineTicketRectification, ReasonModificationLineInvoice, ReasonModificationLineInvoiceRectification
-from .models_cash import CashDiary, CashMovement
 
 admin.site.register(Provider)
 
@@ -94,8 +97,6 @@ admin.site.register(ReasonModificationLineInvoice)
 admin.site.register(ReasonModificationLineInvoiceRectification)
 """
 """
-admin.site.register(CashDiary)
-admin.site.register(CashMovement)
 
 for info in MODELS:
     model = info[1]

@@ -20,14 +20,20 @@
 
 import ast
 import datetime
-from decimal import Decimal, ROUND_HALF_UP
 import json
+import pytz
+
+from dateutil import tz
+from decimal import Decimal, ROUND_HALF_UP
+
 
 from django.db.models import Q, Sum, F
 from django.db import transaction, IntegrityError
 from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
+from django.utils import formats
+from django.utils.translation import get_language
 from django.forms.utils import ErrorList
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
 from django.utils.decorators import method_decorator
@@ -38,6 +44,7 @@ from django.conf import settings
 
 from codenerix.views import GenList, GenCreate, GenCreateModal, GenUpdate, GenUpdateModal, GenDelete, GenDetail, GenDetailModal, GenForeignKey
 from codenerix.middleware import get_current_user
+from codenerix.widgets import DynamicInput
 
 from codenerix_corporate.models import CorporateImage
 from codenerix_extensions.views import GenCreateBridge, GenUpdateBridge
@@ -81,7 +88,9 @@ from .helpers import ShoppingCartProxy
 from codenerix_pos.helpers import get_POS
 
 from .forms_sales import LineOfInvoiceRectificationUnityForm
+from .exceptions import SalesLinesInsufficientStock, SalesLinesProductFinalIsSample, SalesLinesUniqueProductNotExists, SalesLinesNotModifiable
 
+from .forms_sales import SalesLinesInLineForm
 
 # ###########################################
 class GenCustomerUrl(object):
@@ -552,11 +561,21 @@ class BasketPassToOrder(View):
 
         pk = kwargs.get('pk', None)
         list_lines = ast.literal_eval(request._body.decode())['lines']
-        context = SalesLines.create_order_from_budget(pk, list_lines)
+        try:
+            context = SalesLines.create_order_from_budget(pk, list_lines)
+            if 'error' in context:
+                context['error'] = str(context['error'])
+        except SalesLinesProductFinalIsSample as e:
+            context = {'error': str(e)}
+        except SalesLinesUniqueProductNotExists as e:
+            context = {'error': str(e)}
+        except SalesLinesInsufficientStock as e:
+            context = {'error': str(e)}
+        except SalesLinesNotModifiable as e:
+            context = {'error': str(e)}
+
         if 'obj_final' in context:
             context.pop('obj_final')
-        if 'error' in context:
-            context['error'] = str(context['error'])
         try:
             json_answer = json.dumps(context)
         except TypeError:
@@ -2697,3 +2716,227 @@ class LinesUpdateModalTicketRectification(GenUpdate):
             errors = form._errors.setdefault("reason", ErrorList())
             errors.append(_("Reason of modification invalid"))
             return super(LinesUpdateModalTicketRectification, self).form_invalid(form)
+
+
+##############################
+class LinesVending(GenList):
+    extra_context = {'menu': ['vending', 'vending'], 'bread': [_('Vending'), _('Vending')]}
+    ws_entry_point = '{}/vending/CDNX_INVOICING_URL_SALES'.format(settings.CDNX_INVOICING_URL_SALES)
+    model = SalesLines
+    show_details = False
+    linkedit = False
+    template_model = "vendings/lines_work.html"
+    static_partial_header = 'vendings/vending_header.html'
+    static_app_row = 'vendings/vending_app.js'
+    static_controllers_row = 'vendings/vending_controllers.js'
+
+    def dispatch(self, *args, **kwargs):
+        self.budget_pk = kwargs.get('bpk', None)
+
+        budget = SalesBasket.objects.filter(pk=self.budget_pk).first()
+        if budget:
+            history_customer = []
+            for basket in SalesBasket.objects.filter(customer=budget.customer).exclude(pk=budget.pk).order_by('-date')[:5]:
+                history_customer.append({
+                    'date': basket.date.replace(tzinfo=pytz.utc).astimezone(tz.tzlocal()).strftime(formats.get_format('DATETIME_INPUT_FORMATS', lang=get_language())[0]),
+                    'code': basket.code,
+                    'total': basket.total,
+                })
+            self.extra_context.update({
+                'customer': budget.customer.__str__(),
+                'name': budget.name,
+                'code': budget.code,
+                'date': budget.date.replace(tzinfo=pytz.utc).astimezone(tz.tzlocal()).strftime(formats.get_format('DATETIME_INPUT_FORMATS', lang=get_language())[0]),
+                'address_delivery': budget.address_delivery,
+                'address_invoice': budget.address_invoice,
+                'subtotal': float(budget.subtotal),
+                'discounts': budget.discounts,
+                'taxes': budget.taxes,
+                'total': float(budget.total),
+                'lock': budget.lock,
+                # descuento del cliente
+                'cusomer_discount': '123',
+                # historial del cliente
+                'history': history_customer,
+            })
+        self.ws_entry_point = self.ws_entry_point.replace('CDNX_INVOICING_URL_SALES', self.budget_pk)
+
+        # Prepare form
+        self.ws_ean13_fullinfo = reverse('CDNX_storages_inventoryoutline_ean13_fullinfo', kwargs={"ean13": 'PRODUCT_FINAL_EAN13'})[1:]
+        self.ws_unique_fullinfo = reverse('CDNX_storages_inventoryoutline_unique_fullinfo', kwargs={"unique": 'PRODUCT_FINAL_UNIQUE'})[1:]
+        self.ws_submit = reverse('CDNX_storages_inventoryoutline_addws', kwargs={"ipk": self.budget_pk})[1:]
+
+        fields = []
+        fields.append((DynamicInput, 'product_final', 3, 'CDNX_products_productfinalsean13_foreign', [], {}))
+        fields.append((DynamicInput, 'product_unique', 3, 'CDNX_products_productuniquescode_foreign', ['product_final'], {}))
+        form = SalesLinesInLineForm()
+        for (widget, key, minchars, url, autofill, newattrs) in fields:
+            wattrs = form.fields[key].widget.attrs
+            wattrs.update(newattrs)
+            form.fields[key].widget = widget(wattrs)
+            form.fields[key].widget.form_name = form.form_name
+            form.fields[key].widget.field_name = key
+            form.fields[key].widget.autofill_deepness = minchars
+            form.fields[key].widget.autofill_url = url
+            form.fields[key].widget.autofill = autofill
+
+        # Prepare context
+        self.client_context = {
+            'ipk': self.budget_pk,
+            'final_focus': True,
+            'unique_focus': False,
+            'unique_disabled': True,
+            'errors': {
+                'quantity': None,
+                'product': None,
+                'unique': None,
+            },
+            'ws': {
+                'ean13_fullinfo': self.ws_ean13_fullinfo,
+                'unique_fullinfo': self.ws_unique_fullinfo,
+                'submit': self.ws_submit,
+            },
+            'form_quantity': form.fields['quantity'].widget.render('quantity', None, {
+                'ng-init': 'quantity=1.0',
+                'codenerix-on-enter': 'product_changed(this)',
+                'ng-class': '{"bg-danger": data.meta.context.errors.quantity}',
+            }),
+            'form_product': form.fields['product_final'].widget.render('product_final', None, {
+                'codenerix-on-enter': 'product_changed(this)',
+                'ng-disabled': '(quantity<=0)',
+                'codenerix-focus': 'data.meta.context.final_focus',
+                'ng-class': '{"bg-danger": final_error || data.meta.context.errors.product}',
+                'autofocus': '',
+            }),
+            'form_price': form.fields['price_tmp'].widget.render('price_tmp', None, {
+                'ng-disabled': 'true',
+                'ng-value': 'price',
+            }),
+            'form_tax': form.fields['tax_tmp'].widget.render('tax_tmp', None, {
+                'ng-disabled': 'true',
+                'ng-value': 'tax',
+            }),
+            'form_unique': form.fields['product_unique'].widget.render('unique', None, {
+                'codenerix-on-enter': 'unique_changed()',
+                'codenerix-focus': 'data.meta.context.unique_focus',
+                'ng-disabled': 'data.meta.context.unique_disabled',
+                'ng-class': '{"bg-danger": data.meta.context.errors.unique || unique_error}',
+            }) + " <span class='fa fa-exclamation-triangle text-danger' ng-show='unique_error' alt='{{unique_error}}' title='{{unique_error}}'></span>",
+        }
+
+        return super(LinesVending, self).dispatch(*args, **kwargs)
+
+    def __limitQ__(self, info):
+        limit = {}
+        if self.budget_pk:
+            limit['budget__pk'] = Q(basket__pk=self.budget_pk)
+        limit['removed'] = Q(removed=False)
+        return limit
+
+    def __fields__(self, info):
+        fields = []
+        fields.append(('quantity', _("Quantity")))
+        fields.append(('product_final', _("Product")))
+        fields.append(('product_unique', _("Unique")))
+        fields.append(('price_base_basket', _("Price")))
+        fields.append(('tax_basket', _("Tax (%)")))
+        return fields
+
+
+class SalesLinesDetails(GenList):
+    model = SalesLines
+    ws_entry_point = '{}/vending/0'.format(settings.CDNX_INVOICING_URL_SALES)
+
+
+# .................
+class BasketDetailsSHOPPINGCARTVending(GenDetail):
+    template_model = "vendings/basket_details.html"
+    # ws_entry_point = '{}/shoppingcarts/vending'.format(settings.CDNX_INVOICING_URL_SALES)
+    model = SalesBasket
+    groups = BasketForm.__groups_details__()
+    exclude_fields = ['parent_pk', 'payment']
+    tabs_XXXXXXXX = [
+        {
+            'id': 'lines',
+            'name': _('Products'),
+            'ws': 'CDNX_invoicing_saleslines_sublist_vending',
+            'rows': 'base',
+            'static_partial_header': 'vendings/vending_header.html',
+        },
+    ]
+    # linkedit = False
+    # linkdelete = False
+    # linkback = False
+    
+    def dispatch(self, *args, **kwargs):
+        raise Exception("A!")
+
+
+######################
+class SalesLinesList(GenList):
+    model = SalesLines
+
+
+class LinesSubListBasketVending(GenList):
+    model = SalesLines
+    # ws_entry_point = '{}/shoppingcarts/vending'.format(settings.CDNX_INVOICING_URL_SALES)
+    show_details = False
+    field_delete = False
+    field_check = False
+    linkadd = False
+    linkedit = False
+    # static_app_row = 'vendings/vending_app.js'
+    # static_controllers_row = 'vendings/vending_controllers.js'
+
+    def dispatchX(self, *args, **kwargs):
+        raise Exception("A")
+
+
+class XLinesSubListBasketVending(GenList):
+    """
+    mejor hacer un genlist de SalesLines de ese 'pedido' y meter la info del 'pedido' en el contexto
+    """
+
+    # form_ngcontroller = 'vendings/vending_controllers.js'
+
+    # static_partial_row = 'vendings/vending_rowxxxxxxxxxx'
+
+    # ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_linebasket.html"}
+    # gentrans = {
+    #     'CreateBudget': _("Create Budget"),
+    #     'CreateOrder': _("Create Order"),
+    #     'Debeseleccionarproducto': ('Debe seleccionar los productos'),
+    # }
+    # client_context = {
+    #     'order_btn': False,
+    #     # 'budget_btn': False,
+    #     # 'invoice_btn': False,
+    # }
+
+    def dispatch(self, *args, **kwargs):
+        # Get constants
+        self.ipk = kwargs.get('ipk')
+
+            
+        return super(LinesSubListBasketVending, self).dispatch(*args, **kwargs)
+    
+    def X_get_context_json(self, context):
+        answer = super(LinesSubListBasket, self).get_context_json(context)
+
+        obj = SalesBasket.objects.filter(pk=self.__pk).first()
+        answer['meta']['role_shoppingcart'] = None
+        answer['meta']['role_budget'] = None
+        answer['meta']['role_wishlist'] = None
+        if obj:
+            if obj.role == ROLE_BASKET_SHOPPINGCART:
+                answer['meta']['role_shoppingcart'] = True
+            elif obj.role == ROLE_BASKET_BUDGET:
+                answer['meta']['role_budget'] = True
+        return answer
+
+    def __limitQ__(self, info):
+        limit = {}
+        pk = info.kwargs.get('pk', None)
+        limit['file_link'] = Q(basket__pk=pk)
+        limit['removed'] = Q(removed=False)
+        return limit

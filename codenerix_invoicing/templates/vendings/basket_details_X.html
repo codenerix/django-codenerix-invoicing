@@ -1,0 +1,197 @@
+{% load i18n %}
+{% load staticfiles %}
+{% load codenerix_lists %}
+{% load codenerix_common %}
+
+{{ html_head }}
+
+{% block angular_app_libraries %}
+    <script type="text/javascript">
+        {# Define modules that we will use here #}
+        var services=angular.module('codenerixInlineServices', ['ngResource']);
+        var subws_entry_point=Array();
+        {% if tabs_autorender %}
+            {# Define services used to access to the resources of each tab #}
+            {% for tab in tabs_autorender %}
+                {% if tab.auto %}
+                    subws_entry_point[{{tab.internal_id}}]='{% url tab.ws object.id %}';
+                    services.factory('Register{{tab.internal_id}}', ['$resource', function($resource){
+                        return $resource('{% url tab.ws object.id %}/:pk/:action', { json:'{}', pk:null, action:null },{
+                            query:{ method: "GET", params: { json:'@json' }, isArray: false },
+                            get:{ method: "GET", params: { pk:'@pk', action:'@action' }, isArray: false },
+                        }); 
+                    }]);
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+        
+    </script>
+{% endblock %}
+
+{% block ini_modal %}{% endblock %}
+
+    {# if there is an existing title for the form, it is shown #}
+    {% block block_top %}
+    <div class="col-md-12 internal-name">
+        <h4>{{object}}</h4>
+    </div>
+    {# BUTTONS at the top #}
+    <div class="col-md-12 internal-buttons-top">
+        <div class="form-group text-center">
+        {% block buttons_top %}
+            {% if linkedit %}
+                {% if not cannot_update %}
+                    <label  class="sr-only" for="submit_edit">{% trans "Edit" %}</label>
+                    <button type="button" id="submit_edit" ng-click="edit()" class="btn btn-sm btn-info">{% trans "Edit" %}</button>
+                {% endif %}
+            {% endif %}
+
+            {% block extra_btn_up %}
+            {% endblock %}
+            
+            {% if linkback %}
+               <label  class="sr-only"  for="submit_back">{% trans "Go to back" %}</label>
+               <button type="button" id="submit_back" ng-click="gotoback()" class="btn btn-sm grey-cascade">{% trans "Go back" %}</button>
+            {% endif %}
+            {% if linkdelete %}
+                {% if cannot_delete %}
+                    <label  class="sr-only"  for="submit_delete">{% trans "Delete" %}</label>
+                    <button type="button" id="submit_delete" ng-click="msg('{{cannot_delete}}')" class="btn btn-sm btn-danger">{% trans "Delete" %}</button>
+                {% else %}
+                    <label  class="sr-only"  for="submit_delete">{% trans "Delete" %}</label>
+                    <button type="button" id="submit_delete" ng-click="delete('{% trans "Are you sure you would like to delete this register?" %}', '{{angular_delete|default:"delete"}}')" class="btn btn-sm btn-danger">{% trans "Delete" %}</button>
+                {% endif %}
+            {% endif %}
+        {% endblock %}
+        </div>
+    </div>
+    {% endblock %}
+
+<div class="row">
+<div class="col-md-3">
+{% with langcode=LANGUAGE_CODE|default:"en" %}
+    {% block details %}
+        {% for item in object_detail %}
+            
+            {% if item.value.0.name %}
+            {# if the current item have several elements in value it is a group #}
+                <div class="col-md-{{item.col}}">
+                    <div class="panel panel-default">
+                        <div class="panel-heading"><strong>{{item.name}}</strong></div>
+                        <div class="panel-body">
+                {% for subitem in item.value %}
+                    {% if subitem.value.0.name %}
+                        <div class="col-md-12">
+                            <div class="panel panel-default">
+                                <div class="panel-heading">
+                                    <strong>{{subitem.name}}</strong>
+                                </div>
+                                <div class="panel-body">
+                                {% for subsubitem in subitem.value %}
+                                    <label >{{subsubitem.name}}:</label>
+                                    {{ subsubitem.value|cdnx_beauty:subitem.filter }}<br>
+                                {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        
+                        <label >{{subitem.name}}:</label>
+                        {{ subitem.value|cdnx_beauty:subitem.filter }}<br>
+                    {% endif %}
+                {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="col-md-12">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <label>{{item.name}}:</label>
+                            {{ item.value|cdnx_beauty }}<br>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    {% endblock %}
+    
+{% endwith %}
+</div>
+<div class="col-md-9">
+
+{% block body %}
+    {% if tabs_autorender %}
+        <div id="tabs" ng-init="tabs_autorender={};tabsref={};{% for tab in tabs_autorender %}tabs_autorender['tab_{{tab.id}}']={% if tab.auto_open%}true{%else%}false{%endif%}; tabsref['t{{tab.internal_id}}']='tab_{{tab.id}}';{% endfor %}" ngcloack>
+            <uib-accordion id="accordion" close-others="true" class="hidden-md hidden-lg">
+                {% for tab in tabs_autorender %}
+                    <uib-accordion-group is-open="tabs_autorender.tab_{{tab.id}}">
+                        <uib-accordion-heading>
+                                <a ui-sref="details0.sublist{{tab.internal_id}}({listid:{{tab.internal_id}}})">
+                                    {{tab.name}}{#<span class="badge">{{x}}</span>#}
+                                </a>
+                        </uib-accordion-heading>
+                        
+                        <div ng-if="(tabs_autorender.tab_{{tab.id}} == true)">
+                            <div class='col-md-12' ui-view></div>
+                        </div>
+                        
+                    </uib-accordion-group>
+                {% endfor %}
+            </uib-accordion>
+            <uib-tabset class="hidden-xs hidden-sm">
+                {% for tab in tabs_autorender %}
+                    <uib-tab
+                            active="tabs_autorender.tab_{{tab.id}}"
+                            ui-sref="details0.sublist{{tab.internal_id}}({listid:{{tab.internal_id}}})">
+                        <uib-tab-heading>
+                            <span>
+                                {{tab.name}}{#<span class="badge">{{x}}</span>#}
+                            </span>
+                        </uib-tab-heading>
+                        <div ng-if="(tabs_autorender.tab_{{tab.id}} == true)">
+                            <div class='col-md-12 internal-view' ui-view>-</div>
+                        </div>
+                    </uib-tab>
+                {% endfor %}
+            </uib-tabset>
+        </div>
+    {% endif %}
+{% endblock %}
+
+</div>
+</div>
+
+
+{# BUTTONS at the bottom #}
+{% block block_bottom %}
+<div class="col-md-12 internal-buttons-bottom">
+    <div class="form-group text-center">
+        {% block buttons_bottom %}
+            {% if linkedit %}
+                {% if not cannot_update %}
+                    <label  class="sr-only"  for="submit_edit">{% trans "Edit" %}</label>
+                    <button type="button" id="submit_edit" ng-click="edit()" class="btn btn-sm btn-info">{% trans "Edit" %}</button>
+                {% endif %}
+            {% endif %}
+
+            {% block extra_btn_down %}
+            {% endblock %}
+
+            {% if linkback %}
+                <label  class="sr-only"  for="submit_back">{% trans "Go back" %}</label>
+                <button type="button" id="submit_back" ng-click="gotoback()" class="btn btn-sm grey-cascade">{% trans "Go back" %}</button>
+            {% endif %}
+            {% if linkdelete %}
+                {% if cannot_delete %}
+                    <label  class="sr-only"  for="submit_delete">{% trans "Delete" %}</label>
+                    <button type="button" id="submit_delete" ng-click="msg('{{cannot_delete}}')" class="btn btn-sm btn-danger">{% trans "Delete" %}</button>
+                {% else %}
+                    <label  class="sr-only"  for="submit_delete">{% trans "Delete" %}</label>
+                    <button type="button" id="submit_delete" ng-click="delete('{% trans "Are you sure you would like to delete this register?" %}', '{{angular_delete|default:"delete"}}')" class="btn btn-sm btn-danger">{% trans "Delete" %}</button>
+                {% endif %}
+            {% endif %}
+        {% endblock %}
+    </div>
+</div>
+{% endblock %}
