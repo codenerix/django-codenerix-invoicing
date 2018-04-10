@@ -2729,12 +2729,20 @@ class LinesVending(GenList):
     static_partial_header = 'vendings/vending_header.html'
     static_app_row = 'vendings/vending_app.js'
     static_controllers_row = 'vendings/vending_controllers.js'
-
+    # quitar paginacion
+    gentrans = {
+        'Pay': _("Pay"),
+        'Print': _("Print"),
+        'Cancel': ('Cancel'),
+    }
+    
     def dispatch(self, *args, **kwargs):
         self.budget_pk = kwargs.get('bpk', None)
 
         budget = SalesBasket.objects.filter(pk=self.budget_pk).first()
         if budget:
+            self.extra_context['budget_pk'] = budget.pk
+
             history_customer = []
             for basket in SalesBasket.objects.filter(customer=budget.customer).exclude(pk=budget.pk).order_by('-date')[:5]:
                 history_customer.append({
@@ -2742,6 +2750,7 @@ class LinesVending(GenList):
                     'code': basket.code,
                     'total': basket.total,
                 })
+            # budget information
             self.extra_context.update({
                 'customer': budget.customer.__str__(),
                 'name': budget.name,
@@ -2759,6 +2768,41 @@ class LinesVending(GenList):
                 # historial del cliente
                 'history': history_customer,
             })
+            # budget total
+            summary = {}
+            totals = {
+                'subtotal': 0,
+                'tax': 0,
+                'total': 0,
+            }
+            for line in budget.lines_sales.all().values(
+                'price_base_basket',
+                'quantity',
+                'tax_label_basket',
+                'tax_basket',
+                'tax_basket_fk',
+            ):
+                if line['tax_basket_fk'] not in summary:
+                    summary[line['tax_basket_fk']] = {
+                        'label': line['tax_label_basket'],
+                        'subtotal': 0,
+                        'tax': 0,
+                        'total': 0
+                    }
+                summary[line['tax_basket_fk']]['subtotal'] += float(line['price_base_basket']) * line['quantity']
+                summary[line['tax_basket_fk']]['tax'] += (float(line['tax_basket']) * line['quantity']) / 100
+                summary[line['tax_basket_fk']]['total'] += summary[line['tax_basket_fk']]['subtotal'] + summary[line['tax_basket_fk']]['tax']
+                totals['subtotal'] += summary[line['tax_basket_fk']]['subtotal']
+                totals['tax'] += summary[line['tax_basket_fk']]['tax']
+                totals['total'] += summary[line['tax_basket_fk']]['total']
+                
+            self.extra_context.update({
+                'summary': summary,
+                'totals': totals,
+            })
+        else:
+            self.extra_context['budget_pk'] = None
+
         self.ws_entry_point = self.ws_entry_point.replace('CDNX_INVOICING_URL_SALES', self.budget_pk)
 
         # Prepare form
@@ -2782,7 +2826,7 @@ class LinesVending(GenList):
 
         # Prepare context
         self.client_context = {
-            'ipk': self.budget_pk,
+            'budget_pk': self.budget_pk,
             'final_focus': True,
             'unique_focus': False,
             'unique_disabled': True,
@@ -2847,6 +2891,33 @@ class SalesLinesDetails(GenList):
     model = SalesLines
     ws_entry_point = '{}/vending/0'.format(settings.CDNX_INVOICING_URL_SALES)
 
+
+class LinesVendingPayment(View):
+    @method_decorator(login_required)
+    def get(self, request, *args, **kwargs):
+        self.template = 'vendings/vending_payment.html'
+        slot_pk = kwargs.get('pk', None)
+
+        context = self.prepare_context()
+        context["slot"] = slot_pk
+        context['basket'] = SalesBasket.objects.filter(
+            pos_slot__pk=slot_pk,
+            order_sales__payment__isnull=True,
+            role=ROLE_BASKET_SHOPPINGCART,
+            order_sales__removed=False,
+            removed=False
+        ).last()
+        if context['basket']:
+            context['ticket'] = context['basket'].list_tickets().first()
+        context['PAYMENT_DETAILS_CARD'] = PAYMENT_DETAILS_CARD
+        context['PAYMENT_DETAILS_CASH'] = PAYMENT_DETAILS_CASH
+        context['KIND_CARD_VISA'] = KIND_CARD_VISA
+        context['KIND_CARD_MASTER'] = KIND_CARD_MASTER
+        context['KIND_CARD_AMERICAN'] = KIND_CARD_AMERICAN
+        context['KIND_CARD_OTHER'] = KIND_CARD_OTHER
+        context['url_vending_payment'] = 'vending_payment'
+
+        return render(request, self.template, context)
 
 # .................
 class BasketDetailsSHOPPINGCARTVending(GenDetail):

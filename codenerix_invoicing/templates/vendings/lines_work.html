@@ -34,7 +34,7 @@ limitations under the License.
                 <label>{% trans "Customer" %}: </label> {{ customer }}<br />
                 <label>{% trans "Name" %}: </label> {{ name }}<br />
                 <label>{% trans "Code" %}: </label> {{ code }}<br />
-                <label>{% trans "Date" %}: </label> {{ date }}<br />strftime(formats.get_format('DATETIME_INPUT_FORMATS', lang=get_language())[0]),
+                <label>{% trans "Date" %}: </label> {{ date }}<br />
                 <label>{% trans "Address delivery" %}: </label> {{ address_delivery }}<br />
                 <label>{% trans "Address invoice" %}: </label> {{ address_invoice }}<br />
             </div>
@@ -56,9 +56,11 @@ limitations under the License.
             <div class="panel-body">
             <table class="table">
                 <thead>
+                    <tr>
                     <th>{% trans "code" %}</th>
                     <th>{% trans "date" %}</th>
                     <th>{% trans "total" %}</th>
+                    </tr>
                 </thead>
                 <tbody>
                 {% for basket in history %}
@@ -75,6 +77,39 @@ limitations under the License.
     </div>
     <div class="col-sm-9">
         <div ui-view class="body-view"></div>
+    </div>
+    <div class="col-sm-9">
+        <br />
+        <div class="panel panel-default">
+            <table class="table">
+                <thead>
+                    <tr>
+                    <th>{% trans "Tasas" %}</th>
+                    <th>{% trans "Total SI" %}</th>
+                    <th>{% trans "Total IVA" %}</th>
+                    <th>{% trans "Total" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for summary in summary.items %}
+                    <tr>
+                    <td>{{ summary.1.label }}</td>
+                    <td>{{ summary.1.subtotal }} &euro;</td>
+                    <td>{{ summary.1.tax }} &euro;</td>
+                    <td>{{ summary.1.total }} &euro;</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr>
+                    <th></th>
+                    <th>{{ totals.subtotal }} &euro;</th>
+                    <th>{{ totals.tax }} &euro;</th>
+                    <th>{{ totals.total }} &euro;</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}

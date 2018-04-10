@@ -1,0 +1,381 @@
+{% load staticfiles %}
+{% load i18n %}
+
+{% block btn_cobrar %}
+<ul class="nav navbar-nav navbar-right">
+    <li>
+        <button class="w3-button w3-block w3-grey w3-section" title="{% trans "Previo" %}" onclick="javascript:btn_previous()">
+            <i class="fa fa-chevron-left"></i>{% trans "PREVIO" %}
+        </button>
+    </li>
+</ul>
+{% endblock %}
+
+{% block vending_start %}  
+<div class="row fixed-resize">
+    <div class="col-md-4">
+        <div class="w3-row calculator">
+            <div class="pull-left">
+                <h5>{{ basket.pos_slot }}</h5>
+            </div>
+            <div class="pull-right">
+                <h5><span id="total_ticket"></span>&euro;</h5>
+            </div>
+            <input type="hidden" name="slot" id="slot" value="{{ basket.pos_slot.pk }}" />
+        </div>
+        <div class="overflow-table" id="list_products">
+            <table class="table table-hover table-responsive table-bordered" id="tbl_products">
+                <tbody>
+                </tbody>
+            </table>
+        </div> 
+        <div class="w3-row table-controles">
+            <div class="w3-half">
+                <button class="w3-button w3-block w3-grey" title="" id="bnt_product_up">
+                    <i class="fa fa-angle-double-up"></i>
+                </button>
+            </div>
+            <div class="w3-half">
+                <button class="w3-button w3-block w3-blue" title="" id="bnt_product_down">
+                    <i class="fa fa-angle-double-down"></i>
+                </button>
+            </div>
+        </div> 
+        <table class="table table-hover table-responsive table-bordered table-total" id="tbl_totales">
+            <tr>
+                <th>Subtotal</th>
+                <td>XXX €</td>
+            </tr>
+            <tr>
+                <th>TAX</th>
+                <td>21%</td>
+            </tr>
+            <tr>
+                <th><h3>TOTAL</h3></th>
+                <td><h3>XXX €</h3></td>
+            </tr>
+        </table>
+    </div>
+    <div class="col-md-1">
+    </div>
+    <div class="col-md-1">
+            <div class="calculator">
+                <div class="keypad">
+                    <div class="keys">
+<button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(5, 1)">
+    <img src="{% static "img/billete_5.png" %}" alt="5" width="100px" />
+</button>
+<button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(10, 1)">
+    <img src="{% static "img/billete_10.png" %}" alt="10" width="100px" />
+</button>
+<button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(20, 1)">
+    <img src="{% static "img/billete_20.png" %}" alt="20" width="100px" />
+</button>
+<button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(50, 1)">
+    <img src="{% static "img/billete_50.png" %}" alt="50" width="100px" />
+</button>
+<button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(100, 1)">
+    <img src="{% static "img/billete_100.png" %}" alt="100" width="100px" />
+</button>
+<button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(200, 1)">
+    <img src="{% static "img/billete_200.png" %}" alt="200" width="100px" />
+</button>
+<button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(500, 1)">
+    <img src="{% static "img/billete_500.png" %}" alt="500" width="100px" />
+</button>
+                    </div>
+                </div>
+            </div>
+    </div>
+    <div class="col-md-4">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="calculator calculator-funciones">
+                    <div class="screen">
+                        <input type="text" name="txt_amount_cash" id="txt_amount_cash" onchange="refresh_cambio()" />
+                    </div>    
+                    <div class="screen">
+                        <div>
+                            {% trans "Cambio" %}
+                            <h2><span id="div_cambio"><span class="vending-info">&lt; {% trans "Elija pago" %} &gt;</span></span></h2>
+                        </div>
+                    </div>  
+                    <div class="keypad">
+                        <div class="keys keys-funciones">
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(1)">1</button>
+                                    <button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(2)">2</button>
+                                    <button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(3)">3</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(4)">4</button>
+                                    <button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(5)">5</button>
+                                    <button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(6)">6</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                <button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(7)">7</button>
+                                <button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(8)">8</button>
+                                <button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(9)">9</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash(0)">0</button>
+                                    <button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash('.')">.</button>
+                                    <button type="button" class="btn btn-info btn-lg btn_cash" onclick="javascript:btn_cash('00')">00</button>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <button class="w3-button w3-blue w3-section" onclick="javascript:clear_cash()" title="{% trans "Clear" %}">{% trans "CLEAR" %}</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!--
+                <div class="well w3-section">
+                    <button class="w3-button w3-black w3-section w3-padding-24 btn_payment_method" id="btn_payment_method_1" onclick="javascript:payment_method(PAYMENT_METHOD_EXACT)" title="{% trans "Exact Cash" %}">{% trans "EXACT CASH" %} </button>
+                    {# <button class="w3-button w3-black w3-section w3-padding-24 btn_payment_method" id="btn_payment_method_2" onclick="javascript:payment_method(PAYMENT_METHOD_CASH)" title="{% trans "Cash" %}">{% trans "CASH" %}</button>   #}
+                    <button class="w3-button w3-black w3-section w3-padding-24 btn_payment_method" id="btn_payment_method_3" onclick="javascript:payment_method(PAYMENT_METHOD_CARD)" title="{% trans "Card" %}">{% trans "CARD" %}</button> 
+                </div>
+                -->
+            </div>
+        </div>    
+    </div>
+    <div class="col-md-1">
+            <div class="calculator">
+                <div class="keypad">
+                    <div class="keys">
+<button type="button" class="btn btn-info btn-lg btn_card" id="btn_visa" onclick="javascript:btn_kind_card('{{KIND_CARD_VISA}}', 'btn_visa')">
+    <img src="{% static "img/tarjeta_visa.png" %}" alt="Visa" width="100px" />
+</button>
+<button type="button" class="btn btn-info btn-lg btn_card" id="btn_master" onclick="javascript:btn_kind_card('{{KIND_CARD_MASTER}}', 'btn_master')">
+    <img src="{% static "img/tarjeta_master.png" %}" alt="MasterCard" width="100px" />
+</button>
+<button type="button" class="btn btn-info btn-lg btn_card" id="btn_american" onclick="javascript:btn_kind_card('{{KIND_CARD_AMERICAN}}', 'btn_american')">
+    <img src="{% static "img/tarjeta_american.png" %}" alt="American Express" width="100px" />
+</button>
+<button type="button" class="btn btn-info btn-lg btn_card" id="btn_otras" onclick="javascript:btn_kind_card('{{KIND_CARD_OTHER}}', 'btn_otras')">
+    <img src="{% static "img/tarjeta_otras.png" %}" alt="Otras" width="100px" />
+</button>
+                    </div>
+                </div>
+            </div>
+    </div>
+    {% comment %}
+    <div class="col-md-2 bg-grey">
+        <button class="w3-button w3-block w3-purple w3-section w3-padding-24" title="{% trans "Pagar" %}">{% trans "PAGAR" %} </button>
+        {# <button class="w3-button w3-block w3-purple w3-section w3-padding-24" title="Accept">DESCUENTOS </button>
+    </div>
+    {% endcomment %}
+</div>
+
+
+{% endblock %}   
+
+{% block btn_foot_right %}
+
+<ul class="nav navbar-nav navbar-right">
+    <li>
+        <a href="#" class="w3-button w3-block w3-white w3-section" onclick="javascript:print_ticket(true)">{% trans "PRINT TICKET >>" %}</a>
+    </li>
+    <li>
+        <button class="w3-button w3-block w3-green w3-section" title="{% trans "Aceptar" %}" onclick="javascript:btn_pagar()">
+            <i class="fa fa-check"></i>{% trans "ACEPTAR" %}
+        </button>          
+    </li>
+</ul>
+{% endblock %}
+
+
+{% block extra_js %}
+    {{ block.super }}
+    <script type="text/javascript">
+    var slot = '{{ slot }}';
+    var cash_decimal = '';
+    var PAYMENT_METHOD_EXACT = 1;
+    var PAYMENT_METHOD_CASH = 2;
+    var PAYMENT_METHOD_CARD = 3;
+    var kind_payment_method = PAYMENT_METHOD_CASH;
+    var kind_card_select = null;
+    var KIND_PAYMENT_METHOD_CARD = "{{ PAYMENT_DETAILS_CARD }}";
+    var KIND_PAYMENT_METHOD_CASH = "{{ PAYMENT_DETAILS_CASH }}";
+    var url_vending_payment = '{% url url_vending_payment  %}';
+
+    function btn_cash(num, sum){
+        // console.log(num);
+        if (num == '.' && cash_decimal == ''){
+            cash_decimal = num;
+        }else{
+            if (cash_decimal == '.'){
+                num = cash_decimal + num;
+                cash_decimal = null;
+            }
+            if (num != '.'){
+                if (sum == undefined){
+                    $("#txt_amount_cash").val(($("#txt_amount_cash").val() + num));
+                }else{
+                    var tmp = parseFloat($("#txt_amount_cash").val());
+                    if (isNaN(tmp)){
+                        tmp = 0;
+                    }
+
+                    $("#txt_amount_cash").val(tmp + num);
+                }
+            }
+        }
+        refresh_cambio();
+        $("#btn_payment_method_" + PAYMENT_METHOD_CARD).prop('disabled', 'disabled');
+        $("#btn_payment_method_" + PAYMENT_METHOD_EXACT).prop('disabled', 'disabled');
+    }
+
+    function refresh_cambio(){
+        var amount_total = parseFloat($("#amount_total").html());
+        var amount_cash = parseFloat($("#txt_amount_cash").val());
+        // console.log(amount_total);
+        // console.log(amount_cash);
+        var change;
+        if (isNaN(amount_cash)){
+            change = "<span class='vending-danger'>{% trans "Faltan" %} "+(-parseFloat(amount_total).toFixed(2))+"€</span>";
+        } else {
+            var change = amount_cash - amount_total;
+            change = parseFloat(change).toFixed(2);
+            if (change < 0) {
+                change = "<span class='vending-danger'>{% trans "Faltan" %} "+change+"€</span>";
+            } else if (change == 0) {
+                change = "<span class='vending-info'>{% trans "Importe exacto" %}</span>";
+            } else {
+                change = "<span class='vending-success'>{% trans "Dar" %} "+change+"€</span>";
+            }
+        }
+        // Set new change
+        $("#div_cambio").html(change);
+    }
+
+    function backspace_cash(){
+        var cadena = $("#txt_amount_cash").val();
+        var size = cadena.length;
+        if (size!= 0){
+            var ult_caracter = cadena.slice(size -1, size);
+            if (ult_caracter == '.'){
+                cash_decimal = '';
+            }
+            $("#txt_amount_cash").val(cadena.slice(0, -1));
+        }
+    }
+
+    function clear_cash(){
+        $("#txt_amount_cash").val('');
+        refresh_cambio();
+        $("#btn_payment_method_" + PAYMENT_METHOD_CARD).prop('disabled', '');
+        $("#btn_payment_method_" + PAYMENT_METHOD_EXACT).prop('disabled', '');
+        $(".btn_cash").prop('disabled', '');
+        kind_payment_method = PAYMENT_METHOD_CASH;
+    }
+
+    function btn_previous(){
+        window.location.href = '/vendings/vending/' + slot;
+    }
+
+    function payment_method(kind){
+        $(".btn_payment_method").removeClass("active");
+        $(".btn_payment_method").prop("disabled", '');
+        $(".btn_cash").prop('disabled', '');
+        // console.log(kind);
+        // console.log(kind_payment_method);
+        if (kind == kind_payment_method){
+            kind_payment_method = PAYMENT_METHOD_CASH;
+        }else{
+            kind_payment_method = kind;
+            $("#btn_payment_method_" + kind).addClass('active');
+        }
+        if (kind_payment_method == PAYMENT_METHOD_CASH){
+            $("#btn_payment_method_" + PAYMENT_METHOD_CARD).prop('disabled', 'disabled');
+            $("#btn_payment_method_" + PAYMENT_METHOD_EXACT).prop('disabled', 'disabled');
+        }else if (kind_payment_method != null){
+            clear_cash();
+            $(".btn_cash").prop('disabled', 'disabled');
+        }
+        // console.log("kind_payment_method");
+        // console.log(kind_payment_method);
+        // console.log(PAYMENT_METHOD_CARD);
+    }
+
+    function btn_kind_card(kind, button){
+        kind_card_select = kind;
+        $(".btn_card").removeClass("active");
+        $("#"+ button).addClass("active");
+        var alt = $("#"+button+" > img").attr('alt');
+        // payment_method(PAYMENT_METHOD_CARD);
+        $("#txt_amount_cash").val('');
+        $("#btn_payment_method_" + PAYMENT_METHOD_CARD).prop('disabled', '');
+        $("#btn_payment_method_" + PAYMENT_METHOD_EXACT).prop('disabled', '');
+        $(".btn_cash").prop('disabled', '');
+        // Set new kind
+        kind_payment_method = PAYMENT_METHOD_CARD;
+        // Set new change
+        change = "<span class='vending-warning'>{% trans "Pago tarjeta" %}: "+alt+"</span>";
+        $("#div_cambio").html(change);
+    }
+
+    function btn_pagar(){
+        // console.log(kind_payment_method);
+        if (kind_payment_method == null){
+            alert("Seleccione un metodo de pago");
+        }else{
+            var method = null;
+            var amount = null;
+            if (kind_payment_method == PAYMENT_METHOD_CASH){
+                amount = $("#txt_amount_cash").val();
+                method = KIND_PAYMENT_METHOD_CASH;
+            }
+            else if (kind_payment_method == PAYMENT_METHOD_CARD){
+                method = KIND_PAYMENT_METHOD_CARD;
+            }
+            else if (kind_payment_method == PAYMENT_METHOD_EXACT){
+                amount = $("#amount_total").html().replace('€', '');
+                method = KIND_PAYMENT_METHOD_CASH;
+            }
+            info = {
+                csrfmiddlewaretoken: $("input[name='csrfmiddlewaretoken']").val(),
+                slot: slot,
+                ticket: '{{ticket.pk}}',
+                kind_card: kind_card_select,
+                method: method,
+                amount: amount
+            };
+            // console.log(info);
+            var ruta = url_vending_payment;
+            $.post(ruta, info, function(data){
+                if (data.error != null){
+                    alert(data.error);
+                }else{
+                    // Open cash drawer
+                    open_cash_drawer(function () {
+                        // Print ticket no matter if cash drawer failed
+                        print_ticket(false, function () {
+                            // Jump to another page no matter if ticket printer failed
+                            window.location.href = '{% url "vending_start" %}';
+                        });
+                    });
+                }
+            }).done(function(data){
+
+            }).fail(function(data){
+                var msg = "{% trans "ERROR while paying" %}";
+                console.error(msg);
+                console.error(data);
+                alert_modal(msg+": "+data.responseText);
+            }).always(function(data){
+
+            });
+        }
+    }
+    </script>
+{% endblock %}   

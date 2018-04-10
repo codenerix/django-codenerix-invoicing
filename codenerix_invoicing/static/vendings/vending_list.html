@@ -1,0 +1,76 @@
+<!--
+
+django-codenerix-invoicing
+
+Copyright 2017 Centrologic Computational Logistic Center S.L.
+
+Project URL : http://www.codenerix.com
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+-->
+
+<div class="col-md-12 internal-buttons-top">
+    <div class="form-group text-center">
+
+        <label  class="sr-only"  for="submit_pay">{{ data.meta.gentranslate.Pay }}</label>
+        <button type="button" id="submit_pay" 
+            ng-click="open_pay('{{ data.meta.context.budget_pk }}')" 
+            class="btn btn-sm btn-success" >{{ data.meta.gentranslate.Pay }}
+            </button>
+
+        <label  class="sr-only"  for="submit_print">{{ data.meta.gentranslate.Print }}</label>
+        <button type="button" id="submit_print" 
+            ng-click="open_print('{{ data.meta.context.budget_pk }}')" 
+            class="btn btn-sm btn-info" >{{ data.meta.gentranslate.Print }}
+            </button>
+
+        <label  class="sr-only"  for="submit_cancel">{{ data.meta.gentranslate.Cancel }}</label>
+        <button type="button" id="submit_cancel" 
+            ng-click="open_cancel('{{ data.meta.context.budget_pk }}')" 
+            class="btn btn-sm btn-danger" >{{ data.meta.gentranslate.Cancel }}
+            </button>
+    </div>
+</div>
+<div class="row clearfix block-center">
+    <div class="col-md-12 column">
+        <div class="row clearfix">
+            <div class="col-md-12 column table-responsive">
+                <ng-include src="data.meta.ngincludes.table"></ng-include>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-12 internal-buttons-botton">
+    <div class="text-center">
+
+        <label  class="sr-only"  for="submit_pay">{{ data.meta.gentranslate.Pay }}</label>
+        <button type="button" id="submit_pay" 
+            ng-click="open_pay('{{ data.meta.context.budget_pk }}')" 
+            class="btn btn-sm btn-success" >{{ data.meta.gentranslate.Pay }}
+            </button>
+
+        <label  class="sr-only"  for="submit_print">{{ data.meta.gentranslate.Print }}</label>
+        <button type="button" id="submit_print" 
+            ng-click="open_print('{{ data.meta.context.budget_pk }}')" 
+            class="btn btn-sm btn-info" >{{ data.meta.gentranslate.Print }}
+            </button>
+
+        <label  class="sr-only"  for="submit_cancel">{{ data.meta.gentranslate.Cancel }}</label>
+        <button type="button" id="submit_cancel" 
+            ng-click="open_cancel('{{ data.meta.context.budget_pk }}')" 
+            class="btn btn-sm btn-danger" >{{ data.meta.gentranslate.Cancel }}
+            </button>
+    </div>
+</div>

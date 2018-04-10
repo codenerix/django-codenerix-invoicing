@@ -213,5 +213,34 @@ angular.module('codenerixInvoicingVendingControllers', [])
                 }
             });
         };
+
+        $scope.open_pay = function(budget_pk){
+            console.log("A");
+            console.log(budget_pk);
+            // Base window
+            $scope.ws = url + "/pay";
+            
+            // Base Window functions
+            var functions = function(scope) {};
+            var callback = function(scope) {
+                // Close our window
+                if (scope.base_window) {
+                    scope.base_window.dismiss('cancel');
+                }
+                
+                // If base_reload specified
+                if (scope.base_reload){
+                    // Arguments are dinamically added
+                    scope.base_reload[0].apply(this,scope.base_reload.slice(1));
+                }
+            };
+            
+            // Start modal window
+            openmodal($scope, $timeout, $uibModal, 'lg', functions, callback);
+        };
+
+        $scope.open_print = function(budget_pk){};
+
+        $scope.open_cancel = function(budget_pk){};
     }
 ]);
