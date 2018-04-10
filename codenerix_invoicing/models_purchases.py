@@ -158,6 +158,7 @@ class GenPurchase(CodenerixModel):  # META: Abstract class
         fields.append(('provider', _('Provider')))
         fields.append(('code', _('Code')))
         fields.append(('date', _('Date')))
+        fields.append((None, _('Distribute')))
         return fields
 
 
