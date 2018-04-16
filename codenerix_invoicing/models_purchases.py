@@ -19,6 +19,7 @@
 # limitations under the License.
 
 from django.db import models
+from django.db.models import F
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from django.utils.encoding import smart_text
@@ -108,7 +109,6 @@ class GenLineProduct(CodenerixModel):  # META: Abstract class
 
     def __fields__(self, info):
         fields = []
-        fields.append(('product', _("Product")))
         fields.append(('quantity', _("Quantity")))
         fields.append(('price', _("Price")))
         fields.append(('tax', _("Tax")))
@@ -297,6 +297,16 @@ class PurchasesOrderDocument(GenBillingDocument):
 class PurchasesAlbaran(GenPurchase):
     provider = models.ForeignKey(Provider, on_delete=models.CASCADE, related_name='albaran_purchases', verbose_name=_("Provider"))
 
+    def lock_delete(self, request=None):
+        result = None
+        for line in self.line_albaran_purchases.all():
+            answer = line.lock_delete(request)
+            if answer is not None:
+                # We found a problem in some of the lines
+                result = "{}: {}".format(_("Some of your lines is having troubles to get deleted"), answer)
+                break
+        # Return result
+        return result
 
 # lineas de albaranes
 class PurchasesLineAlbaran(GenLineProduct):
@@ -313,9 +323,24 @@ class PurchasesLineAlbaran(GenLineProduct):
         fields.insert(0, ('albaran', _("Albaran")))
         fields.append(('line_order', _("Line orders")))
         fields.append(('product_unique', _("Product")))
-        fields.append(('get_status_display', _("Status")))
         return fields
 
+    def lock_delete(self, request=None):
+        if not self.product_unique.filter(stock_original=F('stock_real')):
+            # Lock delete if some of the unique product has been sold (stock_original!=stock_real)
+            return _("Some of the products have been sold already")
+        elif not self.product_unique.filter(stock_locked=0):
+            # Lock if there are some locked products already stock_locked>0
+            return _("There are locked products from this line")
+        else:
+            # This purchase Albaran can be deleted, keep going!
+            return None
+
+    def delete(self):
+        # Clear all unique products from this line
+        self.product_unique.clear()
+        # Delete LineAlbaran as usually
+        return super(PurchasesLineAlbaran, self).delete()
 
 # documentos asociados a los albaranes
 class PurchasesAlbaranDocument(GenBillingDocument):
