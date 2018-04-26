@@ -326,10 +326,10 @@ class PurchasesLineAlbaran(GenLineProduct):
         return fields
 
     def lock_delete(self, request=None):
-        if not self.product_unique.filter(stock_original=F('stock_real')):
+        if self.product_unique.exclude(stock_original=F('stock_real')):
             # Lock delete if some of the unique product has been sold (stock_original!=stock_real)
             return _("Some of the products have been sold already")
-        elif not self.product_unique.filter(stock_locked=0):
+        elif self.product_unique.exclude(stock_locked=0):
             # Lock if there are some locked products already stock_locked>0
             return _("There are locked products from this line")
         else:
