@@ -225,6 +225,46 @@ angular.module('codenerixSalesControllers', [])
         };
     }
 ])
+.controller('SalesAlbaranDetailsCtrl', ['$scope', '$rootScope', '$timeout', '$http', '$window', '$uibModal', '$state', '$stateParams', '$templateCache', 'Register', 'hotkeys',
+   function($scope, $rootScope, $timeout, $http, $window, $uibModal, $state, $stateParams, $templateCache, Register, hotkeys) {
+       if (ws_entry_point==undefined) { ws_entry_point=""; }
+       multidetails($scope, $rootScope, $timeout, $http, $window, $uibModal, $state, $stateParams, $templateCache, Register, 0, "/"+ws_entry_point, hotkeys);
+
+        $scope.send_albaran = function(gobackurl, url) {
+
+            var functions = function(scope) {};
+            var callback = function(scope, answer) {
+                $window.location.href = gobackurl;
+            };
+            var callback_cancel = function(scope, answer) {};
+
+            function action(quickmodal_ok, quickmodal_error) {
+                $http.get( url, {}, {} )
+                .success(function(answer, stat) {
+                    if (answer.return != 'OK'){
+                        quickmodal_error(answer.return);
+                    } else {
+                        quickmodal_ok(answer);
+                    }
+                })
+                .error(function(data, status, headers, config) {
+                    if (cnf_debug){
+                        if (data) {
+                            quickmodal_error(data);
+                        } else {
+                            quickmodal_error(cnf_debug_txt);
+                        }
+                    } else {
+                        quickmodal_error(cnf_debug_txt);
+                    }
+                });
+            }
+
+            quickmodal($scope, $timeout, $uibModal, 'sm', action, functions, callback, callback_cancel);
+        };
+
+    }
+])
 .controller('codenerixSalesListPackCtrl', ['$scope', '$rootScope', '$timeout', '$location', '$uibModal', '$templateCache', '$http', '$state', 'Register', 'ListMemory', 'hotkeys',
     function($scope, $rootScope, $timeout, $location, $uibModal, $templateCache, $http, $state, Register, ListMemory, hotkeys) {
         if (ws_entry_point==undefined) { ws_entry_point=""; }

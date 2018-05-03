@@ -42,7 +42,7 @@ from .views_sales import OrderCreateModalFromBudget, OrderCreateModalFromShoppin
 from .views_sales import OrderDocumentSubList, OrderDocumentCreateModal, OrderDocumentUpdateModal, OrderDocumentDelete
 
 from .views_sales import AlbaranCreate, AlbaranCreateModal, AlbaranDelete, AlbaranList, AlbaranUpdate, AlbaranUpdateModal
-from .views_sales import AlbaranDetails, AlbaranPrint
+from .views_sales import AlbaranDetails, AlbaranPrint, AlbaranSend
 from .views_sales import AlbaranCreateTicket, AlbaranCreateInvoice
 
 from .views_sales import InvoiceCreate, InvoiceCreateModal, InvoiceDelete, InvoiceList, InvoiceUpdate, InvoiceUpdateModal, InvoicePrint
@@ -178,25 +178,25 @@ urlpatterns = [
     url(r'^lines/(?P<pk>\w+)/basket_sublist/addmodal$', LinesCreateModalBasket.as_view(), name='CDNX_invoicing_saleslines_sublist_addmodal_basket'),
     url(r'^lines/(?P<cpk>\w+)/basket_sublist/(?P<pk>\w+)/editmodal$', LinesUpdateModalBasket.as_view(), name='CDNX_invoicing_saleslines_sublist_editmodal_basket'),
     # url(r'^lines/basket_foreign/(?P<search>[\w\W]+|\*)$', LinesForeignBasketOrder.as_view(), name='CDNX_invoicing_linessaless_foreign_for_order'),
-    
+
     url(r'^lines/(?P<pk>\w+)/order_sublist$', LinesSubListOrder.as_view(), name='CDNX_invoicing_saleslines_sublist_order'),
     # url(r'^lines/(?P<pk>\w+)/order_sublist/addmodal$', LinesCreateModalOrder.as_view(), name='CDNX_invoicing_saleslines_sublist_addmodal_order'),
     url(r'^lines/(?P<cpk>\w+)/order_sublist/(?P<pk>\w+)/modal$', LinesDetailModalOrder.as_view(), name='CDNX_invoicing_saleslines_sublist_details_order'),
     url(r'^lines/(?P<cpk>\w+)/order_sublist/(?P<pk>\w+)/editmodal$', LinesUpdateModalOrder.as_view(), name='CDNX_invoicing_saleslines_sublist_editmodal_order'),
-    
+
     url(r'^lines/(?P<pk>\w+)/albaran_sublist$', LinesSubListAlbaran.as_view(), name='CDNX_invoicing_saleslines_sublist_albaran'),
     url(r'^lines/(?P<cpk>\w+)/albaran_sublist/(?P<pk>\w+)/editmodal$', LinesUpdateModalAlbaran.as_view(), name='CDNX_invoicing_saleslines_sublist_editmodal_albaran'),
-        
+
     url(r'^lines/(?P<pk>\w+)/invoice_sublist$', LinesSubListInvoice.as_view(), name='CDNX_invoicing_saleslines_sublist_invoice'),
     url(r'^lines/(?P<cpk>\w+)/invoice_sublist/(?P<pk>\w+)/modal$', LinesDetailModalInvoice.as_view(), name='CDNX_invoicing_saleslines_sublist_details_invoice'),
     url(r'^lines/(?P<cpk>\w+)/invoice_sublist/(?P<pk>\w+)/editmodal$', LinesUpdateModalInvoice.as_view(), name='CDNX_invoicing_saleslines_sublist_editmodal_invoice'),
-    
+
     url(r'^lines/(?P<pk>\w+)/invoicerectification_sublist$', LinesSubListInvoiceRectification.as_view(), name='CDNX_invoicing_saleslines_sublist_invoicerectification'),
     url(r'^lines/(?P<cpk>\w+)/invoicerectification_sublist/(?P<pk>\w+)/editmodal$', LinesUpdateModalInvoiceRectification.as_view(), name='CDNX_invoicing_saleslines_sublist_editmodal_invoicerectification'),
-    
+
     url(r'^lines/(?P<pk>\w+)/ticket_sublist$', LinesSubListTicket.as_view(), name='CDNX_invoicing_saleslines_sublist_ticket'),
     url(r'^lines/(?P<pk>\w+)/ticket_sublist$', LinesUpdateModalTicket.as_view(), name='CDNX_invoicing_saleslines_sublist_ticket'),
-    
+
     url(r'^lines/(?P<pk>\w+)/ticketrectification_sublist$', LinesSubListTicketRectification.as_view(), name='CDNX_invoicing_saleslines_sublist_ticketrectificaction'),
     url(r'^lines/(?P<pk>\w+)/ticketrectification_sublist$', LinesUpdateModalTicketRectification.as_view(), name='CDNX_invoicing_saleslines_sublist_editmodal_ticketrectification'),
 
@@ -242,6 +242,7 @@ urlpatterns = [
     url(r'^albarans/(?P<pk>\w+)/createticket$', AlbaranCreateTicket.as_view(), name='CDNX_invoicing_albaransaless_create_ticket'),
     url(r'^albarans/(?P<pk>\w+)/createinvoice$', AlbaranCreateInvoice.as_view(), name='CDNX_invoicing_albaransaless_create_invoice'),
     url(r'^albarans/(?P<pk>\w+)/print$', AlbaranPrint.as_view(), name='CDNX_invoicing_albaransaless_print'),
+    url(r'^albarans/(?P<pk>\w+)/send$', AlbaranSend.as_view(), name='CDNX_invoicing_albaransaless_send'),
 
     url(r'^invoices$', InvoiceList.as_view(), name='CDNX_invoicing_invoicesaless_list'),
     url(r'^invoices/add$', InvoiceCreate.as_view(), name='CDNX_invoicing_invoicesaless_add'),
@@ -330,7 +331,7 @@ urlpatterns = [
 
     # url(r'^shoppingcarts/management$', ShoppingCartManagement.as_view(), name='CDNX_invoicing_shoppingcarts_management'),
 
- 
+
 
 """
 
@@ -358,7 +359,7 @@ urlpatterns = [
     url(r'^salesorderdocuments/(?P<pk>\w+)/edit$', OrderDocumentUpdate.as_view(), name='CDNX_invoicing_salesorderdocuments_edit'),
     url(r'^salesorderdocuments/(?P<pk>\w+)/editmodal$', OrderDocumentUpdateModal.as_view(), name='CDNX_invoicing_salesorderdocuments_editmodal'),
     url(r'^salesorderdocuments/(?P<pk>\w+)/delete$', OrderDocumentDelete.as_view(), name='CDNX_invoicing_salesorderdocuments_delete'),
-   
+
     url(r'^salesorderdocuments/(?P<pk>\w+)/sublist/add$', OrderDocumentCreateModal.as_view(), name='CDNX_invoicing_salesorderdocuments_sublist_add'),
     url(r'^salesorderdocuments/(?P<pk>\w+)/sublist/addmodal$', OrderDocumentCreateModal.as_view(), name='CDNX_invoicing_salesorderdocuments_sublist_addmodal'),
     url(r'^salesorderdocuments/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', OrderDocumentDetailModal.as_view(), name='CDNX_invoicing_salesorderdocuments_sublist_details'),
@@ -377,7 +378,7 @@ urlpatterns = [
     url(r'^lineorders/foreign/(?P<search>[\w\W]+|\*)$', LineOrderForeign.as_view(), name='CDNX_invoicing_lineordersaless_foreign'),
     url(r'^lineorders/foreigncustom/(?P<search>[\w\W]+|\*)$', LineOrderForeignCustom.as_view(), name='CDNX_invoicing_lineordersaless_foreign_custom'),
 
-    
+
     url(r'^linealbarans$', LineAlbaranList.as_view(), name='CDNX_invoicing_linealbaransaless_list'),
     url(r'^linealbarans/(?P<pk>\w+)/delete$', LineAlbaranDelete.as_view(), name='CDNX_invoicing_linealbaransaless_delete'),
     url(r'^linealbarans/(?P<pk>\w+)/sublist$', LineAlbaranSubList.as_view(), name='CDNX_invoicing_linealbaransaless_sublist'),

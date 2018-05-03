@@ -27,7 +27,7 @@ from dateutil import tz
 from decimal import Decimal, ROUND_HALF_UP
 
 
-from django.db.models import Q, Sum, F
+from django.db.models import Q, Sum
 from django.db import transaction, IntegrityError
 from django.core.exceptions import ValidationError
 from django.contrib.auth.decorators import login_required
@@ -49,7 +49,7 @@ from codenerix.widgets import DynamicInput
 from codenerix_corporate.models import CorporateImage
 from codenerix_extensions.views import GenCreateBridge, GenUpdateBridge
 from codenerix_extensions.files.views import DocumentFileView
-from codenerix_extensions.helpers import get_language_database
+# from codenerix_extensions.helpers import get_language_database
 from codenerix_products.models import ProductFinal
 
 from codenerix_invoicing.models_sales import Customer, CustomerDocument
@@ -75,7 +75,7 @@ from codenerix_invoicing.views import PrinterHelper
 from .models_sales import CURRENCY_DECIMAL_PLACES
 
 from .models_sales import ReasonModification
-from .forms_reason import ReasonModificationForm
+# from .forms_reason import ReasonModificationForm
 
 from codenerix_invoicing.models_sales import ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineInvoice, ReasonModificationLineTicket, ReasonModificationLineTicketRectification
 # , , , , , , , ReasonModificationLineInvoiceRectification
@@ -91,6 +91,7 @@ from .forms_sales import LineOfInvoiceRectificationUnityForm
 from .exceptions import SalesLinesInsufficientStock, SalesLinesProductFinalIsSample, SalesLinesUniqueProductNotExists, SalesLinesNotModifiable
 
 from .forms_sales import SalesLinesInLineForm
+
 
 # ###########################################
 class GenCustomerUrl(object):
@@ -1041,6 +1042,40 @@ class AlbaranDetails(GenAlbaranUrl, GenDetail):
         return super(AlbaranDetails, self).dispatch(*args, **kwargs)
 
 
+class AlbaranSend(View):
+
+    @method_decorator(login_required)
+    def get(self, *args, **kwargs):
+
+        # Get Inventory PK
+        self.pk = kwargs.get('pk', None)
+        albaran = SalesAlbaran.objects.filter(pk=self.pk).first()
+
+        # Prepare answer
+        answer = {}
+
+        # Check answer
+        if not albaran:
+            # No albaran
+            answer['return'] = _("Albaran not found!")
+        elif albaran.send:
+            # Already sent
+            answer['return'] = _("Albaran already sent!")
+        else:
+
+            # Lock it and set it ready to send
+            albaran.send = True
+            albaran.lock = True
+            albaran.save()
+
+            # Return answer
+            answer['return'] = "OK"
+
+        # Return answer
+        json_answer = json.dumps(answer)
+        return HttpResponse(json_answer, content_type='application/json')
+
+
 class AlbaranPrint(PrinterHelper, GenAlbaranUrl, GenDetail):
     model = SalesAlbaran
     modelname = "list"
@@ -1586,7 +1621,6 @@ class InvoiceCreateRectificationUnity(GenUpdate):
         raise Exception("form_valid pending!!!!")
 
 
-
 class InvoicePrint(PrinterHelper, GenInvoiceUrl, GenDetail):
     model = SalesInvoice
     modelname = "list"
@@ -1756,6 +1790,7 @@ class InvoiceRectificationPrint(PrinterHelper, GenInvoiceRectificationUrl, GenDe
 
         return context
 
+
 """
 # ###########################################
 class GenReservedProduct(object):
@@ -1783,6 +1818,8 @@ class ReservedProductDelete(GenReservedProduct, GenDelete):
     model = SalesReservedProduct
 
 """
+
+
 # ###########################################
 class GenShoppingCart(object):
     ws_entry_point = '{}/shoppingcarts'.format(settings.CDNX_INVOICING_URL_SALES)
@@ -2735,7 +2772,7 @@ class LinesVending(GenList):
         'Print': _("Print"),
         'Cancel': ('Cancel'),
     }
-    
+
     def dispatch(self, *args, **kwargs):
         self.budget_pk = kwargs.get('bpk', None)
 
@@ -2795,7 +2832,7 @@ class LinesVending(GenList):
                 totals['subtotal'] += summary[line['tax_basket_fk']]['subtotal']
                 totals['tax'] += summary[line['tax_basket_fk']]['tax']
                 totals['total'] += summary[line['tax_basket_fk']]['total']
-                
+
             self.extra_context.update({
                 'summary': summary,
                 'totals': totals,
@@ -2909,17 +2946,17 @@ class LinesVendingPayment(View):
         ).last()
         if context['basket']:
             context['ticket'] = context['basket'].list_tickets().first()
-        context['PAYMENT_DETAILS_CARD'] = PAYMENT_DETAILS_CARD
-        context['PAYMENT_DETAILS_CASH'] = PAYMENT_DETAILS_CASH
-        context['KIND_CARD_VISA'] = KIND_CARD_VISA
-        context['KIND_CARD_MASTER'] = KIND_CARD_MASTER
-        context['KIND_CARD_AMERICAN'] = KIND_CARD_AMERICAN
-        context['KIND_CARD_OTHER'] = KIND_CARD_OTHER
+        # context['PAYMENT_DETAILS_CARD'] = PAYMENT_DETAILS_CARD
+        # context['PAYMENT_DETAILS_CASH'] = PAYMENT_DETAILS_CASH
+        # context['KIND_CARD_VISA'] = KIND_CARD_VISA
+        # context['KIND_CARD_MASTER'] = KIND_CARD_MASTER
+        # context['KIND_CARD_AMERICAN'] = KIND_CARD_AMERICAN
+        # context['KIND_CARD_OTHER'] = KIND_CARD_OTHER
         context['url_vending_payment'] = 'vending_payment'
 
-        return render(request, self.template, context)
+        # return render(request, self.template, context)
 
-# .................
+
 class BasketDetailsSHOPPINGCARTVending(GenDetail):
     template_model = "vendings/basket_details.html"
     # ws_entry_point = '{}/shoppingcarts/vending'.format(settings.CDNX_INVOICING_URL_SALES)
@@ -2938,7 +2975,7 @@ class BasketDetailsSHOPPINGCARTVending(GenDetail):
     # linkedit = False
     # linkdelete = False
     # linkback = False
-    
+
     def dispatch(self, *args, **kwargs):
         raise Exception("A!")
 
@@ -2988,9 +3025,8 @@ class XLinesSubListBasketVending(GenList):
         # Get constants
         self.ipk = kwargs.get('ipk')
 
-            
         return super(LinesSubListBasketVending, self).dispatch(*args, **kwargs)
-    
+
     def X_get_context_json(self, context):
         answer = super(LinesSubListBasket, self).get_context_json(context)
 

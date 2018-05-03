@@ -1162,6 +1162,7 @@ class SalesOrderDocument(CodenerixModel, GenDocumentFile):
 class SalesAlbaran(GenVersion):
     summary_delivery = models.TextField(_("Address delivery"), max_length=256, blank=True, null=True)
     billing_series = models.ForeignKey(BillingSeries, related_name='albaran_sales', verbose_name='Billing series', blank=False, null=False, on_delete=models.CASCADE)
+    send = models.BooleanField(_("Send"), blank=False, default=False)
 
     def __str__(self):
         return u"{}".format(smart_text(self.code))

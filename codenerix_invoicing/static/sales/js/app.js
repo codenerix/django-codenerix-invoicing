@@ -18,4 +18,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-var module = codenerix_builder(['codenerixSalesControllers']);
+var module = codenerix_builder(['codenerixSalesControllers'],{
+    'details0':[undefined,undefined,'SalesAlbaranDetailsCtrl'],
+});

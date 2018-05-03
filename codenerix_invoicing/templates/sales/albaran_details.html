@@ -2,6 +2,7 @@
 {% load i18n %}
 {% load codenerix_lists %}
 {% load codenerix_common %}
+{% load static from staticfiles %}
 {% comment %}
 
 django-codenerix-invoicing
@@ -27,10 +28,28 @@ limitations under the License.
 
 
 {% block extra_btn_up %}
-	<a href="{% url 'CDNX_invoicing_albaransaless_print' object.id %}" target="_blank" id="submit_print" class="btn btn-sm btn-info">{% trans "Print" %}</a>
+    <button
+        id="submit_send"
+        ng-init="data.meta={'url_static': '{% static "" %}', 'gentranslate': {'PleaseWait':'{% trans "Please wait" %}', 'Done':'{% trans "Done" %}', 'Error':'{% trans "Error" %}', 'Cancel':'{% trans "Cancel" %}'}}"
+        ng-click="send_albaran('{% url 'CDNX_storages_inventoryout_add' %}','{% url 'CDNX_invoicing_albaransaless_send' object.id %}')"
+        class="btn btn-sm btn-warning">{% trans "Send" %}</button>
+    <a
+        href="{% url 'CDNX_invoicing_albaransaless_print' object.id %}"
+        target="_blank"
+        id="submit_print"
+        class="btn btn-sm btn-success">{% trans "Print" %}</a>
 {% endblock %}
 
 
 {% block extra_btn_down %}
-	<a href="{% url 'CDNX_invoicing_albaransaless_print' object.id %}" target="_blank" id="submit_print" class="btn btn-sm btn-info">{% trans "Print" %}</a>
+    <button
+        id="submit_send"
+        ng-init="data.meta={'url_static': '{% static "" %}', 'gentranslate': {'PleaseWait':'{% trans "Please wait" %}', 'Done':'{% trans "Done" %}', 'Error':'{% trans "Error" %}', 'Cancel':'{% trans "Cancel" %}'}}"
+        ng-click="send_albaran('{% url 'CDNX_storages_inventoryout_add' %}','{% url 'CDNX_invoicing_albaransaless_send' object.id %}')"
+        class="btn btn-sm btn-warning">{% trans "Send" %}</button>
+    <a
+        href="{% url 'CDNX_invoicing_albaransaless_print' object.id %}"
+        target="_blank"
+        id="submit_print"
+        class="btn btn-sm btn-success">{% trans "Print" %}</a>
 {% endblock %}
