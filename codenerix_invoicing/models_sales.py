@@ -20,11 +20,9 @@
 
 import copy
 import datetime
-import json
 from decimal import Decimal
 
-from django.core.exceptions import ValidationError
-from django.db import models, transaction, IntegrityError
+from django.db import models, transaction
 from django.db.models import Q, F
 from django.urls import reverse
 from django.utils import timezone
@@ -44,7 +42,7 @@ from codenerix_invoicing.settings import CDNX_INVOICING_PERMISSIONS
 
 from codenerix_pos.models import POSSlot, POS
 
-from codenerix_products.models import ProductFinal, TypeTax, ProductFinalOption, ProductUnique
+from codenerix_products.models import ProductFinal, TypeTax, ProductUnique
 # from codenerix_storages.models import Storage
 from codenerix_payments.models import PaymentRequest, Currency
 
@@ -1158,6 +1156,7 @@ class SalesOrderDocument(CodenerixModel, GenDocumentFile):
                 self.removed = True
                 self.save(force_save=True)
 
+
 # albaranes
 class SalesAlbaran(GenVersion):
     summary_delivery = models.TextField(_("Address delivery"), max_length=256, blank=True, null=True)
@@ -1968,10 +1967,60 @@ class SalesLines(CodenerixModel):
         msg_error_not_found = _('Sales order not found')
         msg_error_line_not_found = _('Todas las lineas ya se han pasado a albaran')
 
-        return SalesLines.create_document_from_another(pk, list_lines,
-                                                       MODEL_SOURCE, MODEL_FINAL, url_reverse,
-                                                       msg_error_relation, msg_error_not_found, msg_error_line_not_found,
-                                                       False)
+        context = SalesLines.create_document_from_another(pk, list_lines, MODEL_SOURCE, MODEL_FINAL, url_reverse, msg_error_relation, msg_error_not_found, msg_error_line_not_found, False)
+
+        # If there was not any error
+        if 'error' not in context:
+            # Get albaran
+            albaran = context['obj_final']
+
+            # Reserve stock
+            try:
+                with transaction.atomic():
+                    # For each line
+                    for line in albaran.lines_sales.all():
+                        if line.product_unique:
+                            # It is a unique product
+                            pus = [line.product_unique]
+                        else:
+                            # It is not a unique product, get all of them
+                            pus = line.product_final.products_unique.filter(stock_real__gt=F(stock_locked)):
+
+                        # Reserve as many as we can
+                        quantity = line.quantity
+                        for pu in pus:
+                            # Check how many are free and lock as many as we need
+                            available = pu.stock_real - pu.stock_locked
+                            # Choose how many we are going to lock
+                            to_lock = min(available, quantity)
+                            # Mark as locked
+                            pu.stock_locked += to_lock
+                            pu.save()
+                            # Count down from quantity
+                            quantity -= to_lock
+                            # When we are done, break bucle
+                            if not quantity:
+                                break
+
+                        # If we are not done
+                        if quantity:
+                            # Fail
+                            raise IOError("Not enought products for line '{}'!".format(line))
+            except IOError as e:
+
+                # Remove all line's from albaran before failing
+                for line in albaran.lines_sales.all():
+                    line.delete()
+
+                # Remove albaran before failing
+                albaran.delete()
+
+                # Set error
+                context = {}
+                context['error'] = e
+
+        # Return result
+        return context
 
     @staticmethod
     def create_ticket_from_order(pk, list_lines):
@@ -2208,6 +2257,7 @@ class SalesLines(CodenerixModel):
                                 context['error'] = error
                                 return context
                         """
+
 
 # #############################################
 # Print counter per document

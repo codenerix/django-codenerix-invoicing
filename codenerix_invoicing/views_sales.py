@@ -792,7 +792,7 @@ class OrderPrint(PrinterHelper, GenOrderUrl, GenDetail):
 class OrderCreateAlbaran(View):
 
     def get(self, request, *args, **kwargs):
-        raise Exception("get")
+        raise Exception("GET method not supported!")
 
     @method_decorator(login_required)
     def post(self, request, *args, **kwargs):

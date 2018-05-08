@@ -18,7 +18,7 @@ setup(
     license='Apache License Version 2.0',
     description='Codenerix Invoicing is a module that enables CODENERIX to manage bills.',
     long_description=README,
-    url='https://github.com/centrologic/django-codenerix-invoicing',
+    url='https://github.com/codenerix/django-codenerix-invoicing',
     author=", ".join(codenerix_invoicing.__authors__),
     keywords=['django', 'codenerix', 'management', 'erp', 'crm', 'invoicing', 'sales', 'purchases', 'cash', 'cashdiary', 'diary'],
     platforms=['OS Independent'],
