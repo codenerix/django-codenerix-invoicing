@@ -4,9 +4,9 @@ django-codenerix-invoicing
 
 Codenerix Invoicing is a module that enables `CODENERIX.com <http://www.codenerix.com/>`_  to manage bills.
 
-.. image:: http://www.centrologic.com/wp-content/uploads/2017/01/logo-codenerix.png
+.. image:: http://www.codenerix.com/wp-content/uploads/2018/05/codenerix.png
     :target: http://www.codenerix.com
-    :alt: Try our demo with Centrologic Cloud
+    :alt: Try our demo with Codenerix Cloud
 
 ****
 Demo
@@ -58,16 +58,10 @@ Quickstart
 Documentation
 *************
 
-Coming soon... do you help us? `Centrologic <http://www.centrologic.com/>`_
+Coming soon... do you help us? `Codenerix <http://www.codenerix.com/>`_
 
-******************
-Commercial support
-******************
+*******
+Credits
+*******
 
-This project is backed by `Centrologic <http://www.centrologic.com/>`_. You can discover more in `CODENERIX.com <http://www.codenerix.com/>`_.
-If you need help implementing or hosting django-codenerix-invoicing, please contact us:
-http://www.centrologic.com/contacto/
-
-.. image:: http://www.centrologic.com/wp-content/uploads/2015/09/logo-centrologic.png
-    :target: http://www.centrologic.com
-    :alt: Centrologic is supported mainly by Centrologic Computational Logistic Center
+This project has been possible thanks to `Centrologic <http://www.centrologic.com/>`_.
