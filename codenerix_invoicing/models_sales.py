@@ -1984,7 +1984,7 @@ class SalesLines(CodenerixModel):
                             pus = [line.product_unique]
                         else:
                             # It is not a unique product, get all of them
-                            pus = line.product_final.products_unique.filter(stock_real__gt=F(stock_locked)):
+                            pus = line.product_final.products_unique.filter(stock_real__gt=F("stock_locked"))
 
                         # Reserve as many as we can
                         quantity = line.quantity
