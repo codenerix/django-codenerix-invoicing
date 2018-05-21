@@ -24,19 +24,22 @@ import json
 import pytz
 
 from dateutil import tz
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal, InvalidOperation
 
 
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, F
 from django.db import transaction, IntegrityError
 from django.core.exceptions import ValidationError
+from django.core.urlresolvers import reverse_lazy
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.utils import formats
 from django.utils.translation import get_language
 from django.forms.utils import ErrorList
 from django.http import HttpResponse, JsonResponse, HttpResponseBadRequest
+from django.shortcuts import render, redirect
 from django.utils.decorators import method_decorator
+from django.utils.http import urlsafe_base64_encode
 from django.utils.translation import ugettext as _
 from django.views.generic import View
 
@@ -49,8 +52,8 @@ from codenerix.widgets import DynamicInput
 from codenerix_corporate.models import CorporateImage
 from codenerix_extensions.views import GenCreateBridge, GenUpdateBridge
 from codenerix_extensions.files.views import DocumentFileView
-# from codenerix_extensions.helpers import get_language_database
-from codenerix_products.models import ProductFinal
+from codenerix_extensions.helpers import get_language_database, round_decimal
+from codenerix_products.models import ProductFinal, ProductUnique
 
 from codenerix_invoicing.models_sales import Customer, CustomerDocument
 # from codenerix_invoicing.models_sales import SalesReservedProduct
@@ -58,7 +61,7 @@ from codenerix_invoicing.models_sales import SalesBasket, SalesOrder, SalesAlbar
 from codenerix_invoicing.models_sales import SalesOrderDocument
 from codenerix_invoicing.models_sales import SalesLines
 
-from codenerix_invoicing.models_sales import ROLE_BASKET_SHOPPINGCART, ROLE_BASKET_BUDGET, ROLE_BASKET_WISHLIST, STATUS_ORDER
+from codenerix_invoicing.models_sales import ROLE_BASKET_SHOPPINGCART, ROLE_BASKET_BUDGET, ROLE_BASKET_WISHLIST, STATUS_ORDER, STATUS_ORDER_PAYMENT_ACCEPTED
 
 # from codenerix_invoicing.forms_sales import ReservedProductForm
 from codenerix_invoicing.forms_sales import CustomerForm, CustomerDocumentForm
@@ -72,25 +75,30 @@ from codenerix_invoicing.forms_sales import TicketForm
 from codenerix_invoicing.forms_sales import TicketRectificationForm, TicketRectificationUpdateForm
 from codenerix_invoicing.views import PrinterHelper
 
-from .models_sales import CURRENCY_DECIMAL_PLACES
+from .models_sales import CURRENCY_DECIMAL_PLACES, STATUS_ORDER_PENDING
 
 from .models_sales import ReasonModification
-# from .forms_reason import ReasonModificationForm
+from .forms_reason import ReasonModificationForm
 
 from codenerix_invoicing.models_sales import ReasonModificationLineBasket, ReasonModificationLineOrder, ReasonModificationLineAlbaran, ReasonModificationLineInvoice, ReasonModificationLineTicket, ReasonModificationLineTicketRectification
 # , , , , , , , ReasonModificationLineInvoiceRectification
 # , ReasonModificationLineBasketForm, ReasonModificationLineOrderForm, ReasonModificationLineAlbaranForm, ReasonModificationLineTicketForm, ReasonModificationLineTicketRectificationForm, ReasonModificationLineInvoiceForm, ReasonModificationLineInvoiceRectificationForm
-from .forms_sales import LineOfBasketForm, LineOfBasketFormUpdate, LineOfOrderForm, LineOfAlbaranForm
+from .forms_sales import LineOfBasketForm, LineOfBasketFormWS, LineOfBasketFormUpdate, LineOfOrderForm, LineOfAlbaranForm
 from .forms_sales import LineOfInvoiceForm, LineOfInvoiceRectificationForm
 from .models_sales import PrintCounterDocumentBasket, PrintCounterDocumentOrder, PrintCounterDocumentAlbaran, PrintCounterDocumentTicket, PrintCounterDocumentTicketRectification, PrintCounterDocumentInvoice, PrintCounterDocumentInvoiceRectification
 
 from .helpers import ShoppingCartProxy
 from codenerix_pos.helpers import get_POS
 
-from .forms_sales import LineOfInvoiceRectificationUnityForm
+from .forms_sales import LineOfInvoiceRectificationUnityForm, LinesVendingEditForm
 from .exceptions import SalesLinesInsufficientStock, SalesLinesProductFinalIsSample, SalesLinesUniqueProductNotExists, SalesLinesNotModifiable
 
-from .forms_sales import SalesLinesInLineForm
+from .forms_sales import SalesLinesInLineForm, VendingPayForm
+
+from codenerix_pos.models import POS
+from codenerix_invoicing.models_cash import CashDiary, CashMovement
+from codenerix.views import gen_auth_permission
+from codenerix_invoicing.models_purchases import PAYMENT_DETAILS_CARD, PAYMENT_DETAILS_CASH
 
 
 # ###########################################
@@ -2088,6 +2096,63 @@ class LinesCreateModalBasket(GenCreateModal, LinesCreateBasket):
             return self.form_invalid(form)
 
 
+class SalesLinesCreateWS(LinesCreateBasket):
+    json = True
+    form_class = LineOfBasketFormWS
+    
+    def dispatch(self, *args, **kwargs):
+        self.budget_id = kwargs.get('ipk', None)
+        return super(SalesLinesCreateWS, self).dispatch(*args, **kwargs)
+
+    def get_initial(self):
+        initial = super(SalesLinesCreateWS, self).get_initial()
+
+        body = json.loads(self.request.body.decode())
+        
+        product_final = ProductFinal.objects.filter(pk=body['product_final']).first()
+        if product_final is None:
+            raise Exception(_('Product invalid'))
+
+        product_unique_value = body['product_unique_value']
+        if product_unique_value:
+            product_unique = ProductUnique.objects.filter(
+                product_final=product_final,
+                value=product_unique_value
+            ).first()
+        else:
+            product_unique = ProductUnique.objects.filter(
+                product_final=product_final,
+                stock_real__gt=0,
+                stock_locked__lt=F('stock_real')
+            ).first()
+
+        if product_unique is None:
+            raise Exception(_('Product Unique invalid'))
+
+        prices = product_final.calculate_price()
+
+        budget = SalesBasket.objects.filter(pk=self.budget_id).first()
+        if budget is None:
+            raise Exception(_('Budget invalid'))
+        else:
+            # init form
+            initial['basket'] = budget.pk
+            initial['tax_basket_fk'] = product_final.product.tax.pk
+            initial['product_unique'] = product_unique.pk
+            initial['price_recommended_basket'] = prices['price_base']
+            initial['description_basket'] = '{}'.format(product_final)
+            initial['price_base_basket'] = prices['price_base']
+            initial['discount_basket'] = 0
+
+        return initial
+
+    def get_form_kwargs(self):
+        kwargs = super(SalesLinesCreateWS, self).get_form_kwargs()
+        data = self.get_initial()
+        kwargs['data'].update(data)
+        return kwargs
+
+
 class LinesUpdateBasket(GenUpdate):
     model = SalesLines
     form_class = LineOfBasketFormUpdate
@@ -2321,7 +2386,7 @@ class LinesUpdatelOrder(GenUpdate):
         form = super(LinesUpdatelOrder, self).get_form(form_class)
         initial = form.initial
         price = initial['price_base_order'] * Decimal(1 + (initial['tax_order'] / 100))
-        initial['price'] = price.quantize(Decimal(1 / Decimal(10) ** CURRENCY_DECIMAL_PLACES), rounding=ROUND_HALF_UP)
+        initial['price'] = round_decimal(price, CURRENCY_DECIMAL_PLACES)
         initial['tax'] = initial['tax_order']
         return form
 
@@ -2764,15 +2829,17 @@ class LinesVending(GenList):
     linkedit = False
     template_model = "vendings/lines_work.html"
     static_partial_header = 'vendings/vending_header.html'
+    static_partial_row = 'vendings/partials/vending_rows.html'
     static_app_row = 'vendings/vending_app.js'
     static_controllers_row = 'vendings/vending_controllers.js'
     # quitar paginacion
     gentrans = {
         'Pay': _("Pay"),
         'Print': _("Print"),
-        'Cancel': ('Cancel'),
+        'Cancel': _('Cancel'),
+        'notfound': _('Product not found'),
     }
-
+    
     def dispatch(self, *args, **kwargs):
         self.budget_pk = kwargs.get('bpk', None)
 
@@ -2787,6 +2854,10 @@ class LinesVending(GenList):
                     'code': basket.code,
                     'total': basket.total,
                 })
+            if not hasattr(budget, 'order_sales') or (budget.order_sales and budget.order_sales.status_order == STATUS_ORDER_PENDING):
+                paidout = False
+            else:
+                paidout = True
             # budget information
             self.extra_context.update({
                 'customer': budget.customer.__str__(),
@@ -2839,13 +2910,16 @@ class LinesVending(GenList):
             })
         else:
             self.extra_context['budget_pk'] = None
+            paidout = False
 
         self.ws_entry_point = self.ws_entry_point.replace('CDNX_INVOICING_URL_SALES', self.budget_pk)
 
         # Prepare form
         self.ws_ean13_fullinfo = reverse('CDNX_storages_inventoryoutline_ean13_fullinfo', kwargs={"ean13": 'PRODUCT_FINAL_EAN13'})[1:]
         self.ws_unique_fullinfo = reverse('CDNX_storages_inventoryoutline_unique_fullinfo', kwargs={"unique": 'PRODUCT_FINAL_UNIQUE'})[1:]
-        self.ws_submit = reverse('CDNX_storages_inventoryoutline_addws', kwargs={"ipk": self.budget_pk})[1:]
+        self.ws_submit = reverse('CDNX_invoicing_saleslines_addws', kwargs={"ipk": self.budget_pk})[1:]
+        self.ws_pay_modal = reverse('CDNX_invoicing_vending_pay', kwargs={"pk": self.budget_pk})[1:]
+        self.ws_open_cash = reverse('CDNX_POS_open_cash_register')[1:]
 
         fields = []
         fields.append((DynamicInput, 'product_final', 3, 'CDNX_products_productfinalsean13_foreign', [], {}))
@@ -2864,6 +2938,7 @@ class LinesVending(GenList):
         # Prepare context
         self.client_context = {
             'budget_pk': self.budget_pk,
+            'paidout': paidout,
             'final_focus': True,
             'unique_focus': False,
             'unique_disabled': True,
@@ -2876,6 +2951,8 @@ class LinesVending(GenList):
                 'ean13_fullinfo': self.ws_ean13_fullinfo,
                 'unique_fullinfo': self.ws_unique_fullinfo,
                 'submit': self.ws_submit,
+                'pay_modal': self.ws_pay_modal,
+                'open_cash': self.ws_open_cash,
             },
             'form_quantity': form.fields['quantity'].widget.render('quantity', None, {
                 'ng-init': 'quantity=1.0',
@@ -2909,7 +2986,7 @@ class LinesVending(GenList):
 
     def __limitQ__(self, info):
         limit = {}
-        if self.budget_pk:
+        if hasattr(self, 'budget_pk') and self.budget_pk:
             limit['budget__pk'] = Q(basket__pk=self.budget_pk)
         limit['removed'] = Q(removed=False)
         return limit
@@ -2924,126 +3001,241 @@ class LinesVending(GenList):
         return fields
 
 
+class LinesVendingEdit(GenUpdateModal, GenUpdate):
+    model = SalesLines
+    form_class = LinesVendingEditForm
+
+
+class VendingPay(View):
+    template_model = 'vendings/pay_formmodal.html'
+    model = SalesBasket
+    form_class = VendingPayForm
+
+    @method_decorator(login_required)
+    def dispatch(self, *args, **kwargs):
+        self.__pk = kwargs.get('pk', None)
+        return super(VendingPay, self).dispatch(*args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        # Context
+        context = {'paidout': True}
+        ini = {}
+
+        uuid_pos = self.request.session.get('POS_client_UUID', None)
+        PDV = POS.objects.filter(uuid=uuid_pos).first()
+        if PDV is None:
+            context['error'] = _("POS invalid")
+        else:
+            cashdiary = CashDiary.find(PDV, request.user)
+
+            if not cashdiary or cashdiary.is_closed:
+                context['error'] = _("Cash diary is closed")
+            else:
+                if self.__pk:
+                    budget = self.model.objects.filter(pk=self.__pk).first()
+                    if budget:
+                        prices = budget.calculate_price_doc_complete()
+                        ini['total'] = prices['total']
+                        if not hasattr(budget, 'order_sales') or (budget.order_sales and budget.order_sales.status_order == STATUS_ORDER_PENDING):
+                            context['paidout'] = False
+
+        form = self.form_class(initial=ini)
+        if context['paidout']:
+            for field in form.fields.keys():
+                form.fields[field].disabled = True
+        context['form'] = form
+        auth_edit = gen_auth_permission(
+            self.request.user,
+            'add',
+            self.model._meta.model_name,
+            'codenerix_invoicing',
+            None
+        )
+
+        context['cannot_update'] = None
+        if not auth_edit:
+            context['cannot_update'] = _("Unauthorized action")
+
+        return render(self.request, self.template_model, context)
+
+    def post(self, request, *args, **kwargs):
+        query = json.loads(request._body.decode('utf-8'))
+        form = self.form_class(query)
+        budget = self.model.objects.filter(pk=self.__pk).first()
+        if budget:
+            prices = budget.calculate_price_doc_complete()
+            total = prices['total']
+        else:
+            total = 0
+        error = self.__form_valid(request, query, total)
+
+        if form.is_valid() and not error:
+            with transaction.atomic():
+                # try:
+                info_order = budget.pass_to_order()
+                if 'error' in info_order:
+                    raise Exception(info_order['error'])
+                order = info_order['order']
+
+                info_albaran = order.pass_to_albaran()
+                if 'error' in info_albaran:
+                    raise Exception(info_albaran['error'])
+
+                info_ticket = order.pass_to_ticket()
+                if 'error' in info_ticket:
+                    raise Exception(info_ticket['error'])
+
+                if query.get('payment_card', None):
+                    cash = CashMovement()
+                    pos_slot = self.__PDV.zone.slots.first()
+                    user = get_current_user()
+                    cash.pos = self.__PDV
+                    cash.cash_diary = self.__cashdiary
+                    cash.pos_slot = pos_slot
+                    cash.date_movement = datetime.datetime.now()
+                    cash.user = user
+
+                    cash.kind = PAYMENT_DETAILS_CARD
+                    cash.kind_card = query.get('kind_card')
+                    cash.amount = query.get('amount_card')
+
+                    cash.save()
+                    cash.order.add(order)
+
+                if query.get('payment_cash', None):
+                    cash = CashMovement()
+                    pos_slot = self.__PDV.zone.slots.first()
+                    user = get_current_user()
+                    cash.pos = self.__PDV
+                    cash.cash_diary = self.__cashdiary
+                    cash.pos_slot = pos_slot
+                    cash.date_movement = datetime.datetime.now()
+                    cash.user = user
+                    cash.kind_card = None
+
+                    cash.kind = PAYMENT_DETAILS_CASH
+                    cash.amount = query.get('amount_cash')
+
+                    cash.save()
+                    cash.order.add(order)
+
+                if self.__amount != total:
+                    cash = CashMovement()
+                    cash.pos = self.__PDV
+                    cash.cash_diary = self.__cashdiary
+                    cash.pos_slot = pos_slot
+                    cash.kind = PAYMENT_DETAILS_CASH
+                    cash.kind_card = None
+                    cash.date_movement = datetime.datetime.now()
+                    cash.amount = total - self.__amount
+                    cash.user = user
+                    cash.save()
+                    cash.order.add(order)
+
+                order.status_order = STATUS_ORDER_PAYMENT_ACCEPTED
+                order.save(force_save=True)
+                
+            # Jump to success status
+            return redirect(reverse_lazy("status", kwargs={'status': 'accept', 'answer': urlsafe_base64_encode(json.dumps('').encode())}))
+        else:
+            # Context
+            context = {}
+            if error:
+                for err in error:
+                    errors = form._errors.setdefault(err, ErrorList())
+                    errors.append(error[err])
+            form.fields['total'].initial = total
+            context['form'] = form
+
+            auth_edit = gen_auth_permission(
+                self.request.user,
+                'add',
+                self.model._meta.model_name,
+                'codenerix_invoicing',
+                None
+            )
+
+            context['cannot_update'] = None
+            if not auth_edit:
+                context['cannot_update'] = _("Unauthorized action")
+
+            return render(self.request, self.template_model, context)
+
+    def __form_valid(self, request, query, total):
+        error = {}
+        uuid_pos = request.session.get('POS_client_UUID', None)
+        self.__PDV = POS.objects.filter(uuid=uuid_pos).first()
+
+        if self.__PDV is None:
+            error["payment_detail"] = _('Operation invalid. You are not POS')
+        elif not self.__PDV.have_cash_drawer():
+            error["payment_detail"] = _('POS without cash drawer')
+
+        amount_card = query.get('amount_card', None)
+        amount_cash = query.get('amount_cash', None)
+        payment_card = query.get('payment_card', None)
+        payment_cash = query.get('payment_cash', None)
+        kind_card = query.get('kind_card', None)
+        self.__amount = Decimal('0')
+        if not payment_card and not payment_cash:
+            error['payment_cash'] = _('Select an options')
+            error['payment_card'] = _('Select an options')
+        else:
+            if payment_card and not kind_card:
+                error['kind_card'] = _('Select a card')
+            if payment_card:
+                if not amount_card:
+                    error["amount_card"] = _('Amount invalid')
+                else:
+                    try:
+                        amount_card = Decimal(amount_card)
+                    except InvalidOperation:
+                        error["amount_card"] = _('Amount invalid {} -- {}'.format(amount_card, type(amount_card)))
+                        amount_card = 0
+                    except TypeError:
+                        error["amount_card"] = _('Amount invalid {} -- {}'.format(amount_card, type(amount_card)))
+                        amount_card = 0
+                    except ValueError:
+                        error["amount_card"] = _('Amount invalid {} -- {}'.format(amount_card, type(amount_card)))
+                        amount_card = 0
+                    self.__amount += amount_card
+
+            if payment_cash:
+                if not amount_cash:
+                    error["amount_cash"] = _('Amount invalid')
+                else:
+                    try:
+                        amount_cash = Decimal(amount_cash)
+                    except TypeError:
+                        error["amount_cash"] = _('Amount invalid {} -- {}'.format(amount_cash, type(amount_cash)))
+                        amount_cash = 0
+                    except ValueError:
+                        error["amount_cash"] = _('Amount invalid {} -- {}'.format(amount_cash, type(amount_cash)))
+                        amount_cash = 0
+                    self.__amount += amount_cash
+
+        if self.__amount:
+            if self.__amount < total:
+                error["amount"] = _('Insufficient amount {} --- {}'.format(self.__amount, total))
+        if not self.__pk:
+            error["payment_detail"] = _('ServicePerson invalid')
+        else:
+            budget = self.model.objects.filter(pk=self.__pk).first()
+            if not budget:
+                error["payment_detail"] = _('ServicePerson does not exist invalid')
+            else:
+                self.__cashdiary = CashDiary.find(self.__PDV, request.user)
+                if not self.__cashdiary or self.__cashdiary.is_closed:
+                    error['error'] = _("Cash diary is closed")
+
+        return error
+
+
 class SalesLinesDetails(GenList):
     model = SalesLines
     ws_entry_point = '{}/vending/0'.format(settings.CDNX_INVOICING_URL_SALES)
 
 
-class LinesVendingPayment(View):
-    @method_decorator(login_required)
-    def get(self, request, *args, **kwargs):
-        self.template = 'vendings/vending_payment.html'
-        slot_pk = kwargs.get('pk', None)
-
-        context = self.prepare_context()
-        context["slot"] = slot_pk
-        context['basket'] = SalesBasket.objects.filter(
-            pos_slot__pk=slot_pk,
-            order_sales__payment__isnull=True,
-            role=ROLE_BASKET_SHOPPINGCART,
-            order_sales__removed=False,
-            removed=False
-        ).last()
-        if context['basket']:
-            context['ticket'] = context['basket'].list_tickets().first()
-        # context['PAYMENT_DETAILS_CARD'] = PAYMENT_DETAILS_CARD
-        # context['PAYMENT_DETAILS_CASH'] = PAYMENT_DETAILS_CASH
-        # context['KIND_CARD_VISA'] = KIND_CARD_VISA
-        # context['KIND_CARD_MASTER'] = KIND_CARD_MASTER
-        # context['KIND_CARD_AMERICAN'] = KIND_CARD_AMERICAN
-        # context['KIND_CARD_OTHER'] = KIND_CARD_OTHER
-        context['url_vending_payment'] = 'vending_payment'
-
-        # return render(request, self.template, context)
-
-
-class BasketDetailsSHOPPINGCARTVending(GenDetail):
-    template_model = "vendings/basket_details.html"
-    # ws_entry_point = '{}/shoppingcarts/vending'.format(settings.CDNX_INVOICING_URL_SALES)
-    model = SalesBasket
-    groups = BasketForm.__groups_details__()
-    exclude_fields = ['parent_pk', 'payment']
-    tabs_XXXXXXXX = [
-        {
-            'id': 'lines',
-            'name': _('Products'),
-            'ws': 'CDNX_invoicing_saleslines_sublist_vending',
-            'rows': 'base',
-            'static_partial_header': 'vendings/vending_header.html',
-        },
-    ]
-    # linkedit = False
-    # linkdelete = False
-    # linkback = False
-
-    def dispatch(self, *args, **kwargs):
-        raise Exception("A!")
-
-
 ######################
 class SalesLinesList(GenList):
     model = SalesLines
-
-
-class LinesSubListBasketVending(GenList):
-    model = SalesLines
-    # ws_entry_point = '{}/shoppingcarts/vending'.format(settings.CDNX_INVOICING_URL_SALES)
-    show_details = False
-    field_delete = False
-    field_check = False
-    linkadd = False
-    linkedit = False
-    # static_app_row = 'vendings/vending_app.js'
-    # static_controllers_row = 'vendings/vending_controllers.js'
-
-    def dispatchX(self, *args, **kwargs):
-        raise Exception("A")
-
-
-class XLinesSubListBasketVending(GenList):
-    """
-    mejor hacer un genlist de SalesLines de ese 'pedido' y meter la info del 'pedido' en el contexto
-    """
-
-    # form_ngcontroller = 'vendings/vending_controllers.js'
-
-    # static_partial_row = 'vendings/vending_rowxxxxxxxxxx'
-
-    # ngincludes = {"table": "/static/codenerix_invoicing/partials/sales/table_linebasket.html"}
-    # gentrans = {
-    #     'CreateBudget': _("Create Budget"),
-    #     'CreateOrder': _("Create Order"),
-    #     'Debeseleccionarproducto': ('Debe seleccionar los productos'),
-    # }
-    # client_context = {
-    #     'order_btn': False,
-    #     # 'budget_btn': False,
-    #     # 'invoice_btn': False,
-    # }
-
-    def dispatch(self, *args, **kwargs):
-        # Get constants
-        self.ipk = kwargs.get('ipk')
-
-        return super(LinesSubListBasketVending, self).dispatch(*args, **kwargs)
-
-    def X_get_context_json(self, context):
-        answer = super(LinesSubListBasket, self).get_context_json(context)
-
-        obj = SalesBasket.objects.filter(pk=self.__pk).first()
-        answer['meta']['role_shoppingcart'] = None
-        answer['meta']['role_budget'] = None
-        answer['meta']['role_wishlist'] = None
-        if obj:
-            if obj.role == ROLE_BASKET_SHOPPINGCART:
-                answer['meta']['role_shoppingcart'] = True
-            elif obj.role == ROLE_BASKET_BUDGET:
-                answer['meta']['role_budget'] = True
-        return answer
-
-    def __limitQ__(self, info):
-        limit = {}
-        pk = info.kwargs.get('pk', None)
-        limit['file_link'] = Q(basket__pk=pk)
-        limit['removed'] = Q(removed=False)
-        return limit

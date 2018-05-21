@@ -1,0 +1,81 @@
+{% extends "codenerix/form.html" %}
+{% load staticfiles %}
+{% load i18n %}
+{% load codenerix_lists %}
+{% load codenerix_common %}
+
+{% block form_head %}
+    <script type="text/javascript" src="{% static "codenerix/js/controllers.js" %}"></script>
+    <script type="text/javascript" src="{% static "codenerix_invoicing/js/app.js" %}"></script>
+    <script type="text/javascript" src="{% static "codenerix_invoicing/js/controllers.js" %}"></script>
+    <div ng-controller="codenerixVendingPaymentCtrl">
+    <div class="modal-header">
+        <h3 class="modal-title text-center">{% trans "Payment" %}</h3>
+    </div>
+    <div class="row clearfix">
+    <div class="modal-body">
+        <div class="col-md-12">
+            {% if form.errors %}
+                <div class="non-field-errors text-center">
+                    <alert type="danger">
+                        {% for err in form.errors.delay %}
+                            <p>{{ err|safe }}</p>
+                        {% endfor %}
+                    </alert>
+                </div>
+            {% else %}
+                {% if cannot_update %}
+                    <div class="non-field-errors text-center">
+                        <alert type="danger">
+                           *{{ cannot_update }}
+                        </alert>
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+    {% if error %}
+    <div class="col-md-12">
+        <h2 class="alert alert-danger"><li class="glyphicon glyphicon-warning-sign"></li>&nbsp;{{ error }}</h2>
+    </div>
+    <style type="text/css">
+    .panel{
+        display: none;
+    }
+    </style>
+    {% endif %}
+
+{% endblock %}
+{% block form_action %}{% endblock %}
+
+{% block buttons_top %}{% endblock %}
+{% block buttons_bottom %}{% endblock %}
+
+{% block form_bottom %}
+    </div>
+    </div>
+    <div class="modal-footer">
+        {% if linkdelete %}
+            {% if cannot_delete %}
+                <label  class="sr-only"  for="submit_delete">{% trans "Delete" %}</label>
+                <button type="button" id="submit_delete" ng-click="msg('{{cannot_delete}}')" class="btn btn-sm btn-danger">{% trans "Delete" %}</button>
+            {% else %}
+                <label  class="sr-only"  for="submit_delete">{% trans "Delete" %}</label>
+                <button type="button" id="submit_delete" ng-click="delete('{% trans "Are you sure you would like to delete this register?" %}')" class="btn btn-sm btn-danger">{% trans "Delete" %}</button>
+            {% endif %}
+        {% endif %}
+        {% if not cannot_update %}
+            {% comment %}
+            <label  class="sr-only"  for="submit_save">{% trans "Save" %}</label>
+            <button type="button" id="submit_save" ng-click="submit({{form.form_name}})" class="btn btn-sm btn-info" ng-disabled="{{ form.form_name }}.$invalid" ng-if="{{form.form_name}}.$dirty">{% trans "Save" %}</button>
+            {% endcomment %}
+            
+            <label  class="sr-only"  for="submit_pay">{% trans "Pay" %}</label>
+            <button type="button" id="submit_pay" ng-click="submit({{form.form_name}})" class="btn btn-sm btn-info" ng-disabled="{{ form.form_name }}.$invalid" ng-if="{{form.form_name}}.$dirty" ng-hide="'{{ paidout }}' == 'True'">{% trans "Pay" %}</button>
+
+            <label  class="sr-only"  for="submit_print">{% trans "Save" %}</label>
+            <button type="button" id="submit_print" ng-click="print({{form.form_name}})" class="btn btn-sm btn-success" ng-disabled="{{ form.form_name }}.$invalid" ng-if="{{form.form_name}}.$dirty" ng-hide="'{{ paidout }}' == 'True'">{% trans "Print" %}</button>
+        {% endif %}
+        <label  class="sr-only"  for="cancel">{% trans "Close" %}</label>
+        <button type="button" class="btn btn-sm btn-danger" ng-click="cancel()">Close</button>
+    </div>
+{% endblock %}

@@ -22,7 +22,7 @@ import copy
 import datetime
 from decimal import Decimal
 
-from django.db import models, transaction
+from django.db import models, transaction, IntegrityError
 from django.db.models import Q, F
 from django.urls import reverse
 from django.utils import timezone
@@ -33,7 +33,7 @@ from django.conf import settings
 from codenerix.middleware import get_current_user
 from codenerix.models import GenInterface, CodenerixModel
 from codenerix.models_people import GenRole
-from codenerix_extensions.helpers import get_external_method
+from codenerix_extensions.helpers import get_external_method, round_decimal
 from codenerix_extensions.files.models import GenDocumentFile
 
 from codenerix_invoicing.models import Haulier, BillingSeries, TypeDocument
@@ -539,7 +539,7 @@ class GenVersion(CodenerixModel):  # META: Abstract class
             # Itero por todas las claves
             for key in self.__dict__.keys():
                 # Si la clave está en obj, no es block y no es un atributo propio de self (empieza por _) comprueba si son iguales.
-                if key in obj.__dict__ and key not in ['lock', 'role', 'updated', 'code', 'created'] and not key.startswith("_"):
+                if key in obj.__dict__ and key not in ['lock', 'role', 'updated', 'code', 'created', 'status_order'] and not key.startswith("_"):
                     if need_duplicate is False:
                         # Si son iguales, need_duplicate se mantendrá a false. Solo se activa si son distintos.
                         if type(self.__dict__[key]) == datetime.datetime and obj.__dict__[key]:
@@ -623,46 +623,39 @@ class GenVersion(CodenerixModel):  # META: Abstract class
             equivalence_surcharges = {}
             total = Decimal("0")
             for line in queryset:
-                subtotal += line.subtotal
+                subtotal += line['subtotal']
 
-                if hasattr(line, 'tax'):
-                    if line.tax not in tax:
+                if 'tax' in line:
+                    # initial tax
+                    if line['tax'] not in tax:
                         if not details:
-                            tax[line.tax] = Decimal("0")
+                            tax[line['tax']] = Decimal("0")
                         else:
-                            tax[line.tax] = {
-                                'label': line.tax_label,
+                            tax[line['tax']] = {
+                                'label': line['tax_label'],
                                 'amount': Decimal("0")
                             }
-                    price_tax = Decimal(line.taxes)
+                    # update tax
                     if not details:
-                        tax[line.tax] += price_tax
+                        tax[line['tax']] += line['taxes']
                     else:
-                        tax[line.tax]['amount'] += price_tax
-                else:
-                    price_tax = Decimal("0")
+                        tax[line['tax']]['amount'] += line['taxes']
 
-                if hasattr(line, 'equivalence_surcharge'):
-                    if line.equivalence_surcharge:
-                        if line.equivalence_surcharge not in equivalence_surcharges:
-                            equivalence_surcharges[line.equivalence_surcharge] = Decimal("0")
+                if 'equivalence_surcharges' in line:
+                    # initial equivalence surcharges
+                    if line['equivalence_surcharges'] not in equivalence_surcharges:
+                        equivalence_surcharges[str(line['equivalence_surcharges'])] = Decimal("0")
+                    # update
+                    equivalence_surcharges[str(line['equivalence_surcharges'])] = line['equivalence_surcharges']
 
-                        equivalence_surcharge = line.subtotal * Decimal(self.equivalence_surcharge / 100.0)
-                        equivalence_surcharges[line.equivalence_surcharge] = equivalence_surcharge
-                    else:
-                        equivalence_surcharge = Decimal("0")
-                else:
-                    equivalence_surcharge = Decimal("0")
+                if 'discounts' in line:
+                    # initial discounts
+                    if str(line['discounts']) not in discount:
+                        discount[str(line['discounts'])] = Decimal("0")
+                    # update
+                    discount[str(line['discounts'])] += line['discounts']
 
-                if hasattr(line, 'discount'):
-                    if str(line.discount) not in discount:
-                        discount[str(line.discount)] = Decimal("0")
-                    price_discount = Decimal(line.discounts)
-                    discount[str(line.discount)] += price_discount
-                else:
-                    price_discount = Decimal("0")
-
-                total += line.subtotal - price_discount + price_tax + equivalence_surcharge
+                total += line['total']
 
             return {'subtotal': subtotal, 'taxes': tax, 'total': total, 'discounts': discount, 'equivalence_surcharges': equivalence_surcharges}
         else:
@@ -764,70 +757,25 @@ class SalesBasket(GenVersion):
         self.save()
         return self
 
-    def pass_to_order(self, payment_request=None):
-        raise Exception("pass_to_order")
-        """
-        context = {
-            'error': None,
-            'order': None
-        }
-        if not hasattr(self, 'order_sales'):
-            try:
-                with transaction.atomic():
-                    if type(payment_request) == int:
-                        payment_request = PaymentRequest.objects.get(pk=payment_request)
+    def pass_to_order(self, payment_request=None, signed_obligatorily=True):
+        with transaction.atomic():
+            info = {}
+            
+            info = SalesLines.create_order_from_budget(self.pk, [x[0] for x in self.lines_sales.filter(removed=False, order__isnull=True).values_list('pk')], signed_obligatorily)
+            if 'error' not in info:
+                order = info['obj_final']
+                order.payment = payment_request
+                if order.payment and order.payment.is_paid():
+                    order.status_order = STATUS_ORDER_PAYMENT_ACCEPTED
+                order.save()
 
-                    order = SalesOrder()
-                    order.customer = self.customer
-                    order.budget = self
-                    order.payment = payment_request
-                    if order.payment and order.payment.is_paid():
-                        order.status_order = STATUS_ORDER_PAYMENT_ACCEPTED
-                    order.save()
-
-                    if self.pos:
-                        pos = self.pos
-                    else:
-                        pos = POS.objects.filter(default=True).first()
-
-                    if pos is None:
-                        raise IntegrityError(_('POS by default not found'))
-
-                    for line in self.line_basket_sales.all():
-                        if line.product.product.feature_special and line.product.product.feature_special.unique:
-                            news_lines = range(line.quantity)
-                            quantity = 1
-                        else:
-                            news_lines = [0, ]
-                            quantity = line.quantity
-
-                        for counter in news_lines:
-                            lorder = SalesLineOrder()
-                            lorder.order = order
-                            lorder.line_budget = line
-                            lorder.product = line.product
-                            lorder.product_unique = line.product.book_product(pos, quantity)
-                            lorder.price_recommended = line.price_recommended
-                            lorder.description = line.description
-                            lorder.discount = line.discount
-                            lorder.price_base = line.price_base
-                            lorder.tax = line.tax
-                            lorder.equivalence_surcharge = line.equivalence_surcharge
-                            lorder.quantity = quantity
-                            lorder.save()
-
-                    self.lock = True
-                    self.role = ROLE_BASKET_BUDGET
-                    self.expiration_date = None
-                    self.save()
-                context['order'] = self.order_sales
-            except IntegrityError as e:
-                context['error'] = str(e)
-        else:
-            context['order'] = self.order_sales
-
-        return context
-        """
+                self.lock = True
+                self.role = ROLE_BASKET_BUDGET
+                self.expiration_date = None
+                self.save()
+                info['order'] = order
+            
+        return info
 
     def lock_delete(self, request=None):
         # Solo se puede eliminar si:
@@ -848,7 +796,26 @@ class SalesBasket(GenVersion):
         return super(SalesBasket, self).lock_delete()
 
     def calculate_price_doc_complete(self, details=False):
-        return super(SalesBasket, self).calculate_price_doc_complete(self.lines_sales.filter(removed=False), details)
+        queryset = self.lines_sales.filter(
+            removed=False
+        ).annotate(
+            subtotal=F('subtotal_basket'),
+            discounts=F('discounts_basket'),
+            taxes=F('taxes_basket'),
+            equivalence_surcharges=F('equivalence_surcharges_basket'),
+            tax=F('tax_basket'),
+            tax_label=F('tax_label_basket'),
+            total=F('total_basket')
+        ).values(
+            'subtotal',
+            'discounts',
+            'taxes',
+            'equivalence_surcharges',
+            'tax',
+            'tax_label',
+            'total'
+        )
+        return super(SalesBasket, self).calculate_price_doc_complete(queryset, details)
 
     def list_tickets(self):
         raise Exception("list_tickets")
@@ -1091,7 +1058,26 @@ class SalesOrder(GenVersion):
         return self.total
 
     def calculate_price_doc_complete(self, details=False):
-        return super(SalesOrder, self).calculate_price_doc_complete(self.lines_sales.filter(removed=False), details)
+        queryset = self.lines_sales.filter(
+            removed=False
+        ).annotate(
+            subtotal=F('subtotal_order'),
+            discounts=F('discounts_order'),
+            taxes=F('taxes_order'),
+            equivalence_surcharges=F('equivalence_surcharges_order'),
+            tax=F('tax_order'),
+            tax_label=F('tax_label_order'),
+            total=F('total_order')
+        ).values(
+            'subtotal',
+            'discounts',
+            'taxes',
+            'equivalence_surcharges',
+            'tax',
+            'tax_label',
+            'total'
+        )
+        return super(SalesOrder, self).calculate_price_doc_complete(queryset, details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentOrder()
@@ -1127,6 +1113,18 @@ class SalesOrder(GenVersion):
         with transaction.atomic():
             SalesLines.delete_doc(self)
             return super(SalesOrder, self).delete()
+
+    def pass_to_albaran(self):
+        info = SalesLines.create_albaran_from_order(self.pk, [x[0] for x in self.lines_sales.filter(removed=False, albaran__isnull=True).values_list('pk')])
+        return info
+
+    def pass_to_ticket(self):
+        info = SalesLines.create_ticket_from_order(self.pk, [x[0] for x in self.lines_sales.filter(removed=False, ticket__isnull=True).values_list('pk')])
+        return info
+
+    def pass_to_invoice(self):
+        info = SalesLines.create_invoice_from_order(self.pk, [x[0] for x in self.lines_sales.filter(removed=False, invoice__isnull=True).values_list('pk')])
+        return info
 
 
 # documentos de pedidos
@@ -1181,7 +1179,27 @@ class SalesAlbaran(GenVersion):
         return self.total
 
     def calculate_price_doc_complete(self, details=False):
-        return super(SalesAlbaran, self).calculate_price_doc_complete(self.lines_sales.filter(removed=False), details)
+        # albaran no tiene información de precios, el precio de cada producto es el que le fue asignado en el pedido
+        queryset = self.lines_sales.filter(
+            removed=False
+        ).annotate(
+            subtotal=F('subtotal_order'),
+            discounts=F('discounts_order'),
+            taxes=F('taxes_order'),
+            equivalence_surcharges=F('equivalence_surcharges_order'),
+            tax=F('tax_order'),
+            tax_label=F('tax_label_order'),
+            total=F('total_order')
+        ).values(
+            'subtotal',
+            'discounts',
+            'taxes',
+            'equivalence_surcharges',
+            'tax',
+            'tax_label',
+            'total'
+        )
+        return super(SalesAlbaran, self).calculate_price_doc_complete(queryset, details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentAlbaran()
@@ -1234,7 +1252,26 @@ class SalesTicket(GenVersion):
         return self.total
 
     def calculate_price_doc_complete(self, details=False):
-        return super(SalesTicket, self).calculate_price_doc_complete(self.lines_sales.filter(removed=False), details)
+        queryset = self.lines_sales.filter(
+            removed=False
+        ).annotate(
+            subtotal=F('subtotal_ticket'),
+            discounts=F('discounts_ticket'),
+            taxes=F('taxes_ticket'),
+            equivalence_surcharges=F('equivalence_surcharges_ticket'),
+            tax=F('tax_ticket'),
+            tax_label=F('tax_label_ticket'),
+            total=F('total_ticket')
+        ).values(
+            'subtotal',
+            'discounts',
+            'taxes',
+            'equivalence_surcharges',
+            'tax',
+            'tax_label',
+            'total'
+        )
+        return super(SalesTicket, self).calculate_price_doc_complete(queryset, details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentTicket()
@@ -1276,7 +1313,28 @@ class SalesTicketRectification(GenInvoiceRectification):
         return self.total
 
     def calculate_price_doc_complete(self, details=False):
-        return super(SalesTicketRectification, self).calculate_price_doc_complete(self.lines_sales.filter(removed=False), details)
+        # los tickets rectificativos no tienen información de precios
+        # los precios son los que les fueron asigandos al crear el ticket
+        queryset = self.lines_sales.filter(
+            removed=False
+        ).annotate(
+            subtotal=F('subtotal_ticket'),
+            discounts=F('discounts_ticket'),
+            taxes=F('taxes_ticket'),
+            equivalence_surcharges=F('equivalence_surcharges_ticket'),
+            tax=F('tax_ticket'),
+            tax_label=F('tax_label_ticket'),
+            total=F('total_ticket')
+        ).values(
+            'subtotal',
+            'discounts',
+            'taxes',
+            'equivalence_surcharges',
+            'tax',
+            'tax_label',
+            'total'
+        )
+        return super(SalesTicketRectification, self).calculate_price_doc_complete(queryset, details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentTicketRectification()
@@ -1326,7 +1384,26 @@ class SalesInvoice(GenVersion):
         return self.total
 
     def calculate_price_doc_complete(self, details=False):
-        return super(SalesInvoice, self).calculate_price_doc_complete(self.lines_sales.filter(removed=False), details)
+        queryset = self.lines_sales.filter(
+            removed=False
+        ).annotate(
+            subtotal=F('subtotal_invoice'),
+            discounts=F('discounts_invoice'),
+            taxes=F('taxes_invoice'),
+            equivalence_surcharges=F('equivalence_surcharges_invoice'),
+            tax=F('tax_invoice'),
+            tax_label=F('tax_label_invoice'),
+            total=F('total_invoice')
+        ).values(
+            'subtotal',
+            'discounts',
+            'taxes',
+            'equivalence_surcharges',
+            'tax',
+            'tax_label',
+            'total'
+        )
+        return super(SalesInvoice, self).calculate_price_doc_complete(queryset, details)
 
     def get_customer(self):
         return self.customer
@@ -1367,7 +1444,28 @@ class SalesInvoiceRectification(GenInvoiceRectification):
         return self.total
 
     def calculate_price_doc_complete(self, details=False):
-        return super(SalesInvoiceRectification, self).calculate_price_doc_complete(self.lines_sales.filter(removed=False), details)
+        # los tickets rectificativos no tienen información de precios
+        # los precios son los que les fueron asigandos al crear la factura
+        queryset = self.lines_sales.filter(
+            removed=False
+        ).annotate(
+            subtotal=F('subtotal_invoice'),
+            discounts=F('discounts_invoice'),
+            taxes=F('taxes_invoice'),
+            equivalence_surcharges=F('equivalence_surcharges_invoice'),
+            tax=F('tax_invoice'),
+            tax_label=F('tax_label_invoice'),
+            total=F('totalinvoicet')
+        ).values(
+            'subtotal',
+            'discounts',
+            'taxes',
+            'equivalence_surcharges',
+            'tax',
+            'tax_label',
+            'total'
+        )
+        return super(SalesInvoiceRectification, self).calculate_price_doc_complete(queryset, details)
 
     def print_counter(self, user):
         obj = PrintCounterDocumentInvoiceRectification()
@@ -1412,13 +1510,6 @@ class SalesLines(CodenerixModel):
 
     quantity = models.FloatField(_("Quantity"), blank=False, null=False)
 
-    # additional information
-    subtotal = models.DecimalField(_("Subtotal"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
-    discounts = models.DecimalField(_("Discounts"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
-    taxes = models.DecimalField(_("Taxes"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
-    equivalence_surcharges = models.DecimalField(_("Equivalence surcharge"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0)
-    total = models.DecimalField(_("Total"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
-
     code = models.CharField(_("Code"), max_length=250, blank=True, null=True, default=None)
     # ####
     # desde el formulario se podrá modificar el precio y la descripcion del producto
@@ -1433,6 +1524,12 @@ class SalesLines(CodenerixModel):
     equivalence_surcharge_basket = models.FloatField(_("Equivalence surcharge (%)"), blank=True, null=True, default=0)
     tax_label_basket = models.CharField(_("Tax Name"), max_length=250, blank=True, null=True)
     notes_basket = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
+    subtotal_basket = models.DecimalField(_("Subtotal"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    discounts_basket = models.DecimalField(_("Discounts"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    taxes_basket = models.DecimalField(_("Taxes"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    equivalence_surcharges_basket = models.DecimalField(_("Equivalence surcharge"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0)
+    total_basket = models.DecimalField(_("Total"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+
     # info order
     price_recommended_order = models.DecimalField(_("Recomended price base"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
     description_order = models.CharField(_("Description"), max_length=256, blank=True, null=True)
@@ -1442,6 +1539,12 @@ class SalesLines(CodenerixModel):
     equivalence_surcharge_order = models.FloatField(_("Equivalence surcharge (%)"), blank=True, null=True, default=0)
     tax_label_order = models.CharField(_("Tax Name"), max_length=250, blank=True, null=True)
     notes_order = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
+    subtotal_order = models.DecimalField(_("Subtotal"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    discounts_order = models.DecimalField(_("Discounts"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    taxes_order = models.DecimalField(_("Taxes"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    equivalence_surcharges_order = models.DecimalField(_("Equivalence surcharge"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0)
+    total_order = models.DecimalField(_("Total"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+
     # info albaran - basic
     notes_albaran = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
     # info ticket
@@ -1453,6 +1556,12 @@ class SalesLines(CodenerixModel):
     equivalence_surcharge_ticket = models.FloatField(_("Equivalence surcharge (%)"), blank=True, null=True, default=0)
     tax_label_ticket = models.CharField(_("Tax Name"), max_length=250, blank=True, null=True)
     notes_ticket = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
+    subtotal_ticket = models.DecimalField(_("Subtotal"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    discounts_ticket = models.DecimalField(_("Discounts"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    taxes_ticket = models.DecimalField(_("Taxes"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    equivalence_surcharges_ticket = models.DecimalField(_("Equivalence surcharge"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0)
+    total_ticket = models.DecimalField(_("Total"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+
     # info ticket rectification - basic
     notes_ticket_rectification = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
     # info invoice
@@ -1464,6 +1573,12 @@ class SalesLines(CodenerixModel):
     equivalence_surcharge_invoice = models.FloatField(_("Equivalence surcharge (%)"), blank=True, null=True, default=0)
     tax_label_invoice = models.CharField(_("Tax Name"), max_length=250, blank=True, null=True)
     notes_invoice = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
+    subtotal_invoice = models.DecimalField(_("Subtotal"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    discounts_invoice = models.DecimalField(_("Discounts"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    taxes_invoice = models.DecimalField(_("Taxes"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+    equivalence_surcharges_invoice = models.DecimalField(_("Equivalence surcharge"), blank=True, null=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0)
+    total_invoice = models.DecimalField(_("Total"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
+
     # info invoice rectification - basic
     notes_invoice_rectification = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
 
@@ -1506,7 +1621,7 @@ class SalesLines(CodenerixModel):
                             }
                         ]
                     else:
-                        raise SalesLinesUniqueProductNotExists(_('Unique product not exists!'))
+                        raise SalesLinesUniqueProductNotExists(_('Unique product not exists! No stock!'))
                 else:
                     stock_available = None
                     for unique_product in qs:
@@ -1525,13 +1640,14 @@ class SalesLines(CodenerixModel):
                         quantity -= stock_available
 
                     if quantity > 0:
-                        raise SalesLinesInsufficientStock(_("Insufficient stock"))
+                        raise SalesLinesInsufficientStock(_("Insufficient stock. Product: {}".format(self.product_final)))
                     else:
                         return products_unique
 
     def save(self, *args, **kwargs):
         with transaction.atomic():
             if self.pk is None:
+                line_old = None
                 if self.product_final.code:
                     self.code = self.product_final.code
                 else:
@@ -1627,7 +1743,7 @@ class SalesLines(CodenerixModel):
             if self.basket:
                 if self.tax_basket_fk is None:
                     self.tax_basket_fk = self.product_final.product.tax
-                if self.tax_label_basket is None:
+                if not self.tax_label_basket:
                     self.tax_label_basket = self.product_final.product.tax.name
                 if not self.tax_basket:
                     self.tax_basket = self.product_final.product.tax.tax
@@ -1637,6 +1753,7 @@ class SalesLines(CodenerixModel):
                     self.price_recommended_basket = self.product_final.price_base
                 if not self.description_basket:
                     self.description_basket = '{}'.format(self.product_final)
+                update_basket = self.__update_subtotal_basket(line_old)
             if self.order:
                 if self.tax_order_fk is None:
                     self.tax_order_fk = self.product_final.product.tax
@@ -1650,6 +1767,7 @@ class SalesLines(CodenerixModel):
                     self.price_recommended_order = self.product_final.price_base
                 if not self.description_order:
                     self.description_order = '{}'.format(self.product_final)
+                update_order = self.__update_subtotal_order(line_old)
             if self.ticket:
                 if self.tax_ticket_fk is None:
                     self.tax_ticket_fk = self.product_final.product.tax
@@ -1663,6 +1781,7 @@ class SalesLines(CodenerixModel):
                     self.price_recommended_ticket = self.product_final.price_base
                 if not self.description_ticket:
                     self.description_ticket = '{}'.format(self.product_final)
+                update_ticket = self.__update_subtotal_ticket(line_old)
             if self.invoice:
                 if self.tax_invoice_fk is None:
                     self.tax_invoice_fk = self.product_final.product.tax
@@ -1676,22 +1795,82 @@ class SalesLines(CodenerixModel):
                     self.price_recommended_invoice = self.product_final.price_base
                 if not self.description_invoice:
                     self.description_invoice = '{}'.format(self.product_final)
+                update_invoice = self.__update_subtotal_invoice(line_old)
 
             result = super(self._meta.model, self).save(*args, **kwargs)
             # update totals
-            if self.order:
+            if self.order and update_order:
                 self.order.update_totales()
             if self.albaran:
                 self.albaran.update_totales()
-            if self.ticket:
+            if self.ticket and update_ticket:
                 self.ticket.update_totales()
             if self.ticket_rectification:
                 self.ticket_rectification.update_totales()
-            if self.invoice:
+            if self.invoice and update_invoice:
                 self.invoice.update_totales()
             if self.invoice_rectification:
                 self.invoice_rectification.update_totales()
             return result
+
+    def __update_subtotal_basket(self, line_old):
+        self.subtotal_basket = Decimal(self.quantity) * self.price_base_basket
+        self.discounts_basket = round_decimal(self.subtotal_basket * self.discount_basket / Decimal(100), CURRENCY_DECIMAL_PLACES)
+        self.taxes_basket = round_decimal(self.subtotal_basket * Decimal(self.tax_basket) / Decimal(100), CURRENCY_DECIMAL_PLACES)
+        self.equivalence_surcharges_basket = round_decimal(self.subtotal_basket * Decimal(self.equivalence_surcharge_basket) / Decimal(100), CURRENCY_DECIMAL_PLACES)
+        self.total_basket = self.subtotal_basket + self.taxes_basket - self.discounts_basket
+        if line_old is None:
+            update = True
+        elif self.subtotal_basket != line_old.subtotal_basket or self.discounts_basket != line_old.discounts_basket or self.taxes_basket != line_old.taxes_basket or self.equivalence_surcharges_basket != line_old.equivalence_surcharges_basket or self.total_basket != line_old.total_basket:
+            update = True
+        else:
+            update = False
+        return update
+
+    def __update_subtotal_order(self, line_old):
+        self.subtotal_order = Decimal(self.quantity) * self.price_base_order
+        self.discounts_order = round_decimal(self.subtotal_order * self.discount_order / Decimal(100), CURRENCY_DECIMAL_PLACES)
+        self.taxes_order = round_decimal(self.subtotal_order * Decimal(self.tax_order) / Decimal(100), CURRENCY_DECIMAL_PLACES)
+        self.equivalence_surcharges_order = round_decimal(self.subtotal_order * Decimal(self.equivalence_surcharge_order) / Decimal(100), CURRENCY_DECIMAL_PLACES)
+        self.total_order = self.subtotal_order + self.taxes_order - self.discounts_order
+        if line_old is None:
+            update = True
+        elif self.subtotal_order != line_old.subtotal_order or self.discounts_order != line_old.discounts_order or self.taxes_order != line_old.taxes_order or self.equivalence_surcharges_order != line_old.equivalence_surcharges_order or self.total_order != line_old.total_order:
+            update = True
+        else:
+            update = False
+
+        return update
+
+    def __update_subtotal_ticket(self, line_old):
+        self.subtotal_ticket = Decimal(self.quantity) * self.price_base_ticket
+        self.discounts_ticket = round_decimal(self.subtotal_ticket * self.discount_ticket / Decimal(100), CURRENCY_DECIMAL_PLACES)
+        self.taxes_ticket = round_decimal(self.subtotal_ticket * Decimal(self.tax_ticket) / Decimal(100), CURRENCY_DECIMAL_PLACES)
+        self.equivalence_surcharges_ticket = round_decimal(self.subtotal_ticket * Decimal(self.equivalence_surcharge_ticket) / Decimal(100), CURRENCY_DECIMAL_PLACES)
+        self.total_ticket = self.subtotal_ticket + self.taxes_ticket - self.discounts_ticket
+        if line_old is None:
+            update = True
+        elif self.subtotal_ticket != line_old.subtotal_ticket or self.discounts_ticket != line_old.discounts_ticket or self.taxes_ticket != line_old.taxes_ticket or self.equivalence_surcharges_ticket != line_old.equivalence_surcharges_ticket or self.total_ticket != line_old.total_ticket:
+            update = True
+        else:
+            update = False
+
+        return update
+
+    def __update_subtotal_invoice(self, line_old):
+        self.subtotal_invoice = Decimal(self.quantity) * self.price_base_invoice
+        self.discounts_invoice = round_decimal(self.subtotal_invoice * self.discount_invoice / Decimal(100), CURRENCY_DECIMAL_PLACES)
+        self.taxes_invoice = round_decimal(self.subtotal_invoice * Decimal(self.tax_invoice) / Decimal(100), CURRENCY_DECIMAL_PLACES)
+        self.equivalence_surcharges_invoice = round_decimal(self.subtotal_invoice * Decimal(self.equivalence_surcharge_invoice) / Decimal(100), CURRENCY_DECIMAL_PLACES)
+        self.total_invoice = self.subtotal_invoice + self.taxes_invoice - self.discounts_invoice
+        if line_old is None:
+            update = True
+        elif self.subtotal_invoice != line_old.subtotal_invoice or self.discounts_invoice != line_old.discounts_invoice or self.taxes_invoice != line_old.taxes_invoice or self.equivalence_surcharges_invoice != line_old.equivalence_surcharges_invoice or self.total_invoice != line_old.total_invoice:
+            update = True
+        else:
+            update = False
+
+        return update
 
     def delete(self):
         with transaction.atomic():
@@ -1981,10 +2160,10 @@ class SalesLines(CodenerixModel):
                     for line in albaran.lines_sales.all():
                         if line.product_unique:
                             # It is a unique product
-                            pus = [line.product_unique]
+                            pus = [line.product_unique, ]
                         else:
                             # It is not a unique product, get all of them
-                            pus = line.product_final.products_unique.filter(stock_real__gt=F(stock_locked)):
+                            pus = line.product_final.products_unique.filter(stock_real__gt=F('stock_locked'))
 
                         # Reserve as many as we can
                         quantity = line.quantity

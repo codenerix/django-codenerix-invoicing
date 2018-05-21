@@ -28,6 +28,7 @@ from codenerix_products.models import TypeTax
 from codenerix_storages.models import StorageBox
 
 from codenerix_products.models import ProductUnique
+from .models_purchases import KIND_CARD
 
 from .models_sales import Address
 from .models_sales import Customer, CustomerDocument
@@ -246,6 +247,26 @@ class LineOfBasketForm(GenModelForm):
             ),
         ]
         return g
+
+
+class LineOfBasketFormWS(GenModelForm):
+
+    class Meta:
+        model = SalesLines
+        fields = [
+            'basket',
+            'tax_basket_fk',
+            'product_final',
+            'product_unique',
+            'quantity',
+            'price_recommended_basket',
+            'description_basket',
+            'price_base_basket',
+            'discount_basket',
+            'tax_basket',
+            'equivalence_surcharge_basket',
+            'tax_label_basket',
+        ]
 
 
 class LineOfBasketFormUpdate(LineOfBasketForm):
@@ -1261,3 +1282,86 @@ class SalesLinesInLineForm(GenModelForm):
         ]
         # ['price_base_basket'],
         # ['tax_basket', 6]
+
+
+class VendingPayForm(GenForm):
+    amount_card = forms.DecimalField(label=_('Amount'), required=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
+    amount_cash = forms.DecimalField(label=_('Amount'), required=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
+    payment_card = forms.BooleanField(label=_('Card'), required=False)
+    payment_cash = forms.BooleanField(label=_('Cash'), required=False)
+    total = forms.DecimalField(label=_('Total'), required=False, disabled=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
+    diff_pay = forms.DecimalField(label=_('Diff'), required=False, disabled=True, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES)
+    kind_card = forms.ChoiceField(choices=KIND_CARD, label=_('Kind card'), required=False)
+
+    @staticmethod
+    def __groups__():
+        g = [
+            (
+                _('Info'), 12,
+                ['total', 12],
+            ),
+            (
+                _('Card'), 6,
+                ['payment_card', 12, {
+                    'extra': ["ng-click=change_amount('amount_cash', 'amount_card', 'payment_cash', 'payment_card', 'total', 'diff_pay')"],
+                }],
+                ['kind_card', 12],
+                ['amount_card', 12, {
+                    'extra': ["ng-change=change_amount('amount_cash', 'amount_card', 'payment_cash', 'payment_card', 'total', 'diff_pay')"],
+                }],
+            ),
+            (
+                _('Cash'), 6,
+                ['payment_cash', 12, {
+                    'extra': ["ng-click=change_amount('amount_cash', 'amount_card', 'payment_cash', 'payment_card', 'total', 'diff_pay')"],
+                }],
+                ['amount_cash', 12, {
+                    'extra': ["ng-change=change_amount('amount_cash', 'amount_card', 'payment_cash', 'payment_card', 'total', 'diff_pay')"],
+                }],
+            ),
+            (
+                _('Details'), 12,
+                ['diff_pay', 12],
+            )
+        ]
+        return g
+
+
+class LinesVendingEditForm(GenModelForm):
+    reason = forms.ModelChoiceField(label=_('Reason of modification'), queryset=ReasonModification.objects.all().order_by('code'))
+
+    class Meta:
+        model = SalesLines
+        fields = ['code', 'quantity', 'description_basket', 'reason', 'notes_basket']
+        widgets = {
+            'notes': WysiwygAngularInput()
+        }
+
+    def __groups__(self):
+        g = [
+            (_('Details'), 12,
+                ['code', 5, {'extra': ['ng-disabled=true']}],
+                ['description_basket', 5],
+                ['quantity', 2],
+                ['reason', 12],
+                ['notes_basket', 12])
+        ]
+        return g
+
+    @staticmethod
+    def __groups_details__():
+        g = [
+            (
+                _('Details'), 12,
+                ['code', 5],
+                ['quantity', 2],
+                ['description_basket', 6],
+                ['price_base_basket', 6],
+                ['discount_basket', 6],
+                ['tax_basket', 6],
+                ['equivalence_surcharge_basket', 6],
+                ['tax_label_basket', 6],
+                ['notes_basket', 6],
+            )
+        ]
+        return g

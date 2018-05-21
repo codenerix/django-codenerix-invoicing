@@ -27,7 +27,8 @@ angular.module('codenerixInvoicingVendingControllers', [])
 .controller('codenerixVendingCtrl', ['$scope', '$rootScope', '$timeout', '$location', '$uibModal', '$templateCache', '$http', '$state', 'Register', 'ListMemory',
     function($scope, $rootScope, $timeout, $location, $uibModal, $templateCache, $http, $state, Register, ListMemory) {
         if (ws_entry_point==undefined) { ws_entry_point=""; }
-        multilist($scope, $rootScope, $timeout, $location, $uibModal, $templateCache, $http, $state, Register, ListMemory, 0, "/"+ws_entry_point);
+        var ws = "/"+ws_entry_point;
+        multilist($scope, $rootScope, $timeout, $location, $uibModal, $templateCache, $http, $state, Register, ListMemory, 0, ws);
 
         $scope.product_final = null;
         $scope.product_final_pk = null;
@@ -61,7 +62,6 @@ angular.module('codenerixInvoicingVendingControllers', [])
         };
 
         $scope.product_changed = function (inscope) {
-            console.log(inscope);
             // Save inscope
             $scope.inscope = inscope;
 
@@ -70,59 +70,70 @@ angular.module('codenerixInvoicingVendingControllers', [])
             $scope.final_error = false;
             $scope.inscope.product_final = $scope.product_final;
 
-            // Prepare URL
-            var url = $scope.data.meta.context.ws.ean13_fullinfo;
-            var eanurl = "/" + url.replace("/PRODUCT_FINAL_EAN13/", "/"+$scope.product_final+"/");
+            if ($scope.product_final != "None" && $scope.product_final != ''){
+                // Prepare URL
+                var url = $scope.data.meta.context.ws.ean13_fullinfo;
+                var eanurl = "/" + url.replace("/PRODUCT_FINAL_EAN13/", "/"+$scope.product_final+"/");
+                // Query the product
+                $http.get( eanurl, {}, {} )
+                .success(function(answer, stat) {
+                    if (stat==200 || stat ==202) {
+                        // Decide next step
+                        if (Object.keys(answer).length) {
+                            // Set caducity status
+                            $scope.data.meta.context.caducity_disabled = !answer.caducable;
+                            $scope.data.meta.context.unique_disabled = !answer.unique;
+                            $scope.product_final_pk = answer.pk
+                            $scope.inscope.box = answer.box
+                            $scope.product_unique_pk = answer.product_unique_pk
 
-            // Query the product
-            $http.get( eanurl, {}, {} )
-            .success(function(answer, stat) {
-                if (stat==200 || stat ==202) {
-                    // Decide next step
-                    if (Object.keys(answer).length) {
-                        // Set caducity status
-                        $scope.data.meta.context.caducity_disabled = !answer.caducable;
-                        $scope.data.meta.context.unique_disabled = !answer.unique;
-                        $scope.product_final_pk = answer.pk
-
-                        // Check for unique
-                        if (answer.unique) {
-                            $scope.data.meta.context.unique_focus = true;
-                        } else {
-                            if (answer.caducable) {
-                                $scope.data.meta.context.caducity_focus = true;
+                            // Check for unique
+                            if (answer.unique) {
+                                $scope.data.meta.context.unique_focus = true;
                             } else {
-                                // We are done here
-                                $scope.submit_scenario();
+                                if (answer.caducable) {
+                                    $scope.data.meta.context.caducity_focus = true;
+                                } else {
+                                    // We are done here
+                                    $scope.submit_scenario();
+                                }
                             }
+                        } else {
+                            // No answer, invalid product
+                            $scope.product_final = null;
+                            $scope.product_final_pk = null;
+                            $scope.data.meta.context.unique_disabled = true;
+                            $scope.data.meta.context.caducity_disabled = true;
+                            $scope.data.meta.context.final_focus = true;
+                            $scope.final_error = true;
                         }
                     } else {
-                        // No answer, invalid product
-                        $scope.product_final = null;
-                        $scope.product_final_pk = null;
+                        // Error happened, show an alert$
+                        console.log("ERROR "+stat+": "+answer);
+                        console.log(answer);
                         $scope.data.meta.context.unique_disabled = true;
                         $scope.data.meta.context.caducity_disabled = true;
                         $scope.data.meta.context.final_focus = true;
                         $scope.final_error = true;
+                        alert("ERROR "+stat+": "+answer);
                     }
-                } else {
-                    // Error happened, show an alert$
-                    console.log("ERROR "+stat+": "+answer);
-                    console.log(answer);
-                    $scope.data.meta.context.unique_disabled = true;
-                    $scope.data.meta.context.caducity_disabled = true;
-                    $scope.data.meta.context.final_focus = true;
-                    $scope.final_error = true;
-                    alert("ERROR "+stat+": "+answer);
-                }
-            })
-            .error(function(data, status, headers, config) {
-                if (cnf_debug){
-                    alert(data);
-                } else {
-                    alert(cnf_debug_txt)
-                }
-            });
+                })
+                .error(function(data, status, headers, config) {
+                    if (cnf_debug){
+                        alert(data);
+                    } else {
+                        alert(cnf_debug_txt)
+                    }
+                });
+            }else{
+
+                $scope.product_final = null;
+                $scope.product_final_pk = null;
+                $scope.data.meta.context.unique_disabled = true;
+                $scope.data.meta.context.caducity_disabled = true;
+                $scope.data.meta.context.final_focus = true;
+                $scope.final_error = true;
+            }
         };
 
         $scope.unique_changed = function () {
@@ -214,12 +225,9 @@ angular.module('codenerixInvoicingVendingControllers', [])
             });
         };
 
-        $scope.open_pay = function(budget_pk){
-            console.log("A");
-            console.log(budget_pk);
-            // Base window
-            $scope.ws = url + "/pay";
-            
+        $scope.edit_modal_line = function(pk){
+            $scope.ws=ws+"/"+pk+"/editmodal";
+
             // Base Window functions
             var functions = function(scope) {};
             var callback = function(scope) {
@@ -227,14 +235,52 @@ angular.module('codenerixInvoicingVendingControllers', [])
                 if (scope.base_window) {
                     scope.base_window.dismiss('cancel');
                 }
-                
-                // If base_reload specified
-                if (scope.base_reload){
-                    // Arguments are dinamically added
-                    scope.base_reload[0].apply(this,scope.base_reload.slice(1));
-                }
+                $state.go($state.current, {listid:scope.listid});
+                refresh(scope, $timeout, Register, undefined);
             };
             
+            // Start modal window
+            openmodal($scope, $timeout, $uibModal, 'lg', functions, callback);
+        };
+
+        $scope.open_cash_register = function(){
+            var url = '/' + $scope.data.meta.context.ws.open_cash;
+            $.get(ruta, function(data){
+                console.log(data);
+            }).done(function(data){
+
+            }).fail(function(data){
+                alert(data);
+            }).always(function(data){
+
+            });
+        };
+
+        $scope.open_pay = function(budget_pk){
+            // Base Window functions
+            var functions = function(scope) {};
+            var callback = function(scope) {
+                // Open cash register
+                scope.open_cash_register();
+                /*
+                // $scope.refresh();
+                var pk = $scope.data.service_selected;
+                // Go for normal process
+                var autoselect = function () {
+                    $scope.service_select(pk);
+                }
+                $scope.refresh(autoselect);
+                scope.internal_submit({});
+                */
+            };
+
+
+            if ($scope.ws_base == undefined){
+                $scope.ws_base = $scope.ws;
+            }
+            
+            var url = '/' + $scope.data.meta.context.ws.pay_modal;
+            $scope.ws = url;
             // Start modal window
             openmodal($scope, $timeout, $uibModal, 'lg', functions, callback);
         };
@@ -243,4 +289,144 @@ angular.module('codenerixInvoicingVendingControllers', [])
 
         $scope.open_cancel = function(budget_pk){};
     }
+])
+.controller('codenerixVendingPaymentCtrl', ['$scope', '$rootScope', '$timeout', '$http', '$window', '$uibModal', '$state', '$stateParams', '$templateCache', 'Register', '$location', 
+    function($scope, $rootScope, $timeout, $http, $window, $uibModal, $state, $stateParams, $templateCache, Register, $location) {
+        if (ws_entry_point==undefined) { ws_entry_point=""; }
+        if ($stateParams.pk == undefined){
+            var url = ws_entry_point;
+        }else{
+            var url = ws_entry_point+"/"+$stateParams.pk;
+        }
+
+        $scope.pay = function(){
+            alert("AA");
+
+            var functions = function(scope) {
+            };
+            var callback = function(scope, answer) {
+                scope.open_cash_register();
+                $window.location.reload();
+                // $scope.refresh();
+            };
+            if ($scope.ws_base == undefined){
+                $scope.ws_base = $scope.ws;
+            }
+            $scope.ws = "/" + url + "/pay";
+            openmodal($scope, $timeout, $uibModal, 'lg', functions, callback);
+        };
+
+        /*
+        var signed = false;
+        $scope.sign = function(){
+
+            var functions = function(scope) {
+                $timeout($scope.is_signed, 1000);
+            };
+            var callback = function(scope) {
+                $window.location.reload();
+            };
+            var callback_cancel = function($scope){
+                signed = true;
+                var path = "/" + url + "/cancelsign";
+                $http.post( path, {}, {} )
+                    .success(function(answer, stat) {
+                        console.log(answer);
+                    })
+                    .error(function(data, status, headers, config) {
+                        if (cnf_debug){
+                            alert(data);
+                        }else{
+                            alert(cnf_debug_txt)
+                        }
+                    });
+            };
+            if ($scope.ws_base == undefined){
+                $scope.ws_base = $scope.ws;
+            }
+            $scope.ws = "/" + url + "/sign";
+            openmodal($scope, $timeout, $uibModal, 'lg', functions, callback, true, callback_cancel);
+        };
+
+        $scope.is_signed = function(){
+            var path = "/" + url + "/issigned";
+            if (signed == false){
+                $http.post( path, {}, {} )
+                    .success(function(answer, stat) {
+                        if (answer.error != null){
+                            console.log(answer.error);
+                        }
+                        if (answer.error != null || answer.msg=="OK"){
+                            console.log($scope);
+                            $window.location.reload();
+                        }else{
+                            $timeout($scope.is_signed, 1000);
+                        }
+                    })
+                    .error(function(data, status, headers, config) {
+                        if (cnf_debug){
+                            alert(data);
+                        }else{
+                            alert(cnf_debug_txt)
+                        }
+                    });
+            }
+        };
+        */
+        $scope.print_ticket = function(){
+            var path = "/" + url + "/ticket";
+            $http.post( path, {}, {} )
+                .success(function(answer, stat) {
+                    if (answer.error != null){
+                        alert(answer.error);
+                    }
+                })
+                .error(function(data, status, headers, config) {
+                    if (cnf_debug){
+                        alert(data);
+                    }else{
+                        alert(cnf_debug_txt)
+                    }
+                });
+        };
+
+        $scope.change_amount = function(field_amount_cash, field_amount_card, check_cash, check_card, field_total, field_result){
+            var in_cash = $scope[$scope.form_name][field_amount_cash].$viewValue;
+            var in_card = $scope[$scope.form_name][field_amount_card].$viewValue;
+            var chk_cash = $scope[$scope.form_name][check_cash].$viewValue;
+            var chk_card = $scope[$scope.form_name][check_card].$viewValue;
+            var total = $scope[$scope.form_name][field_total].$viewValue;
+            var amount = 0;
+            if (chk_cash){
+                amount+= parseFloat(in_cash);
+            }
+            if (chk_card){
+                amount+= parseFloat(in_card);
+            }
+            var diff = total - amount;
+            $scope[$scope.form_name][field_result].$setViewValue(diff.toFixed(2));
+            $scope[$scope.form_name][field_result].$render();
+        };
+        
+        $scope.open_cash_register = function(){
+            var ruta = '/codenerix_pos/open_cash_register';
+            $.get(ruta, function(data){
+                console.log(data);
+            }).done(function(data){
+
+            }).fail(function(data){
+                alert(data);
+            }).always(function(data){
+
+            });
+        };
+
+    }
 ]);
+
+/*
+al pagar que aparezca la pantalla de pago de recepción de boingjump con dos botones (pagar e imprimir)
+el botón imprimir será cliqueable si aunque no se haya pagado el POS lo admite (nuevo flag en pos)
+al pagar generar el pedido, albaran, albaran de salida (inventario)
+al imprimir generar el pedido si no se ha generado aun, para bloquear los posiciones del presupuestos
+*/

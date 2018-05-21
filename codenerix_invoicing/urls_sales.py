@@ -31,8 +31,8 @@ from .views_sales import BasketListWISHLIST, BasketDetailsWISHLIST, BasketCreate
 from .views_sales import BasketForeignShoppingCart, BasketForeignBudget
 from .views_sales import BasketPrintBUDGET
 
-from .views_sales import BasketDetailsSHOPPINGCARTVending, LinesVending, LinesSubListBasketVending
-from .views_sales import SalesLinesList, SalesLinesDetails
+from .views_sales import LinesVending, LinesVendingEdit
+from .views_sales import SalesLinesList, SalesLinesDetails, SalesLinesCreateWS
 
 from .views_sales import OrderForeign
 from .views_sales import OrderCreateAlbaran, OrderCreateTicket, OrderCreateInvoice, OrderStatus
@@ -65,6 +65,7 @@ from .views_sales import LinesSubListInvoice, LinesUpdateModalInvoice, LinesDeta
 from .views_sales import LinesSubListInvoiceRectification, LinesUpdateModalInvoiceRectification
 from .views_sales import LinesSubListTicket, LinesUpdateModalTicket
 from .views_sales import LinesSubListTicketRectification, LinesUpdateModalTicketRectification
+from .views_sales import VendingPay
 
 from .views_reason import ReasonModificationList, ReasonModificationCreate, ReasonModificationCreateModal, ReasonModificationUpdate, ReasonModificationUpdateModal, ReasonModificationDelete, ReasonModificationSubList, ReasonModificationDetails, ReasonModificationDetailModal
 
@@ -134,19 +135,12 @@ urlpatterns = [
 
 
     # ################
-    # url(r'^salesliness$', SalesLinesList.as_view(), name='CDNX_invoicing_saleslines_list'),
-    # url(r'^salesliness/(?P<pk>\w+)$', SalesLinesDetails.as_view(), name='CDNX_invoicing_saleslines_details'),
-    # url(r'^vending$', LinesSubListBasketVending.as_view(), name='CDNX_invoicing_salesbaskets_shoppingcart_vending_list'),
-    # url(r'^lines/(?P<pk>\w+)/vending$', LinesSubListBasketVending.as_view(), name='CDNX_invoicing_saleslines_sublist_vending'),
-    # url(r'^shoppingcarts/vending$', LinesVending.as_view(), name='CDNX_invoicing_salesbaskets_shoppingcart_vending_list'),
+    url(r'^vending/(?P<bpk>\w+)/(?P<pk>\w+)/editmodal$', LinesVendingEdit.as_view(), name='CDNX_invoicing_salesbaskets_shoppingcart_vending_edit'),
     url(r'^vending$', LinesVending.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_vending_details'),
     url(r'^vending/(?P<bpk>\w+)$', LinesVending.as_view(), name='CDNX_invoicing_salesbaskets_shoppingcart_vending_list'),
+    url(r'^vending/(?P<pk>\w+)/pay$', VendingPay.as_view(), name='CDNX_invoicing_vending_pay'),
     url(r'^vending/(?P<bpk>\w+)/(?P<pk>\w+)$', SalesLinesDetails.as_view(), name='CDNX_invoicing_saleslines_vending_details'),
-    # url(r'^vending/(?P<bpk>\w+)/(?P<pk>\w+)$', LinesVending.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_vending_details'),
-    # url(r'^shoppingcarts/vending/(?P<pk>\w+)$', BasketDetailsSHOPPINGCARTVending.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_vending_details'),
     # ################
-    # url(r'^lines/(?P<pk>\w+)/vending/addmodal$', LinesCreateModalBasket.as_view(), name='CDNX_invoicing_saleslines_sublist_addmodal_vending'),
-    # url(r'^lines/(?P<cpk>\w+)/vending/(?P<pk>\w+)/editmodal$', LinesUpdateModalBasket.as_view(), name='CDNX_invoicing_saleslines_sublist_editmodal_vending'),
 
 
     url(r'^shoppingcarts/(?P<pk>\w+)$', BasketDetailsSHOPPINGCART.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_details'),
@@ -174,6 +168,10 @@ urlpatterns = [
     url(r'^budgets/(?P<pk>\w+)/print$', BasketPrintBUDGET.as_view(), name='CDNX_invoicing_budgetsaless_print'),
 
     # ################
+    url(r'^lines$', SalesLinesList.as_view(), name='CDNX_invoicing_saleslines_list'),
+    url(r'^salesliness$', SalesLinesList.as_view(), name='CDNX_invoicing_saleslines_list'),
+    url(r'^lines/(?P<ipk>\w+)/addws$', SalesLinesCreateWS.as_view(), name='CDNX_invoicing_saleslines_addws'),
+
     url(r'^lines/(?P<pk>\w+)/basket_sublist$', LinesSubListBasket.as_view(), name='CDNX_invoicing_saleslines_sublist_basket'),
     url(r'^lines/(?P<pk>\w+)/basket_sublist/addmodal$', LinesCreateModalBasket.as_view(), name='CDNX_invoicing_saleslines_sublist_addmodal_basket'),
     url(r'^lines/(?P<cpk>\w+)/basket_sublist/(?P<pk>\w+)/editmodal$', LinesUpdateModalBasket.as_view(), name='CDNX_invoicing_saleslines_sublist_editmodal_basket'),

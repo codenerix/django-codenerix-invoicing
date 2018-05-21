@@ -58,6 +58,7 @@ limitations under the License.
         <label  class="sr-only"  for="submit_pay">{{ data.meta.gentranslate.Pay }}</label>
         <button type="button" id="submit_pay" 
             ng-click="open_pay('{{ data.meta.context.budget_pk }}')" 
+            ng-if="!data.meta.context.paidout"
             class="btn btn-sm btn-success" >{{ data.meta.gentranslate.Pay }}
             </button>
 
