@@ -285,7 +285,23 @@ angular.module('codenerixInvoicingVendingControllers', [])
             openmodal($scope, $timeout, $uibModal, 'lg', functions, callback);
         };
 
-        $scope.open_print = function(budget_pk){};
+        $scope.open_print = function(budget_pk){
+            var url = '/' + $scope.data.meta.context.ws.print;
+            $scope.ws = url;
+            $http.post( url, {}, {} )
+                .success(function(answer, stat) {
+                    if (answer.error != null){
+                        alert(answer.error);
+                    }
+                })
+                .error(function(data, status, headers, config) {
+                    if (cnf_debug){
+                        alert(data);
+                    }else{
+                        alert(cnf_debug_txt)
+                    }
+                });
+        };
 
         $scope.open_cancel = function(budget_pk){};
     }
@@ -375,19 +391,9 @@ angular.module('codenerixInvoicingVendingControllers', [])
         */
         $scope.print_ticket = function(){
             var path = "/" + url + "/ticket";
-            $http.post( path, {}, {} )
-                .success(function(answer, stat) {
-                    if (answer.error != null){
-                        alert(answer.error);
-                    }
-                })
-                .error(function(data, status, headers, config) {
-                    if (cnf_debug){
-                        alert(data);
-                    }else{
-                        alert(cnf_debug_txt)
-                    }
-                });
+            alert(path);
+            /*
+            */
         };
 
         $scope.change_amount = function(field_amount_cash, field_amount_card, check_cash, check_card, field_total, field_result){
@@ -407,7 +413,7 @@ angular.module('codenerixInvoicingVendingControllers', [])
             $scope[$scope.form_name][field_result].$setViewValue(diff.toFixed(2));
             $scope[$scope.form_name][field_result].$render();
         };
-        
+
         $scope.open_cash_register = function(){
             var ruta = '/codenerix_pos/open_cash_register';
             $.get(ruta, function(data){

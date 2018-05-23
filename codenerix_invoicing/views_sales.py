@@ -19,8 +19,10 @@
 # limitations under the License.
 
 import ast
+import base64
 import datetime
 import json
+import pyphen
 import pytz
 
 from dateutil import tz
@@ -95,10 +97,10 @@ from .exceptions import SalesLinesInsufficientStock, SalesLinesProductFinalIsSam
 
 from .forms_sales import SalesLinesInLineForm, VendingPayForm
 
-from codenerix_pos.models import POS
+from codenerix_pos.models import POS, POSHardware, KIND_POSHARDWARE_TICKET
 from codenerix_invoicing.models_cash import CashDiary, CashMovement
 from codenerix.views import gen_auth_permission
-from codenerix_invoicing.models_purchases import PAYMENT_DETAILS_CARD, PAYMENT_DETAILS_CASH
+from codenerix_invoicing.models_purchases import PAYMENT_DETAILS, PAYMENT_DETAILS_CARD, PAYMENT_DETAILS_CASH
 
 
 # ###########################################
@@ -2884,11 +2886,13 @@ class LinesVending(GenList):
                 'total': 0,
             }
             for line in budget.lines_sales.all().values(
-                'price_base_basket',
+                'subtotal_basket',
+                'total_basket',
                 'quantity',
-                'tax_label_basket',
                 'tax_basket',
+                'tax_label_basket',
                 'tax_basket_fk',
+
             ):
                 if line['tax_basket_fk'] not in summary:
                     summary[line['tax_basket_fk']] = {
@@ -2897,12 +2901,12 @@ class LinesVending(GenList):
                         'tax': 0,
                         'total': 0
                     }
-                summary[line['tax_basket_fk']]['subtotal'] += float(line['price_base_basket']) * line['quantity']
-                summary[line['tax_basket_fk']]['tax'] += (float(line['tax_basket']) * line['quantity']) / 100
-                summary[line['tax_basket_fk']]['total'] += summary[line['tax_basket_fk']]['subtotal'] + summary[line['tax_basket_fk']]['tax']
-                totals['subtotal'] += summary[line['tax_basket_fk']]['subtotal']
-                totals['tax'] += summary[line['tax_basket_fk']]['tax']
-                totals['total'] += summary[line['tax_basket_fk']]['total']
+                summary[line['tax_basket_fk']]['subtotal'] += line['subtotal_basket']
+                summary[line['tax_basket_fk']]['tax'] += round_decimal(Decimal(line['tax_basket']) * line['subtotal_basket'] / 100, CURRENCY_DECIMAL_PLACES)
+                summary[line['tax_basket_fk']]['total'] += line['total_basket']
+            totals['subtotal'] = budget.subtotal
+            totals['tax'] = budget.taxes
+            totals['total'] = budget.total
 
             self.extra_context.update({
                 'summary': summary,
@@ -2919,6 +2923,7 @@ class LinesVending(GenList):
         self.ws_unique_fullinfo = reverse('CDNX_storages_inventoryoutline_unique_fullinfo', kwargs={"unique": 'PRODUCT_FINAL_UNIQUE'})[1:]
         self.ws_submit = reverse('CDNX_invoicing_saleslines_addws', kwargs={"ipk": self.budget_pk})[1:]
         self.ws_pay_modal = reverse('CDNX_invoicing_vending_pay', kwargs={"pk": self.budget_pk})[1:]
+        self.ws_print = reverse('CDNX_invoicing_vending_print', kwargs={"pk": self.budget_pk})[1:]
         self.ws_open_cash = reverse('CDNX_POS_open_cash_register')[1:]
 
         fields = []
@@ -2952,6 +2957,7 @@ class LinesVending(GenList):
                 'unique_fullinfo': self.ws_unique_fullinfo,
                 'submit': self.ws_submit,
                 'pay_modal': self.ws_pay_modal,
+                'print': self.ws_print,
                 'open_cash': self.ws_open_cash,
             },
             'form_quantity': form.fields['quantity'].widget.render('quantity', None, {
@@ -2989,6 +2995,7 @@ class LinesVending(GenList):
         if hasattr(self, 'budget_pk') and self.budget_pk:
             limit['budget__pk'] = Q(basket__pk=self.budget_pk)
         limit['removed'] = Q(removed=False)
+        limit['quantity'] = Q(quantity__gt=0)
         return limit
 
     def __fields__(self, info):
@@ -2996,8 +3003,9 @@ class LinesVending(GenList):
         fields.append(('quantity', _("Quantity")))
         fields.append(('product_final', _("Product")))
         fields.append(('product_unique', _("Unique")))
-        fields.append(('price_base_basket', _("Price")))
+        fields.append(('price_unit_basket', _("Unit price")))
         fields.append(('tax_basket', _("Tax (%)")))
+        fields.append(('total_basket', _("Price")))
         return fields
 
 
@@ -3134,7 +3142,7 @@ class VendingPay(View):
 
                 order.status_order = STATUS_ORDER_PAYMENT_ACCEPTED
                 order.save(force_save=True)
-                
+
             # Jump to success status
             return redirect(reverse_lazy("status", kwargs={'status': 'accept', 'answer': urlsafe_base64_encode(json.dumps('').encode())}))
         else:
@@ -3229,6 +3237,219 @@ class VendingPay(View):
                     error['error'] = _("Cash diary is closed")
 
         return error
+
+
+class VendingPrintTicket(object):
+    def printer_ticket(self, PDV, request, ticket_obj, comanda=None):
+        context = {}
+        printer = POSHardware.objects.filter(
+            kind=KIND_POSHARDWARE_TICKET,
+            poss=PDV
+        ).first()
+        if printer:
+            config = printer.get_config()
+            column = config.get("column", 48)
+            cut = config.get("cut", True)
+            num_impressions = ticket_obj.print_counter(get_current_user())
+            context_hardware = self.create_ticket_to_print(request, ticket_obj, num_impressions, comanda, column, cut)
+            printer.send(context_hardware)
+            context = context_hardware
+            context = {'msg': 'OK'}
+        else:
+            context = {'error': _('Printer do not found')}
+        return context
+
+    def create_ticket_to_print(self, request, ticket_obj, num_impressions=None, comanda=None, column=48, cut=True):
+        template_name = 'vendings/ticket.html'
+        context_hardware = {}
+
+        info_head = []
+        corporate = CorporateImage.objects.filter(public=True).first()
+        if corporate:
+            if corporate.business_name:
+                info_head.append("{}".format(corporate.business_name))
+            if corporate.nid:
+                info_head.append("{}".format(corporate.nid))
+            address = ''
+            if corporate.address:
+                address = '{} '.format(corporate.address)
+            if corporate.zipcode:
+                address += '{} '.format(corporate.zipcode)
+            if corporate.town:
+                address += '{} '.format(corporate.town)
+            if address:
+                info_head.append(address)
+
+            if corporate.email:
+                info_head.append('{}'.format(corporate.email))
+            if corporate.phone:
+                info_head.append('{}'.format(corporate.phone))
+
+        lines = SalesLines.objects.filter(
+            ticket=ticket_obj,
+            quantity__gt=0,
+            removed=False
+        ).all()
+
+        order = lines[0].order
+
+        change = order.cash_movements.filter(amount__lte=0).first()
+        if change:
+            change = change.amount
+
+        cash_movements = []
+        for cm in order.cash_movements.filter(amount__gt=0):
+            type_payment = [x[1] for x in PAYMENT_DETAILS if x[0] == cm.kind][0]
+            cash_movements.append({
+                'kind': type_payment,
+                'amount': cm.amount,
+            })
+
+        info = ticket_obj.calculate_price_doc_complete(details=True)
+        prices = info.copy()
+        prices['taxes'] = list(info['taxes'].values())
+        """
+        taxes = {}
+        for tax in info['taxes']:
+            name = TypeTax.objects.filter(tax=tax).first()
+            if name is None:
+                name = tax
+            taxes[name] = info['taxes'][tax]
+        prices['taxes'] = info['taxes']
+        """
+        LINEA = u"-" * column
+
+        tmp_footer = getattr(settings, 'INFO_FOOTER_VENDING', '')
+        lang = get_language()
+        if lang in pyphen.LANGUAGES:
+            lang_pyphen = lang
+        elif getattr(settings, 'LANGUAGES', [['', ], ])[0][0] in pyphen.LANGUAGES:
+            lang_pyphen = getattr(settings, 'LANGUAGES', [['', ], ])[0][0]
+        else:
+            lang_pyphen = 'es'
+        dic = pyphen.Pyphen(lang=lang_pyphen)
+
+        info_foot = []
+        for line in tmp_footer.split('\n'):
+            while len(line) > column:
+                tmp = dic.wrap(line, column)
+                info_foot.append('{}'.format(tmp[0] + ' ' * (column - len(tmp[0]))))
+                line = tmp[1]
+            info_foot.append(line)
+            info_foot.append('\n')
+
+        just = column - 7 - 8 - 5  # quantity, amount, margin
+        ctx = {
+            'cut': cut,
+            'labels': {
+                'cant': 'Cant',
+                'pvp': 'PVP',
+                'subtotal': _('Subtotal'),
+                'total': _('Total'),
+                'entregado': _('Entregado'),
+                'cambio': _('Cambio'),
+            },
+            'info_head': '\n'.join(info_head),
+            'info_foot': ''.join(info_foot),
+            'ticket': ticket_obj,
+            'lines': lines,
+            'prices': prices,
+            'change': change,
+            'cash_movements': cash_movements,
+            'LINEA': LINEA,
+            'comanda': comanda,
+            'config': {
+                'cant': {
+                    'slice': ":{}".format(7),
+                    'just': 7,
+                },
+                'pvplabel': {
+                    'slice': ":{}".format(just),
+                    'just': 26,
+                },
+                'pvp': {
+                    'slice': ":{}".format(just),
+                    'just': 16,
+                },
+                'total': {
+                    'slice': ":{}".format(8),
+                    'just': 8,
+                },
+                'label_totals': {
+                    'slice': ":{}".format(column - 9),
+                    'just': column - 12,
+                },
+                'totals': {
+                    'slice': ":{}".format(column - 3),
+                    'just': column - 3,
+                },
+            }
+        }
+
+        rendering = render(request, template_name, ctx)
+        context_hardware['template'] = rendering._container[0].decode("utf-8")
+        if ticket_obj.lock is False:
+            filename = "logo_ticket_cif.png"
+            datas = None
+        elif num_impressions > 1:
+            filename = "logo_ticket_cif_reprinter.png"
+            datas = 'info_fiscal.png'
+        elif num_impressions == 1:
+            filename = "logo_ticket_cif.png"
+            datas = 'info_fiscal.png'
+
+        File = open("{}img/{}".format(settings.STATIC_ROOT, filename), "rb")
+        logo = base64.b64encode(File.read()).decode()
+        File.close()
+        if datas:
+            File = open("{}img/{}".format(settings.STATIC_ROOT, datas), "rb")
+            dataf = base64.b64encode(File.read()).decode()
+            File.close()
+        else:
+            dataf = None
+
+        context_hardware['ctx'] = {
+            'logo': ['image', logo],
+            'dataf': ['image', dataf],
+        }
+        return context_hardware
+
+
+class VendingPrint(VendingPrintTicket, View):
+    template = 'vendings/printer/ticket.txt'
+
+    @method_decorator(login_required)
+    def post(self, request, *args, **kwargs):
+        context = {
+            'error': None,
+        }
+        uuid_pos = self.request.session.get('POS_client_UUID', None)
+        PDV = POS.objects.filter(uuid=uuid_pos).first()
+        if PDV is None:
+            context = {'error': _('POS invalid')}
+        else:
+            pk = kwargs.get('pk', None)
+            budget = SalesBasket.objects.filter(pk=pk).first()
+            if not budget:
+                context['error'] = _("Budget invalid")
+            else:
+                if budget.order_sales.status_order == STATUS_ORDER_PENDING:
+                    context['error'] = _("Para imprimir el ticket se debe de pagar")
+                else:
+                    order = budget.order_sales
+
+            ticket = SalesTicket.objects.filter(lines_sales__order=order).first()
+            if not ticket:
+                list_lines = [x[0] for x in order.line_order_sales.all().values_list('pk')]
+                info = SalesLines.create_ticket_from_order(pk, list_lines)
+                ticket = info['obj_final']
+            if ticket.lock is False:
+                ticket.lock = True
+                ticket.save()
+            context.update(self.printer_ticket(PDV, request, ticket))
+
+        json_answer = json.dumps(context)
+        return HttpResponse(json_answer, content_type='application/json')
 
 
 class SalesLinesDetails(GenList):

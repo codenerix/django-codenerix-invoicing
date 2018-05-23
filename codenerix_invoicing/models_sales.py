@@ -1524,6 +1524,8 @@ class SalesLines(CodenerixModel):
     equivalence_surcharge_basket = models.FloatField(_("Equivalence surcharge (%)"), blank=True, null=True, default=0)
     tax_label_basket = models.CharField(_("Tax Name"), max_length=250, blank=True, null=True)
     notes_basket = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
+    #  info basket total
+    price_unit_basket = models.DecimalField(_("unit_price"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     subtotal_basket = models.DecimalField(_("Subtotal"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     discounts_basket = models.DecimalField(_("Discounts"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     taxes_basket = models.DecimalField(_("Taxes"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
@@ -1539,6 +1541,8 @@ class SalesLines(CodenerixModel):
     equivalence_surcharge_order = models.FloatField(_("Equivalence surcharge (%)"), blank=True, null=True, default=0)
     tax_label_order = models.CharField(_("Tax Name"), max_length=250, blank=True, null=True)
     notes_order = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
+    #  info basket total
+    price_unit_order = models.DecimalField(_("unit_price"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     subtotal_order = models.DecimalField(_("Subtotal"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     discounts_order = models.DecimalField(_("Discounts"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     taxes_order = models.DecimalField(_("Taxes"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
@@ -1556,6 +1560,8 @@ class SalesLines(CodenerixModel):
     equivalence_surcharge_ticket = models.FloatField(_("Equivalence surcharge (%)"), blank=True, null=True, default=0)
     tax_label_ticket = models.CharField(_("Tax Name"), max_length=250, blank=True, null=True)
     notes_ticket = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
+    #  info basket total
+    price_unit_ticket = models.DecimalField(_("unit_price"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     subtotal_ticket = models.DecimalField(_("Subtotal"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     discounts_ticket = models.DecimalField(_("Discounts"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     taxes_ticket = models.DecimalField(_("Taxes"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
@@ -1573,6 +1579,8 @@ class SalesLines(CodenerixModel):
     equivalence_surcharge_invoice = models.FloatField(_("Equivalence surcharge (%)"), blank=True, null=True, default=0)
     tax_label_invoice = models.CharField(_("Tax Name"), max_length=250, blank=True, null=True)
     notes_invoice = models.CharField(_("Notes"), max_length=256, blank=True, null=True)
+    #  info basket total
+    price_unit_invoice = models.DecimalField(_("unit_price"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     subtotal_invoice = models.DecimalField(_("Subtotal"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     discounts_invoice = models.DecimalField(_("Discounts"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
     taxes_invoice = models.DecimalField(_("Taxes"), blank=False, null=False, max_digits=CURRENCY_MAX_DIGITS, decimal_places=CURRENCY_DECIMAL_PLACES, default=0, editable=False)
@@ -1799,6 +1807,8 @@ class SalesLines(CodenerixModel):
 
             result = super(self._meta.model, self).save(*args, **kwargs)
             # update totals
+            if update_basket:
+                self.basket.update_totales()
             if self.order and update_order:
                 self.order.update_totales()
             if self.albaran:
@@ -1819,6 +1829,10 @@ class SalesLines(CodenerixModel):
         self.taxes_basket = round_decimal(self.subtotal_basket * Decimal(self.tax_basket) / Decimal(100), CURRENCY_DECIMAL_PLACES)
         self.equivalence_surcharges_basket = round_decimal(self.subtotal_basket * Decimal(self.equivalence_surcharge_basket) / Decimal(100), CURRENCY_DECIMAL_PLACES)
         self.total_basket = self.subtotal_basket + self.taxes_basket - self.discounts_basket
+        if self.quantity:
+            self.price_unit_basket = self.total_basket / Decimal(self.quantity)
+        else:
+            self.price_unit_basket = Decimal('0')
         if line_old is None:
             update = True
         elif self.subtotal_basket != line_old.subtotal_basket or self.discounts_basket != line_old.discounts_basket or self.taxes_basket != line_old.taxes_basket or self.equivalence_surcharges_basket != line_old.equivalence_surcharges_basket or self.total_basket != line_old.total_basket:
@@ -1833,6 +1847,10 @@ class SalesLines(CodenerixModel):
         self.taxes_order = round_decimal(self.subtotal_order * Decimal(self.tax_order) / Decimal(100), CURRENCY_DECIMAL_PLACES)
         self.equivalence_surcharges_order = round_decimal(self.subtotal_order * Decimal(self.equivalence_surcharge_order) / Decimal(100), CURRENCY_DECIMAL_PLACES)
         self.total_order = self.subtotal_order + self.taxes_order - self.discounts_order
+        if self.quantity:
+            self.price_unit_order = self.total_order / Decimal(self.quantity)
+        else:
+            self.price_unit_order = Decimal('0')
         if line_old is None:
             update = True
         elif self.subtotal_order != line_old.subtotal_order or self.discounts_order != line_old.discounts_order or self.taxes_order != line_old.taxes_order or self.equivalence_surcharges_order != line_old.equivalence_surcharges_order or self.total_order != line_old.total_order:
@@ -1848,6 +1866,10 @@ class SalesLines(CodenerixModel):
         self.taxes_ticket = round_decimal(self.subtotal_ticket * Decimal(self.tax_ticket) / Decimal(100), CURRENCY_DECIMAL_PLACES)
         self.equivalence_surcharges_ticket = round_decimal(self.subtotal_ticket * Decimal(self.equivalence_surcharge_ticket) / Decimal(100), CURRENCY_DECIMAL_PLACES)
         self.total_ticket = self.subtotal_ticket + self.taxes_ticket - self.discounts_ticket
+        if self.quantity:
+            self.price_unit_ticket = self.total_ticket / Decimal(self.quantity)
+        else:
+            self.price_unit_ticket = Decimal('0')
         if line_old is None:
             update = True
         elif self.subtotal_ticket != line_old.subtotal_ticket or self.discounts_ticket != line_old.discounts_ticket or self.taxes_ticket != line_old.taxes_ticket or self.equivalence_surcharges_ticket != line_old.equivalence_surcharges_ticket or self.total_ticket != line_old.total_ticket:
@@ -1863,6 +1885,10 @@ class SalesLines(CodenerixModel):
         self.taxes_invoice = round_decimal(self.subtotal_invoice * Decimal(self.tax_invoice) / Decimal(100), CURRENCY_DECIMAL_PLACES)
         self.equivalence_surcharges_invoice = round_decimal(self.subtotal_invoice * Decimal(self.equivalence_surcharge_invoice) / Decimal(100), CURRENCY_DECIMAL_PLACES)
         self.total_invoice = self.subtotal_invoice + self.taxes_invoice - self.discounts_invoice
+        if self.quantity:
+            self.price_unit_invoice = self.total_invoice / Decimal(self.quantity)
+        else:
+            self.price_unit_invoice = Decimal('0')
         if line_old is None:
             update = True
         elif self.subtotal_invoice != line_old.subtotal_invoice or self.discounts_invoice != line_old.discounts_invoice or self.taxes_invoice != line_old.taxes_invoice or self.equivalence_surcharges_invoice != line_old.equivalence_surcharges_invoice or self.total_invoice != line_old.total_invoice:

@@ -1,0 +1,21 @@
+{% load i18n %}{% block header %}{{ info_head }}
+{% trans "Factura Simplificada: "%}{{ ticket.code }}
+{% trans "Fecha: "%}{{ ticket.date|date:'d/m/Y H:i' }}{% endblock %}
+{{ LINEA }}
+{% block table_header %}{{labels.pvp|rjust:config.pvplabel.just}}  {{labels.cant|rjust:config.cant.just}} {{labels.total|rjust:config.total.just}}
+{% endblock %}{{ LINEA }}{% for line in lines.all %}
+{{ line.product_final.ean13 }}{{ line.price_recommended_ticket|floatformat:2|rjust:config.pvp.just }}{{ line.quantity|floatformat:2|rjust:config.cant.just }}{{ line.total_ticket|floatformat:2|rjust:config.total.just }}
+{{ line.product_final }}{% endfor %}
+{{ LINEA }}
+{{ labels.total|rjust:config.label_totals.just }}: {{ prices.total|rjust:config.total.just }}
+{{ label.entregado|rjust:config.label_totals.just }}
+{% for cm in cash_movements %}{{ cm.kind|rjust:config.label_totals.just }}: {{ cm.amount|rjust:config.total.just }}{% endfor %}
+{% if change %}{{ labels.cambio|rjust:config.label_totals.just }}: {{ change|rjust:config.total.just }}{% endif %}
+{{ LINEA }}
+{{ labels.subtotal|rjust:config.label_totals.just }}: {{ prices.subtotal|rjust:config.total.just }}
+{% for tax in prices.taxes %}{{ tax.label|rjust:config.label_totals.just }}: {{ tax.amount|rjust:config.total.just }}{% endfor %}
+{{ labels.total|rjust:config.label_totals.just }}: {{ prices.total|rjust:config.total.just }}
+{% block footer %}{% endblock %}{{ LINEA }}{% if dataf %}<({dataf})>{% endif %}
+{{ info_foot }}
+{% trans "*** GRACIAS POR SU VISITA ***" %}
+{% if cut %}<({cut})>{% endif %}

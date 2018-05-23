@@ -1,0 +1,11 @@
+{{ ticket.date }} - {{ ticket.code }}
+<hr>
+{% for l in  lines %}
+	{{ l.quantity }}x {{ l.description }} {{l.price}} €<br>
+{% endfor %}
+<hr>
+Total: {{ticket.calculate_price_doc}} €
+<hr>
+Entregado: {{ delivered }} €
+<hr>
+Devuelto: {{ returned }} €

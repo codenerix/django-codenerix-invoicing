@@ -57,5 +57,5 @@ urlpatterns = [
     url(r'^cashmovements/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/edit$', CashMovementUpdateModal.as_view(), name='CDNX_invoicing_cashmovements_sublist_details'),
     url(r'^cashmovements/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', CashMovementDelete.as_view(), name='CDNX_invoicing_cashmovements_sublist_delete'),
 
-    url(r'^cashdiary$', CashDiaryOpenClose.as_view(), name='cashdiarys_cashdiary'),
+    url(r'^cashdiary$', CashDiaryOpenClose.as_view(), name='CDNX_invoicing_cashdiarys_cashdiary'),
 ]

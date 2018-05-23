@@ -65,7 +65,7 @@ from .views_sales import LinesSubListInvoice, LinesUpdateModalInvoice, LinesDeta
 from .views_sales import LinesSubListInvoiceRectification, LinesUpdateModalInvoiceRectification
 from .views_sales import LinesSubListTicket, LinesUpdateModalTicket
 from .views_sales import LinesSubListTicketRectification, LinesUpdateModalTicketRectification
-from .views_sales import VendingPay
+from .views_sales import VendingPay, VendingPrint
 
 from .views_reason import ReasonModificationList, ReasonModificationCreate, ReasonModificationCreateModal, ReasonModificationUpdate, ReasonModificationUpdateModal, ReasonModificationDelete, ReasonModificationSubList, ReasonModificationDetails, ReasonModificationDetailModal
 
@@ -139,6 +139,7 @@ urlpatterns = [
     url(r'^vending$', LinesVending.as_view(), name='CDNX_invoicing_salesbaskets_SHOPPINGCART_vending_details'),
     url(r'^vending/(?P<bpk>\w+)$', LinesVending.as_view(), name='CDNX_invoicing_salesbaskets_shoppingcart_vending_list'),
     url(r'^vending/(?P<pk>\w+)/pay$', VendingPay.as_view(), name='CDNX_invoicing_vending_pay'),
+    url(r'^vending/(?P<pk>\w+)/print$', VendingPrint.as_view(), name='CDNX_invoicing_vending_print'),
     url(r'^vending/(?P<bpk>\w+)/(?P<pk>\w+)$', SalesLinesDetails.as_view(), name='CDNX_invoicing_saleslines_vending_details'),
     # ################
 
