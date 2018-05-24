@@ -22,6 +22,7 @@ import ast
 import base64
 import datetime
 import json
+import os
 import pyphen
 import pytz
 
@@ -3285,38 +3286,45 @@ class VendingPrintTicket(object):
             if corporate.phone:
                 info_head.append('{}'.format(corporate.phone))
 
-        lines = SalesLines.objects.filter(
+        lines_tmp = SalesLines.objects.filter(
             ticket=ticket_obj,
             quantity__gt=0,
             removed=False
         ).all()
-
-        order = lines[0].order
+        lines = []
+        for line in lines_tmp:
+            lines.append({
+                'ean13': line.product_final.ean13,
+                'price': '{}€'.format(line.price_unit_basket),
+                'quantity': line.quantity,
+                'total': '{}€'.format(line.total_ticket),
+                'product': line.product_final.get_name(),
+            })
+            order = lines_tmp[0].order
 
         change = order.cash_movements.filter(amount__lte=0).first()
         if change:
-            change = change.amount
+            change = '{}€'.format(change.amount)
 
         cash_movements = []
         for cm in order.cash_movements.filter(amount__gt=0):
             type_payment = [x[1] for x in PAYMENT_DETAILS if x[0] == cm.kind][0]
             cash_movements.append({
                 'kind': type_payment,
-                'amount': cm.amount,
+                'amount': '{}€'.format(cm.amount),
             })
 
         info = ticket_obj.calculate_price_doc_complete(details=True)
         prices = info.copy()
-        prices['taxes'] = list(info['taxes'].values())
-        """
-        taxes = {}
-        for tax in info['taxes']:
-            name = TypeTax.objects.filter(tax=tax).first()
-            if name is None:
-                name = tax
-            taxes[name] = info['taxes'][tax]
-        prices['taxes'] = info['taxes']
-        """
+        prices['taxes'] = []
+        for line in list(info['taxes'].values()):
+            prices['taxes'].append({
+                'label': line['label'],
+                'amount': '{}€'.format(line['amount']),
+            })
+        prices['total'] = '{}€'.format(info['total'])
+        prices['subtotal'] = '{}€'.format(info['subtotal'])
+
         LINEA = u"-" * column
 
         tmp_footer = getattr(settings, 'INFO_FOOTER_VENDING', '')
@@ -3408,10 +3416,26 @@ class VendingPrintTicket(object):
         else:
             dataf = None
 
-        context_hardware['ctx'] = {
-            'logo': ['image', logo],
-            'dataf': ['image', dataf],
-        }
+        img_terms = getattr(settings, 'INFO_TERMS_VENDING', None)
+        img_terms_code = None
+
+        if img_terms:
+            filename = "{}{}".format(settings.STATIC_ROOT, img_terms)
+            if os.path.isfile(filename):
+                File = open(filename, 'rb')
+                img_terms_code = base64.b64encode(File.read()).decode()
+                File.close()
+            elif getattr(settings, 'DEBUG', False):
+                raise Exception("File not found: {}".format(filename))
+
+        context_hardware['ctx'] = {}
+        if img_terms_code:
+            context_hardware['ctx']['imgterms'] = ['image', img_terms_code]
+        if logo:
+            context_hardware['ctx']['logo'] = ['image', logo]
+        if dataf:
+            context_hardware['ctx']['dataf'] = ['image', dataf]
+
         return context_hardware
 
 
