@@ -2509,3 +2509,23 @@ class InvoiceRectificationDocumentDetails(GenInvoiceRectificationDocumentUrl, Ge
 
 class InvoiceRectificationDocumentDetailsModal(GenDetailModal, InvoiceRectificationDocumentDetails):
     pass
+
+
+class ProductFinalOfBudgetPurchase(GenForeignKey):
+    model = ProductFinal
+    label = "{ean13} - {code} - {product__code}"
+
+    def get_foreign(self, queryset, search, filters):
+
+        qsobject = Q(ean13__icontains=search) | Q(code__icontains=search) | Q(product__code__icontains=search)
+        for lang in settings.LANGUAGES_DATABASES:
+            qsobject |= Q(**{"product__{}__description_short__icontains".format(lang.lower()): search})
+            qsobject |= Q(**{"product__family__{}__name__icontains".format(lang.lower()): search})
+            qsobject |= Q(**{"product__category__{}__name__icontains".format(lang.lower()): search})
+        qs = queryset.filter(qsobject).all()
+
+        line_budget = filters.get('line_budget', None)
+        if line_budget:
+            qs.filter(line_budget__pk=line_budget)
+
+        return qs.distinct()[:settings.LIMIT_FOREIGNKEY]

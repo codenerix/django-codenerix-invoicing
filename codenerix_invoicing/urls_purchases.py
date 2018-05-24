@@ -74,6 +74,8 @@ from codenerix_invoicing.views_purchases import ProviderList, BudgetList, LineBu
     LineBudgetSubListForm, OrderDetailsModal, \
     BudgetPrint, OrderPrint, AlbaranPrint, TicketPrint, TicketRectificationPrint, InvoicePrint, InvoiceRectificationPrint
 
+from codenerix_invoicing.views_purchases import ProductFinalOfBudgetPurchase    
+
 
 urlpatterns = [
     url(r'^providers$', ProviderList.as_view(), name='CDNX_invoicing_providers_list'),
@@ -303,4 +305,5 @@ urlpatterns = [
     url(r'^invoicerectificationdocuments/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', InvoiceRectificationDocumentUpdateModal.as_view(), name='CDNX_invoicing_invoicerectificationpurchasesdocuments_sublist_editmodal'),
     url(r'^invoicerectificationdocuments/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', InvoiceRectificationDocumentDelete.as_view(), name='CDNX_invoicing_invoicerectificationpurchasesdocuments_sublist_delete'),
 
+    url(r'^productfinals/foreignpurchases/(?P<search>[\w\W]+|\*)$', ProductFinalOfBudgetPurchase.as_view(), name='CDNX_invoicing_purchase_product_budget'),
 ]

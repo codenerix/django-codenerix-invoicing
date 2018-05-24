@@ -205,6 +205,9 @@ class LineOrderForm(GenModelForm):
     class Meta:
         model = PurchasesLineOrder
         exclude = ['order', ]
+        autofill = {
+            'product': ['select', 3, 'CDNX_invoicing_purchase_product_budget', 'line_budget'],
+        }
 
     def __groups__(self):
         g = [
