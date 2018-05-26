@@ -33,7 +33,7 @@ from decimal import Decimal, InvalidOperation
 from django.db.models import Q, Sum, F
 from django.db import transaction, IntegrityError
 from django.core.exceptions import ValidationError
-from django.core.urlresolvers import reverse_lazy
+from django.urls import reverse_lazy
 from django.contrib.auth.decorators import login_required
 from django.urls import reverse
 from django.utils import formats
@@ -2102,7 +2102,7 @@ class LinesCreateModalBasket(GenCreateModal, LinesCreateBasket):
 class SalesLinesCreateWS(LinesCreateBasket):
     json = True
     form_class = LineOfBasketFormWS
-    
+
     def dispatch(self, *args, **kwargs):
         self.budget_id = kwargs.get('ipk', None)
         return super(SalesLinesCreateWS, self).dispatch(*args, **kwargs)
@@ -2111,7 +2111,7 @@ class SalesLinesCreateWS(LinesCreateBasket):
         initial = super(SalesLinesCreateWS, self).get_initial()
 
         body = json.loads(self.request.body.decode())
-        
+
         product_final = ProductFinal.objects.filter(pk=body['product_final']).first()
         if product_final is None:
             raise Exception(_('Product invalid'))
@@ -2842,7 +2842,7 @@ class LinesVending(GenList):
         'Cancel': _('Cancel'),
         'notfound': _('Product not found'),
     }
-    
+
     def dispatch(self, *args, **kwargs):
         self.budget_pk = kwargs.get('bpk', None)
 
