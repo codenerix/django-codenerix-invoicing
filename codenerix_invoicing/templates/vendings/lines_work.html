@@ -2,7 +2,7 @@
 {% load i18n %}
 {% comment %}
 
-django-codenerix
+django-codenerix-invoicing
 
 Copyright 2017 Centrologic Computational Logistic Center S.L.
 
@@ -77,39 +77,6 @@ limitations under the License.
     </div>
     <div class="col-sm-9">
         <div ui-view class="body-view"></div>
-    </div>
-    <div class="col-sm-9">
-        <br />
-        <div class="panel panel-default">
-            <table class="table">
-                <thead>
-                    <tr>
-                    <th>{% trans "Tasas" %}</th>
-                    <th>{% trans "Total SI" %}</th>
-                    <th>{% trans "Total IVA" %}</th>
-                    <th>{% trans "Total" %}</th>
-                    </tr>
-                </thead>
-                <tbody>
-                {% for summary in summary.items %}
-                    <tr>
-                    <td>{{ summary.1.label }}</td>
-                    <td>{{ summary.1.subtotal }} &euro;</td>
-                    <td>{{ summary.1.tax }} &euro;</td>
-                    <td>{{ summary.1.total }} &euro;</td>
-                    </tr>
-                {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr>
-                    <th></th>
-                    <th>{{ totals.subtotal }} &euro;</th>
-                    <th>{{ totals.tax }} &euro;</th>
-                    <th>{{ totals.total }} &euro;</th>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
     </div>
 </div>
 {% endblock %}

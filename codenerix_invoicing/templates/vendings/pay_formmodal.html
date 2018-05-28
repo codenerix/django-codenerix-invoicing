@@ -70,10 +70,21 @@
             {% endcomment %}
             
             <label  class="sr-only"  for="submit_pay">{% trans "Pay" %}</label>
-            <button type="button" id="submit_pay" ng-click="submit({{form.form_name}})" class="btn btn-sm btn-info" ng-disabled="{{ form.form_name }}.$invalid" ng-if="{{form.form_name}}.$dirty" ng-hide="'{{ paidout }}' == 'True'">{% trans "Pay" %}</button>
-
-            <label  class="sr-only"  for="submit_print">{% trans "Save" %}</label>
-            <button type="button" id="submit_print" ng-click="print({{form.form_name}})" class="btn btn-sm btn-success" ng-disabled="{{ form.form_name }}.$invalid" ng-if="{{form.form_name}}.$dirty" ng-hide="'{{ paidout }}' == 'True'">{% trans "Print" %}</button>
+            <button type="button" id="submit_pay" 
+                    ng-click="submit({{form.form_name}})" 
+                    class="btn btn-sm btn-info" 
+                    ng-disabled="{{ form.form_name }}.$invalid" 
+                    ng-if="{{form.form_name}}.$dirty" 
+                    ng-hide="'{{ paidout }}' == 'True'">{% trans "Pay" %}
+            </button>
+            
+            <label  class="sr-only"  for="submit_print">{% trans "Print" %}</label>
+            <button type="button" id="submit_print" 
+                ng-click="print({{form.form_name}})"
+                class="btn btn-sm btn-success" 
+                ng-disabled="{{ form.form_name }}.$invalid"
+                ng-if="{{form.form_name}}.$dirty" 
+                ng-hide="'{{ pre_printer }}' == 'False'">{% trans "Print" %}</button>
         {% endif %}
         <label  class="sr-only"  for="cancel">{% trans "Close" %}</label>
         <button type="button" class="btn btn-sm btn-danger" ng-click="cancel()">Close</button>
