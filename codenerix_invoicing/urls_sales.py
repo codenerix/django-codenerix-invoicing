@@ -65,6 +65,8 @@ from .views_sales import LinesSubListInvoice, LinesUpdateModalInvoice, LinesDeta
 from .views_sales import LinesSubListInvoiceRectification, LinesUpdateModalInvoiceRectification
 from .views_sales import LinesSubListTicket, LinesUpdateModalTicket
 from .views_sales import LinesSubListTicketRectification, LinesUpdateModalTicketRectification
+from .views_sales import LineBasketDelete
+
 from .views_sales import VendingPay, VendingPrint
 
 from .views_reason import ReasonModificationList, ReasonModificationCreate, ReasonModificationCreateModal, ReasonModificationUpdate, ReasonModificationUpdateModal, ReasonModificationDelete, ReasonModificationSubList, ReasonModificationDetails, ReasonModificationDetailModal
@@ -176,6 +178,8 @@ urlpatterns = [
     url(r'^lines/(?P<pk>\w+)/basket_sublist$', LinesSubListBasket.as_view(), name='CDNX_invoicing_saleslines_sublist_basket'),
     url(r'^lines/(?P<pk>\w+)/basket_sublist/addmodal$', LinesCreateModalBasket.as_view(), name='CDNX_invoicing_saleslines_sublist_addmodal_basket'),
     url(r'^lines/(?P<cpk>\w+)/basket_sublist/(?P<pk>\w+)/editmodal$', LinesUpdateModalBasket.as_view(), name='CDNX_invoicing_saleslines_sublist_editmodal_basket'),
+    url(r'^lines/(?P<cpk>\w+)/basket_sublist/(?P<pk>\w+)/delete$', LineBasketDelete.as_view(), name='CDNX_invoicing_saleslinebs_sublist_delete'),
+
     # url(r'^lines/basket_foreign/(?P<search>[\w\W]+|\*)$', LinesForeignBasketOrder.as_view(), name='CDNX_invoicing_linessaless_foreign_for_order'),
 
     url(r'^lines/(?P<pk>\w+)/order_sublist$', LinesSubListOrder.as_view(), name='CDNX_invoicing_saleslines_sublist_order'),
@@ -342,13 +346,11 @@ urlpatterns = [
     url(r'^linebaskets/(?P<pk>\w+)$', LineBasketDetails.as_view(), name='CDNX_invoicing_saleslinebaskets_details'),
     url(r'^linebaskets/(?P<pk>\w+)/edit$', LineBasketUpdate.as_view(), name='CDNX_invoicing_saleslinebaskets_edit'),
     url(r'^linebaskets/(?P<pk>\w+)/editmodal$', LineBasketUpdateModal.as_view(), name='CDNX_invoicing_saleslinebaskets_editmodal'),
-    url(r'^linebaskets/(?P<pk>\w+)/delete$', LineBasketDelete.as_view(), name='CDNX_invoicing_saleslinebaskets_delete'),
     url(r'^linebaskets/(?P<pk>\w+)/sublist$', LineBasketSubList.as_view(), name='CDNX_invoicing_saleslinebaskets_sublist'),
     url(r'^linebaskets/(?P<pk>\w+)/sublist/addmodal$', LineBasketCreateModal.as_view(), name='CDNX_invoicing_saleslinebaskets_sublist_add'),
     # url(r'^linebaskets/(?P<pk>\w+)/sublist/addpackmodal$', LineBasketCreateModalPack.as_view(), name='CDNX_invoicing_saleslinebaskets_sublist_addpack'),
     url(r'^linebaskets/(?P<cpk>\w+)/sublist/(?P<pk>\w+)$', LineBasketDetailModal.as_view(), name='CDNX_invoicing_saleslinebaskets_sublist_details'),
     url(r'^linebaskets/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/editmodal$', LineBasketUpdateModal.as_view(), name='CDNX_invoicing_saleslinebaskets_sublist_details'),
-    url(r'^linebaskets/(?P<cpk>\w+)/sublist/(?P<pk>\w+)/delete$', LineBasketDelete.as_view(), name='CDNX_invoicing_saleslinebaskets_sublist_delete'),
     url(r'^linebaskets/foreign/(?P<search>[\w\W]+|\*)$', LineBasketForeign.as_view(), name='CDNX_invoicing_linebasketsaless_foreign'),
 
     url(r'^salesorderdocuments$', OrderDocumentList.as_view(), name='CDNX_invoicing_salesorderdocuments_list'),
