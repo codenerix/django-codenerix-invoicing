@@ -1,0 +1,58 @@
+<!--
+
+django-codenerix-invoicing
+
+Copyright 2017 Centrologic Computational Logistic Center S.L.
+
+Project URL : http://www.codenerix.com
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+-->
+
+<div
+    ng-include="'/static/codenerix/partials/table.html'">
+</div>
+<div>
+
+    <br />
+        <div class="panel panel-default">
+            <table class="table">
+                <thead>
+                    <tr>
+                    <th>{{ data.meta.gentranslate.Tasas }}</th>
+                    <th>{{ data.meta.gentranslate.Total_SI }}</th>
+                    <th>{{ data.meta.gentranslate.Total_IVA }}</th>
+                    <th>{{ data.meta.gentranslate.Total }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr ng-repeat="summary in data.summary">
+                        <td>{{ summary.label }}</td>
+                        <td>{{ summary.subtotal }} &euro;</td>
+                        <td>{{ summary.tax }} &euro;</td>
+                        <td>{{ summary.total }} &euro;</td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                    <th></th>
+                    <th>{{ data.totals.subtotal }} &euro;</th>
+                    <th>{{ data.totals.tax }} &euro;</th>
+                    <th>{{ data.totals.total }} &euro;</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    
+</div>
