@@ -202,7 +202,13 @@ angular.module('codenerixInvoicingVendingControllers', [])
                     if ((typeof(answer['head'])!='undefined') && (typeof(answer['head']['errors'])!='undefined')) {
                         angular.forEach(answer['head']['errors'], function (value, key) {
                             angular.forEach(value, function(error) {
-                                $scope.data.meta.context.errors[key] += value+".";
+                                if (value != null){
+                                    if ($scope.data.meta.context.errors[key] == undefined){
+                                        $scope.data.meta.context.errors[key] = value+".";
+                                    }else{
+                                        $scope.data.meta.context.errors[key] += value+".";
+                                    }
+                                }
                             });
                         });
                     } else {
