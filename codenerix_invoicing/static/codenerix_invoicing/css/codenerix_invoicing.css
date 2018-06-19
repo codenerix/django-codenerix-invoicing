@@ -7,3 +7,6 @@
 .CDNX_invoicing_order_delivered{
 	background-color: #d9edf7;
 }
+.CDNX_invoicing_order_cancelled{
+	background-color: #ffccdd;
+}
