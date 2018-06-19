@@ -33,6 +33,7 @@ limitations under the License.
         <label  class="sr-only"  for="submit_print">{{ data.meta.gentranslate.Print }}</label>
         <button type="button" id="submit_print" 
             ng-click="open_print('{{ data.meta.context.budget_pk }}')" 
+            ng-show="data.meta.context.pre_printer"
             class="btn btn-sm btn-info" >{{ data.meta.gentranslate.Print }}
             </button>
 
@@ -66,6 +67,7 @@ limitations under the License.
         <label  class="sr-only"  for="submit_print">{{ data.meta.gentranslate.Print }}</label>
         <button type="button" id="submit_print" 
             ng-click="open_print('{{ data.meta.context.budget_pk }}')" 
+            ng-show="data.meta.context.pre_printer"
             class="btn btn-sm btn-info" >{{ data.meta.gentranslate.Print }}
             </button>
 

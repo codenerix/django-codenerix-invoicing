@@ -1900,6 +1900,26 @@ class SalesLines(CodenerixModel):
 
         return update
 
+    def lock_delete(self, request=None):
+        # Un SalesLines si:
+        # * Esta en una factura
+        # * Esta en un ticket
+        # * Esta en un albaran
+        # * Esta en un pedido
+        # * Esta en un budget bloqueado
+        if self.invoice:
+            return _('Cannot delete, it is related to invoice')
+        elif self.ticket:
+            return _('Cannot delete, it is related to ticket')
+        elif self.albaran:
+            return _('Cannot delete, it is related to albaran')
+        elif self.order:
+            return _('Cannot delete, it is related to order')
+        elif self.basket.lock:
+            return _('Cannot delete, the order is lock')
+
+        return super().lock_delete()
+
     def delete(self):
         with transaction.atomic():
             if not hasattr(settings, 'CDNX_INVOICING_LOGICAL_DELETION') or settings.CDNX_INVOICING_LOGICAL_DELETION is False:

@@ -2109,45 +2109,67 @@ class SalesLinesCreateWS(LinesCreateBasket):
 
     def get_initial(self):
         initial = super(SalesLinesCreateWS, self).get_initial()
-
+        initial['errors'] = {}
         body = json.loads(self.request.body.decode())
 
         product_final = ProductFinal.objects.filter(pk=body['product_final']).first()
         if product_final is None:
-            raise Exception(_('Product invalid'))
-
-        product_unique_value = body['product_unique_value']
-        if product_unique_value:
-            product_unique = ProductUnique.objects.filter(
-                product_final=product_final,
-                value=product_unique_value
-            ).first()
+            initial['errors']['product_final'] = _('Product invalid')
+            # raise Exception(_('Product invalid'))
+            tax_basket_fk = None
+            price_base = None
+            description_basket = ''
         else:
-            product_unique = ProductUnique.objects.filter(
-                product_final=product_final,
-                stock_real__gt=0,
-                stock_locked__lt=F('stock_real')
-            ).first()
+            tax_basket_fk = product_final.product.tax.pk
+            description_basket = '{}'.format(product_final)
+            prices = product_final.calculate_price()
+            price_base = prices['price_base']
 
-        if product_unique is None:
-            raise Exception(_('Product Unique invalid'))
+            product_unique_value = body['product_unique_value']
+            if product_unique_value:
+                product_unique = ProductUnique.objects.filter(
+                    product_final=product_final,
+                    value=product_unique_value
+                ).first()
+            else:
+                product_unique = ProductUnique.objects.filter(
+                    product_final=product_final,
+                    stock_real__gt=0,
+                    stock_locked__lt=F('stock_real')
+                ).first()
 
-        prices = product_final.calculate_price()
+            if product_unique is None:
+                initial['errors']['product_unique'] = _('Product Unique invalid')
+                # raise Exception(_('Product Unique invalid'))
+                product_unique_pk = None
+            else:
+                product_unique_pk = product_unique.pk
 
         budget = SalesBasket.objects.filter(pk=self.budget_id).first()
         if budget is None:
-            raise Exception(_('Budget invalid'))
+            initial['errors']['basket'] = _('Budget invalid')
+            # raise Exception(_('Budget invalid'))
+            budget_pk = None
         else:
-            # init form
-            initial['basket'] = budget.pk
-            initial['tax_basket_fk'] = product_final.product.tax.pk
-            initial['product_unique'] = product_unique.pk
-            initial['price_recommended_basket'] = prices['price_base']
-            initial['description_basket'] = '{}'.format(product_final)
-            initial['price_base_basket'] = prices['price_base']
-            initial['discount_basket'] = 0
+            budget_pk = budget.pk
+        # init form
+        initial['basket'] = budget_pk
+        initial['tax_basket_fk'] = tax_basket_fk
+        initial['product_unique'] = product_unique_pk
+        initial['price_recommended_basket'] = price_base
+        initial['description_basket'] = description_basket
+        initial['price_base_basket'] = price_base
+        initial['discount_basket'] = 0
 
         return initial
+
+    def form_valid(self, form):
+        if form.initial['errors']:
+            for field in form.initial['errors']:
+                errors = form._errors.setdefault(field, ErrorList())
+                errors.append(form.initial['errors'][field])
+            return super().form_invalid(form)
+        return super().form_valid(form)
 
     def get_form_kwargs(self):
         kwargs = super(SalesLinesCreateWS, self).get_form_kwargs()
@@ -2835,12 +2857,17 @@ class LinesVending(GenList):
     static_partial_row = 'vendings/partials/vending_rows.html'
     static_app_row = 'vendings/vending_app.js'
     static_controllers_row = 'vendings/vending_controllers.js'
+    ngincludes = {"table": "/static/vendings/partials/vending_table.html"}
     # quitar paginacion
     gentrans = {
         'Pay': _("Pay"),
         'Print': _("Print"),
         'Cancel': _('Cancel'),
         'notfound': _('Product not found'),
+        'Tasas': _('Tasas'),
+        'Total_SI': _('Total SI'),
+        'Total_IVA': _('Total IVA'),
+        'Total': _('Total'),
     }
 
     def dispatch(self, *args, **kwargs):
@@ -2861,6 +2888,13 @@ class LinesVending(GenList):
                 paidout = False
             else:
                 paidout = True
+
+            uuid_pos = self.request.session.get('POS_client_UUID', None)
+            PDV = POS.objects.filter(uuid=uuid_pos).first()
+            if paidout or PDV and PDV.print_unpaid:
+                pre_printer = True
+            else:
+                pre_printer = False
             # budget information
             self.extra_context.update({
                 'customer': budget.customer.__str__(),
@@ -2881,6 +2915,7 @@ class LinesVending(GenList):
             })
             # budget total
             summary = {}
+            summary_tmp = {}
             totals = {
                 'subtotal': 0,
                 'tax': 0,
@@ -2895,19 +2930,26 @@ class LinesVending(GenList):
                 'tax_basket_fk',
 
             ):
-                if line['tax_basket_fk'] not in summary:
-                    summary[line['tax_basket_fk']] = {
+                if line['tax_basket_fk'] not in summary_tmp:
+                    summary_tmp[line['tax_basket_fk']] = {
                         'label': line['tax_label_basket'],
                         'subtotal': 0,
                         'tax': 0,
                         'total': 0
                     }
-                summary[line['tax_basket_fk']]['subtotal'] += line['subtotal_basket']
-                summary[line['tax_basket_fk']]['tax'] += round_decimal(Decimal(line['tax_basket']) * line['subtotal_basket'] / 100, CURRENCY_DECIMAL_PLACES)
-                summary[line['tax_basket_fk']]['total'] += line['total_basket']
-            totals['subtotal'] = budget.subtotal
-            totals['tax'] = budget.taxes
-            totals['total'] = budget.total
+                summary_tmp[line['tax_basket_fk']]['subtotal'] += round(float(line['subtotal_basket']), CURRENCY_DECIMAL_PLACES)
+                summary_tmp[line['tax_basket_fk']]['tax'] += round(float(round_decimal(Decimal(line['tax_basket']) * line['subtotal_basket'] / 100, CURRENCY_DECIMAL_PLACES)), CURRENCY_DECIMAL_PLACES)
+                summary_tmp[line['tax_basket_fk']]['total'] += round(float(line['total_basket']), CURRENCY_DECIMAL_PLACES)
+
+            for stmp in summary_tmp:
+                summary[stmp] = summary_tmp[stmp]
+                summary[stmp]['subtotal'] = "{0:.{prec}f}".format(summary_tmp[stmp]['subtotal'], prec=CURRENCY_DECIMAL_PLACES)
+                summary[stmp]['tax'] = "{0:.{prec}f}".format(summary_tmp[stmp]['tax'], prec=CURRENCY_DECIMAL_PLACES)
+                summary[stmp]['total'] = "{0:.{prec}f}".format(summary_tmp[stmp]['total'], prec=CURRENCY_DECIMAL_PLACES)
+
+            totals['subtotal'] = "{0:.{prec}f}".format(budget.subtotal, prec=CURRENCY_DECIMAL_PLACES)
+            totals['tax'] = "{0:.{prec}f}".format(budget.taxes, prec=CURRENCY_DECIMAL_PLACES)
+            totals['total'] = "{0:.{prec}f}".format(budget.total, prec=CURRENCY_DECIMAL_PLACES)
 
             self.extra_context.update({
                 'summary': summary,
@@ -2945,6 +2987,7 @@ class LinesVending(GenList):
         self.client_context = {
             'budget_pk': self.budget_pk,
             'paidout': paidout,
+            'pre_printer': pre_printer,
             'final_focus': True,
             'unique_focus': False,
             'unique_disabled': True,
@@ -3009,6 +3052,12 @@ class LinesVending(GenList):
         fields.append(('total_basket', _("Price")))
         return fields
 
+    def get_context_json(self, context):
+        answer = super().get_context_json(context)
+        answer['summary'] = self.extra_context['summary']
+        answer['totals'] = self.extra_context['totals']
+        return answer
+
 
 class LinesVendingEdit(GenUpdateModal, GenUpdate):
     model = SalesLines
@@ -3047,6 +3096,11 @@ class VendingPay(View):
                         ini['total'] = prices['total']
                         if not hasattr(budget, 'order_sales') or (budget.order_sales and budget.order_sales.status_order == STATUS_ORDER_PENDING):
                             context['paidout'] = False
+
+        if context['paidout'] or PDV and PDV.print_unpaid:
+            context['pre_printer'] = True
+        else:
+            context['pre_printer'] = False
 
         form = self.form_class(initial=ini)
         if context['paidout']:
