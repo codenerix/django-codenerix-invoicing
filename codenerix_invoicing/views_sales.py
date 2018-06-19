@@ -508,7 +508,7 @@ class BasketPassToBudget(View):
             obj = SalesBasket.objects.filter(pk=pk).first()
             if obj:
                 obj_budget = obj.pass_to_budget(list_lines)
-                context['url'] = "{}#/{}".format(reverse("CDNX_invoicing_salesbaskets_budget_list", obj_budget.pk))
+                context['url'] = "{}#/{}".format(reverse("CDNX_invoicing_salesbaskets_budget_list"), obj_budget.pk)
                 try:
                     json_answer = json.dumps(context)
                 except TypeError:
