@@ -1266,6 +1266,12 @@ class LineOrderSubList(GenLineOrderUrl, GenList):
             self.linkadd = True
             self.linkedit = True
             self.field_delete = True
+
+        self.__btn_invoice = getattr(settings, 'CDNX_INVOICING_ORDER_BTN_INVOICE', True)
+        self.__btn_ticket = getattr(settings, 'CDNX_INVOICING_ORDER_BTN_TICKET', True)
+        self.__btn_albaran = getattr(settings, 'CDNX_INVOICING_ORDER_BTN_ALBARAN', True)
+        if self.__btn_invoice is False and self.__btn_ticket is False and self.__btn_albaran is False:
+            self.field_check = None
         return super(LineOrderSubList, self).dispatch(*args, **kwargs)
 
     def __limitQ__(self, info):
@@ -1284,6 +1290,13 @@ class LineOrderSubList(GenLineOrderUrl, GenList):
         else:
             context['total'] = 0
         return context
+
+    def get_context_json(self, context):
+        answer = super(LineOrderSubList, self).get_context_json(context)
+        answer['meta']['btn_invoice'] = self.__btn_invoice
+        answer['meta']['btn_ticket'] = self.__btn_ticket
+        answer['meta']['btn_albaran'] = self.__btn_albaran
+        return answer
 
 
 class LineOrderDetails(GenLineOrderUrl, GenDetail):

@@ -23,11 +23,11 @@ limitations under the License.
 <div ng-include="'/static/codenerix/partials/table.html'"></div>
 <div>
     <label  class="sr-only"  for="submit_create_albaran">{{ data.meta.gentranslate.CreateAlbaran }}</label>
-    <button ng-controller="codenerixSalesDetailsCtrl" id="submit_create_albaran" ng-click="create_albaran()" class="btn btn-sm btn-info">{{ data.meta.gentranslate.CreateAlbaran }}</button>
+    <button ng-if="data.meta.btn_albaran" ng-controller="codenerixSalesDetailsCtrl" id="submit_create_albaran" ng-click="create_albaran()" class="btn btn-sm btn-info">{{ data.meta.gentranslate.CreateAlbaran }}</button>
 
     <label  class="sr-only"  for="submit_create_ticket">{{ data.meta.gentranslate.CreateTicket }}</label>
-    <button ng-controller="codenerixSalesDetailsCtrl" id="submit_create_ticket" ng-click="create_ticket()" class="btn btn-sm btn-info">{{ data.meta.gentranslate.CreateTicket }}</button>
+    <button ng-if="data.meta.btn_ticket" ng-controller="codenerixSalesDetailsCtrl" id="submit_create_ticket" ng-click="create_ticket()" class="btn btn-sm btn-info">{{ data.meta.gentranslate.CreateTicket }}</button>
 
     <label  class="sr-only"  for="submit_create_invoice">{{ data.meta.gentranslate.CreateInvoice }}</label>
-    <button ng-controller="codenerixSalesDetailsCtrl" id="submit_create_invoice" ng-click="create_invoice()" class="btn btn-sm btn-info">{{ data.meta.gentranslate.CreateInvoice }}</button>
+    <button ng-if="data.meta.btn_invoice" ng-controller="codenerixSalesDetailsCtrl" id="submit_create_invoice" ng-click="create_invoice()" class="btn btn-sm btn-info">{{ data.meta.gentranslate.CreateInvoice }}</button>
 </div>
