@@ -1363,6 +1363,7 @@ class SalesLineBasket(GenLineProduct):
         else:
             if kwargs.get('standard_save', False):
                 kwargs.pop('standard_save')
+                self.update_total(force_save=False)
                 result = super(self._meta.model, self).save(*args, **kwargs)
                 self.basket.update_totales()
                 return result
