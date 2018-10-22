@@ -67,7 +67,7 @@ class CashDiaryReport(GenList):
     }
     default_ordering = "-date"
 
-    def custom_queryset(self, queryset):
+    def custom_queryset(self, queryset, info=None):
         return queryset.values('date', 'pos__name').annotate(**{
             'diff_cash': Sum('closed_cash') - Sum('opened_cash'),
             'diff_card': Sum('closed_cards') - Sum('opened_cards'),
