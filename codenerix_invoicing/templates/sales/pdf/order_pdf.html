@@ -200,7 +200,7 @@ limitations under the License.
             <td class="text-right">{{ tax.amount|floatformat:"2" }} &euro;</td>
         </tr>
         {% endfor %}
-        {% for tax, amount in total_budget.discounts.items %}
+        {% for tax, amount in total_order.discounts.items %}
             {% if tax %}
             <tr>
                 <td colspan="3">&nbsp;&nbsp;&nbsp;&nbsp;</td>
