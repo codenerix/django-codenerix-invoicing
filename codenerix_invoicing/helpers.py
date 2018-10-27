@@ -59,7 +59,7 @@ class ShoppingCartProxy(object):
                 raise Exception(_('User {user} is not a Customer').format(user=request.user.username))
 
             try:
-                self._cart = SalesBasket.objects.filter(customer=customer, role=ROLE_BASKET_SHOPPINGCART, removed=False).first()
+                self._cart = SalesBasket.objects.filter(customer=customer, role=ROLE_BASKET_SHOPPINGCART, removed=False, lock=False).first()
             except ObjectDoesNotExist:
                 pos = None
                 self._cart = SalesBasket(customer=customer, role=ROLE_BASKET_SHOPPINGCART, removed=False, pos_slot=pos)
