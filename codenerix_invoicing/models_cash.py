@@ -22,8 +22,8 @@ from decimal import Decimal
 
 from django.db import models, IntegrityError
 from django.db.models import Q, Sum
-from django.utils.encoding import smart_text
-from django.utils.translation import ugettext_lazy as _
+from django.utils.encoding import smart_str
+from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 from django.utils import timezone, dateparse
 
@@ -136,7 +136,7 @@ class CashDiary(CodenerixModel):
         return not self.is_opened
 
     def __str__(self):
-        return u"({}) {}: {}".format(smart_text(self.pos), smart_text(self.opened_user), smart_text(self.opened_date))
+        return u"({}) {}: {}".format(smart_str(self.pos), smart_str(self.opened_user), smart_str(self.opened_date))
 
     def __unicode__(self):
         return self.__str__()
@@ -208,9 +208,9 @@ class CashMovement(CodenerixModel):
 
     def __str__(self):
         if self.order.count() and self.pos_slot:
-            return u"{}".format(smart_text(self.order), smart_text(self.pos_slot), smart_text(self.amount))
+            return u"{}".format(smart_str(self.order), smart_str(self.pos_slot), smart_str(self.amount))
         else:
-            return u"{}".format(smart_text(self.amount))
+            return u"{}".format(smart_str(self.amount))
 
     def __unicode__(self):
         return self.__str__()

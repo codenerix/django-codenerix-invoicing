@@ -18,7 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from django.conf.urls import url
+from django.urls import re_path as url
 from codenerix_invoicing.views import BillingSeriesCreate, BillingSeriesCreateModal, BillingSeriesDelete, BillingSeriesList, BillingSeriesUpdate, BillingSeriesUpdateModal
 from codenerix_invoicing.views import LegalNoteList, LegalNoteCreate, LegalNoteCreateModal, LegalNoteUpdate, LegalNoteUpdateModal, LegalNoteDelete
 # from codenerix_invoicing.views import ProductStockList, ProductStockCreate, ProductStockCreateModal, ProductStockUpdate, ProductStockUpdateModal, ProductStockDelete, ProductStockDetailModal

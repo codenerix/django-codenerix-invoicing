@@ -19,7 +19,7 @@
 # limitations under the License.
 
 from django import forms
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 from codenerix.forms import GenModelForm
 from codenerix_invoicing.models_sales import ReasonModification

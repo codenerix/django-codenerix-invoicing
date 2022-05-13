@@ -29,7 +29,7 @@ from django.shortcuts import render
 from django.template import loader
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from django.views.generic import View
 from django.conf import settings
 

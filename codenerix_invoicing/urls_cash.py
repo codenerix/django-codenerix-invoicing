@@ -18,7 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from django.conf.urls import url
+from django.urls import re_path as url
 
 from .views_cash import CashDiaryList, CashDiaryExplain, CashDiaryCreate, CashDiaryCreateModal, CashDiaryUpdate, CashDiaryUpdateModal, CashDiaryDelete, CashDiarySubList, CashDiaryDetails, CashDiaryDetailModal, CashDiaryReport
 from .views_cash import CashMovementList, CashMovementReport, CashMovementCreate, CashMovementCreateModal, CashMovementUpdate, CashMovementUpdateModal, CashMovementDelete, CashMovementSubList, CashMovementDetails, CashMovementDetailModal

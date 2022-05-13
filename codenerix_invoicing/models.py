@@ -20,8 +20,8 @@
 
 from django.db import models
 from django.db import transaction
-from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import smart_text
+from django.utils.translation import gettext_lazy as _
+from django.utils.encoding import smart_str
 
 from codenerix.models import CodenerixModel
 from django.conf import settings
@@ -56,7 +56,7 @@ class BillingSeries(CodenerixModel):
     observations = models.TextField(_("Observations"), max_length=256, blank=True, null=True)
 
     def __unicode__(self):
-        return u"{}".format(smart_text(self.code))
+        return u"{}".format(smart_str(self.code))
 
     def __str__(self):
         return self.__unicode__()
@@ -88,7 +88,7 @@ class LegalNote(CodenerixModel):
     public = models.BooleanField(_("Public"), default=False)
 
     def __unicode__(self):
-        return u"{}".format(smart_text(self.updated))
+        return u"{}".format(smart_str(self.updated))
 
     def __str__(self):
         return self.__unicode__()
@@ -118,7 +118,7 @@ class TypeDocument(CodenerixModel):
     code = models.CharField(_("Code"), blank=False, null=False, max_length=128)
 
     def __unicode__(self):
-        return u"{}".format(smart_text(self.code))
+        return u"{}".format(smart_str(self.code))
 
     def __str__(self):
         return self.__unicode__()
@@ -216,7 +216,7 @@ class Haulier(CodenerixModel, GenImageFileNull):
     url_tracking = models.CharField(_("Url tracking"), max_length=250, blank=True, null=True)
 
     def __unicode__(self):
-        return u"{}".format(smart_text(self.name))
+        return u"{}".format(smart_str(self.name))
 
     def __str__(self):
         return self.__unicode__()

@@ -21,7 +21,7 @@
 from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from django.utils.decorators import method_decorator
 from django.conf import settings
 from django.db.models import Q

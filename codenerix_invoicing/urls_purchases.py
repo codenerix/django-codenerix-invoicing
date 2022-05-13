@@ -18,7 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from django.conf.urls import url
+from django.urls import re_path as url
 from codenerix_invoicing.views_purchases import ProviderList, BudgetList, LineBudgetList, \
     OrderList, LineOrderList, AlbaranList, LineAlbaranList, \
     TicketList, LineTicketList, TicketRectificationList, \
