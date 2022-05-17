@@ -2,7 +2,7 @@
 #
 # django-codenerix-invoicing
 #
-# Copyright 2017 Centrologic Computational Logistic Center S.L.
+# Codenerix GNU
 #
 # Project URL : http://www.codenerix.com
 #
@@ -18,7 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from django.conf.urls import url
+from django.urls import re_path as url
 from codenerix_invoicing.views_purchases import ProviderList, BudgetList, LineBudgetList, \
     OrderList, LineOrderList, AlbaranList, LineAlbaranList, \
     TicketList, LineTicketList, TicketRectificationList, \

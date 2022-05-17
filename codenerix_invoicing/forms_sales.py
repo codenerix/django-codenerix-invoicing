@@ -2,7 +2,7 @@
 #
 # django-codenerix-invoicing
 #
-# Copyright 2017 Centrologic Computational Logistic Center S.L.
+# Codenerix GNU
 #
 # Project URL : http://www.codenerix.com
 #
@@ -19,7 +19,7 @@
 # limitations under the License.
 
 from django import forms
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 from codenerix.forms import GenModelForm, GenForm
 from codenerix.widgets import WysiwygAngularInput

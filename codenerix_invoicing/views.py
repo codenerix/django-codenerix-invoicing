@@ -2,7 +2,7 @@
 #
 # django-codenerix-invoicing
 #
-# Copyright 2017 Centrologic Computational Logistic Center S.L.
+# Codenerix GNU
 #
 # Project URL : http://www.codenerix.com
 #
@@ -21,7 +21,7 @@
 from datetime import datetime
 
 from django.contrib.auth.decorators import login_required
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 from django.utils.decorators import method_decorator
 from django.conf import settings
 from django.db.models import Q

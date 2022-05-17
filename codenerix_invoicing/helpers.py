@@ -2,7 +2,7 @@
 #
 # django-codenerix-invoicing
 #
-# Copyright 2017 Centrologic Computational Logistic Center S.L.
+# Codenerix GNU
 #
 # Project URL : http://www.codenerix.com
 #
@@ -24,7 +24,7 @@ from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.urls import reverse
 from django.db.models import F, Sum
-from django.utils.translation import ugettext as _
+from django.utils.translation import gettext as _
 
 from codenerix_invoicing.models import Haulier
 # from codenerix_invoicing.models_sales import SalesBasket, SalesLines__________staticmethod as SalesLineBasket, ROLE_BASKET_SHOPPINGCART

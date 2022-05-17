@@ -2,7 +2,7 @@
 #
 # django-codenerix-invoicing
 #
-# Copyright 2017 Centrologic Computational Logistic Center S.L.
+# Codenerix GNU
 #
 # Project URL : http://www.codenerix.com
 #
@@ -21,8 +21,8 @@
 from django.db import models
 from django.db.models import F
 from django.contrib.auth.models import User
-from django.utils.translation import ugettext_lazy as _
-from django.utils.encoding import smart_text
+from django.utils.translation import gettext_lazy as _
+from django.utils.encoding import smart_str
 from django.conf import settings
 
 from codenerix.models import GenInterface, CodenerixModel
@@ -102,7 +102,7 @@ class GenLineProduct(CodenerixModel):  # META: Abstract class
     description = models.TextField(_("description"), blank=True, null=True)
 
     def __str__(self):
-        return u"{} - {}".format(smart_text(self.product), smart_text(self.quantity))
+        return u"{} - {}".format(smart_str(self.product), smart_str(self.quantity))
 
     def __unicode__(self):
         return self.__str__()
@@ -148,7 +148,7 @@ class GenPurchase(CodenerixModel):  # META: Abstract class
     observations = models.TextField(_("Observations"), max_length=256, blank=True, null=True)
 
     def __str__(self):
-        return u"{}".format(smart_text(self.code))
+        return u"{}".format(smart_str(self.code))
 
     def __unicode__(self):
         return self.__str__()
@@ -200,7 +200,7 @@ class Provider(GenRole, CodenerixModel):
 
     def __str__(self):
         if hasattr(self, 'external'):
-            return u"{}".format(smart_text(self.external))
+            return u"{}".format(smart_str(self.external))
         else:
             return "{}".format(self.pk)
 
@@ -316,7 +316,7 @@ class PurchasesLineAlbaran(GenLineProduct):
     validator_user = models.ForeignKey(User, related_name='line_albaran_purchases', verbose_name=_("Validator user"), blank=False, null=False, on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
-        return u"{} - {}".format(smart_text(self.product_unique), smart_text(self.quantity))
+        return u"{} - {}".format(smart_str(self.product_unique), smart_str(self.quantity))
 
     def __fields__(self, info):
         fields = super(PurchasesLineAlbaran, self).__fields__(info)

@@ -2,7 +2,7 @@
 #
 # django-codenerix-invoicing
 #
-# Copyright 2017 Centrologic Computational Logistic Center S.L.
+# Codenerix GNU
 #
 # Project URL : http://www.codenerix.com
 #
@@ -26,8 +26,8 @@ from django.db import models, transaction, IntegrityError
 from django.db.models import Q, F
 from django.urls import reverse
 from django.utils import timezone
-from django.utils.encoding import smart_text
-from django.utils.translation import ugettext_lazy as _
+from django.utils.encoding import smart_str
+from django.utils.translation import gettext_lazy as _
 from django.conf import settings
 
 from codenerix.middleware import get_current_user
@@ -257,7 +257,7 @@ class Customer(GenRole, CodenerixModel):
 
     def __str__(self):
         if hasattr(self, 'external'):
-            return u"{}".format(smart_text(self.external))
+            return u"{}".format(smart_str(self.external))
         else:
             return "{}".format(self.pk)
 
@@ -336,9 +336,9 @@ class Address(CodenerixModel):
 
     def __str__(self):
         if hasattr(self, 'external_delivery'):
-            return u"{}".format(smart_text(self.external_delivery.get_summary()))
+            return u"{}".format(smart_str(self.external_delivery.get_summary()))
         elif hasattr(self, 'external_invoice'):
-            return u"{}".format(smart_text(self.external_invoice.get_summary()))
+            return u"{}".format(smart_str(self.external_invoice.get_summary()))
         else:
             return 'No data!'
 
@@ -408,7 +408,7 @@ class CustomerDocument(CodenerixModel, GenDocumentFile):
     type_document = models.ForeignKey('TypeDocument', related_name='customer_documents', verbose_name=_("Type document"), null=True, on_delete=models.CASCADE)
 
     def __str__(self):
-        return u"{}".format(smart_text(self.customer))
+        return u"{}".format(smart_str(self.customer))
 
     def __unicode__(self):
         return self.__str__()
@@ -678,7 +678,7 @@ class GenInvoiceRectification(GenVersion):  # META: Abstract class
         abstract = True
 
     def __str__(self):
-        return u"{}".format(smart_text(self.code))
+        return u"{}".format(smart_str(self.code))
 
     def __unicode__(self):
         return self.__str__()
@@ -711,7 +711,7 @@ class SalesBasket(GenVersion):
     expiration_date = models.DateTimeField(_("Expiration date"), blank=True, null=True, editable=False)
 
     def __str__(self):
-        return u"Order-{}".format(smart_text(self.code))
+        return u"Order-{}".format(smart_str(self.code))
 
     def __unicode__(self):
         return self.__str__()
@@ -1033,7 +1033,7 @@ class SalesOrder(GenVersion):
     billing_series = models.ForeignKey(BillingSeries, related_name='order_sales', verbose_name='Billing series', blank=False, null=False, on_delete=models.CASCADE)
 
     def __str__(self):
-        return u"{}".format(smart_text(self.code))
+        return u"{}".format(smart_str(self.code))
 
     def __unicode__(self):
         return self.__str__()
@@ -1137,7 +1137,7 @@ class SalesOrderDocument(CodenerixModel, GenDocumentFile):
     removed = models.BooleanField(_("Removed"), blank=False, default=False, editable=False)
 
     def __str__(self):
-        return u'{}'.format(smart_text(self.name_file))
+        return u'{}'.format(smart_str(self.name_file))
 
     def __unicode__(self):
         return self.__str__()
@@ -1164,7 +1164,7 @@ class SalesAlbaran(GenVersion):
     send = models.BooleanField(_("Send"), blank=False, default=False)
 
     def __str__(self):
-        return u"{}".format(smart_text(self.code))
+        return u"{}".format(smart_str(self.code))
 
     def __unicode__(self):
         return self.__str__()
@@ -1236,7 +1236,7 @@ class SalesTicket(GenVersion):
         return super(SalesTicket, self).save(*args, **kwargs)
 
     def __str__(self):
-        return u"Ticket-{}".format(smart_text(self.code))
+        return u"Ticket-{}".format(smart_str(self.code))
 
     def __unicode__(self):
         return self.__str__()
@@ -1367,7 +1367,7 @@ class SalesInvoice(GenVersion):
     billing_series = models.ForeignKey(BillingSeries, related_name='invoice_sales', verbose_name='Billing series', on_delete=models.CASCADE)
 
     def __str__(self):
-        return u"{}".format(smart_text(self.code))
+        return u"{}".format(smart_str(self.code))
 
     def __unicode__(self):
         return self.__str__()
@@ -2496,7 +2496,7 @@ class PrintCounterDocument(CodenerixModel):  # META: Abstract class
         abstract = True
 
     def __str__(self):
-        return u"{} - {}  ({})".format(smart_text(self.date), smart_text(self.doc), smart_text(self.user))
+        return u"{} - {}  ({})".format(smart_str(self.date), smart_str(self.doc), smart_str(self.user))
 
     def __unicode__(self):
         return self.__str__()
@@ -2551,7 +2551,7 @@ class ReasonModification(CodenerixModel):
     enable = models.BooleanField(_("Enable"), blank=True, default=True)
 
     def __str__(self):
-        return u"{} ({})".format(smart_text(self.name), smart_text(self.code))
+        return u"{} ({})".format(smart_str(self.name), smart_str(self.code))
 
     def __unicode__(self):
         return self.__str__()
@@ -2573,7 +2573,7 @@ class ReasonModificationLine(CodenerixModel):  # META: Abstract class
         abstract = True
 
     def __str__(self):
-        return u"{} - {}  ({})".format(smart_text(self.reason), smart_text(self.line), smart_text(self.quantity))
+        return u"{} - {}  ({})".format(smart_str(self.reason), smart_str(self.line), smart_str(self.quantity))
 
     def __unicode__(self):
         return self.__str__()
