@@ -1,5 +1,15 @@
-django-codenerix-invoicing (4.0.1) stable; urgency=medium
+# Changelog
+All notable changes to this project will be documented in this file.
 
-  * Django 4.x support
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
- -- Juanmi Taboada <juanmi@juanmitaboada.com>  Tue, 17 May 2022 14:28:14 +0200
+## [Unreleased]
+
+## [4.0.2] - 2022-06-18
+### Fixed
+- Removed limit on dependencies for this package
+
+## [4.0.1] - 2022-05-17
+### Added
+- Django 4.x support
